@@ -1323,7 +1323,7 @@ void main(){
   o = vec4(col, 1.);
 }`);
 bindAttribs(P_CATH, ["aP"]);
-let cathT = null, cathF = null, cathW = 0, shards = null, cathWalk = 0, cathLastT = -99;
+let cathT = null, cathF = null, cathW = 0, cathH = 0, shards = null, cathWalk = 0, cathLastT = -99;
 const CATH_DANCER = newDancer();
 function prebuildShards() { shards = []; const n = MOBILE ? 9000 : 30000; for (let i = 0; i < n; i++) { const a = rnd() * TAU, r = Math.sqrt(rnd()) * 5.6; shards.push([Math.cos(a) * r, 6.5 + Math.sin(a) * r, -62, (rnd() - .5) * 2, (rnd() - .5) * 2, 6 + rnd() * 18, rnd()]); } }
 function sceneCathedral(tt, dt, C, flash) {
@@ -1343,7 +1343,7 @@ function sceneCathedral(tt, dt, C, flash) {
   const cam = camera(eye, tgt, fov, RW, RH);
   // ---- raymarch pass (half resolution on phones) ----
   const sc = MOBILE ? .5 : .75, w = Math.max(160, (RW * sc) | 0), h = Math.max(90, (RH * sc) | 0);
-  if (!cathT || cathW !== w) { cathT = tex(w, h, true); cathF = fbo(cathT); cathW = w; }
+  if (!cathT || cathW !== w || cathH !== h) { cathT = tex(w, h, true); cathF = fbo(cathT); cathW = w; cathH = h; }
   gl.bindFramebuffer(gl.FRAMEBUFFER, cathF); gl.viewport(0, 0, w, h); gl.disable(gl.BLEND);
   gl.useProgram(P_CATH.p); const u = P_CATH.u, fw = v3.norm(v3.sub(tgt, eye));
   gl.uniform3fv(u.uEye, eye); gl.uniform3fv(u.uR, cam.right); gl.uniform3fv(u.uU, cam.up); gl.uniform3fv(u.uF, fw);
