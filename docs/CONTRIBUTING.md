@@ -38,6 +38,7 @@ Budgets live in `scripts/categories.json`.
 - **Handles only.** No legal names, emails or photos of people, in files or on screen, unless it is your own and you really want it there.
 - **Only release what you may release.** Samples, music, fonts and AI output must be yours or licensed for this. Third-party assets keep their own license and must be noted (e.g. `fonts/OFL.txt`).
 - **No malware, no tracking, no network calls home** in web prods beyond loading their own assets and public fonts.
+- Web prods run in a sandboxed iframe with an opaque origin: no cookies, `localStorage` or access to the gallery page. Load your own assets with relative URLs (GitHub Pages serves them with CORS headers).
 - Flashing content must carry a warning (and ideally a reduced mode).
 - Follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 

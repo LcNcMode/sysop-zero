@@ -61,7 +61,10 @@ function play(slug) {
   $("#p-nfo").href = base + "nfo.txt";
   $("#p-nfo").hidden = !p.has_nfo;
   const f = $("#p-frame");
-  f.setAttribute("sandbox", "allow-scripts allow-same-origin allow-pointer-lock");
+  // No allow-same-origin: prods share the gallery's origin, so that flag would let a prod script the
+  // gallery and lift its own sandbox. Prods run in an opaque origin; asset fetches rely on
+  // CORS, which GitHub Pages sends (Access-Control-Allow-Origin: *).
+  f.setAttribute("sandbox", "allow-scripts allow-pointer-lock");
   f.src = url;
   $("#player").showModal();
   if (location.hash !== "#/" + slug) history.replaceState(null, "", "#/" + slug);
