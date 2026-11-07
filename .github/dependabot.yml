@@ -1,0 +1,14 @@
+# Keeps the SHA-pinned actions and the pinned Python tooling current via reviewable PRs.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule:
+      interval: weekly
