@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crystalline Drop — a 1993 demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
+  #screen{position:relative;width:min(100vw,160vh);height:min(62.5vw,100vh)}
+  #c{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+  #screen::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 50%,rgba(0,0,0,.28) 50%,rgba(0,0,0,.28) 100%);
+    background-size:100% calc(100% / 200);
+    box-shadow:inset 0 0 8vmin rgba(0,0,0,.85)}
+  #hi{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity 1.2s;z-index:1}
+  #menu{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2vmin;
+    font-family:"Press Start 2P",monospace;color:#7ff;text-align:center;background:radial-gradient(circle at 50% 40%,#102060 0%,#000 70%);z-index:2;padding:4vmin;box-sizing:border-box}
+  #menu h1{margin:0;font-size:clamp(16px,5.2vmin,44px);line-height:1.3;
+    background:linear-gradient(#fff,#7ff 45%,#a4f 55%,#fff);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(3px 3px 0 #204)}
+  #menu p{margin:0;font-size:clamp(8px,1.8vmin,14px);line-height:1.8;color:#9ad}
+  #menu button{font-family:inherit;font-size:clamp(10px,2.4vmin,18px);color:#fff;background:#0a1a50;border:3px solid #7ff;
+    padding:1.6vmin 3vmin;cursor:pointer;min-width:min(80vw,520px);box-shadow:4px 4px 0 #a4f}
+  #menu button:disabled{opacity:.4;cursor:wait}
+  #menu button:not(:disabled):hover,#menu button:focus-visible{background:#7ff;color:#002;outline:none}
+  #menu small{display:block;font-size:.6em;color:#9ad;margin-top:.8vmin}
+  .blink{animation:b 1s steps(2) infinite}@keyframes b{50%{opacity:0}}
+  #hidden{display:none}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="screen">
+    <canvas id="c" width="320" height="200"></canvas>
+    <canvas id="hi"></canvas>
+    <div id="menu">
+      <h1>CRYSTALLINE<br>DROP</h1>
+      <p>A 1993-STYLE REALTIME DEMO BY VENTURE OF XANADU<br>320X200 · 256 COLOURS · TRACKER BEATS</p>
+      <button id="b-pt" disabled>▶ START DEMO<small>PROTRACKER EDITION · MUSIC BY VENTURE</small></button>
+      <p id="status" class="blink">LOADING MUSIC...</p>
+      <p style="color:#f9a">⚠ CONTAINS STROBE AND FLASHING LIGHTS</p>
+      <button id="b-safe" style="min-width:0;font-size:clamp(8px,1.8vmin,13px);padding:1vmin 2vmin">FLASHING: FULL</button>
+      <p>TAP LEFT / RIGHT = SKIP 10S · MIDDLE = PAUSE<br>KEYS: SPACE · ← → · ESC</p>
+    </div>
+  </div>
+</div>
+<script>
+"use strict";
+/* ======================= CONFIG ======================= */
+const CFG = {
+  group: "VENTURE OF XANADU",
+  title: "CRYSTALLINE DROP",
+  tracks: {
+    pt: { file: "protracker.mp3", name: "PROTRACKER EDITION", bpm: 171.60, off: .335,
+      cues: [[0,"intro"],[14,"logo"],[29.7,"plasma"],[52,"voxel"],[75,"glenz"],[92,"twister"],[110,"tunnel"],[122,"party"],[133,"fire"],[147.5,"bobs"],[160.5,"dancer"],[188,"bump"],[197,"mini"],[206.5,"finale"],[217.5,"end"]] },
+  },
+  scroll: "        HELLO AND WELCOME TO >>> CRYSTALLINE DROP <<<   VENTURE IS BACK ON THE KEYBOARD AFTER MORE THAN 30 YEARS!     " +
+    "ONCE IN AROS-D, THEN PARAMOUNT AND FINALLY XANADU - NOW TEAMING UP WITH CLAUDE FOR ONE MORE PRODUCTION...     " +
+    "EVERYTHING IS CALCULATED IN REALTIME IN 320X200 WITH A 256 COLOUR PALETTE: PLASMA, VOXEL LANDSCAPE, ROTOZOOMER, TWISTERS, TUNNEL, FIRE, VECTOR BOBS, GLENZ VECTORS, BUMP MAPPING, METABALLS, A TECHNO CLUB AND A SHADOW DANCER!     " +
+    "REMEMBER THE PARTY 1993 AT HERNING MESSECENTER IN DENMARK? THOUSANDS OF SCENERS, A HALL FULL OF AMIGAS AND PCS, DOOM ON THE LAN AND NO SLEEP BETWEEN CHRISTMAS AND NEW YEAR... WHAT A BLAST!     " +
+    "MEGA GREETINGS TO ALL MY OLD GROUP MATES - AND ESPECIALLY TO MINI AND TO ZODIAK OF CASCADA! WE STILL OWE THE SCENE ONE MORE DEMO...     " +
+    "RESPECT TO SPACEBALLS - 9 FINGERS AND ITS DIGITISED DANCERS ROCKED THE PARTY 1993. THE SHADOW DANCER IN THIS DEMO IS OUR 2027 TRIBUTE!     " +
+    "MUSIC: CRYSTALLINE DROP - DESIGNED BY VENTURE HIMSELF, IN PURE TRACKER MODULE STYLE. TURN IT UP LOUD!     " +
+    "THIS DEMO IS A TRIBUTE TO 1993 - AND AN INVITATION: YOUNG CODERS, GRAPHIC ARTISTS, MUSICIANS AND AI WIZARDS... GIVE THE SCENE A REVIVAL! WHAT DOES THE AI DEMOSCENE LOOK LIKE IN 2027? SHOW ME WHAT AMAZING LOOKS LIKE!     " +
+    "TAP LEFT OR RIGHT TO JUMP, MIDDLE TO PAUSE.     LET'S WRAP...                    ",
+  greets: ["MINI","ZODIAK / CASCADA","ALL OF XANADU","AROS-D","PARAMOUNT","THE PARTY CREW","FUTURE CREW","SANITY","SPACEBALLS","KEFRENS","PHENOMENA","MELON DEZIGN","THE BLACK LOTUS","COMPLEX","ALL TRACKER HEROES"],
+  journey: ["VENTURE","AROS-D","PARAMOUNT","XANADU","ONCE A SCENER..."],
+  party: ["THE PARTY 1993","HERNING MESSECENTER","27-29 DECEMBER 1993","3000 SCENERS","DOOM ON THE LAN!","ZERO SLEEP","WHAT A BLAST!"],
+  credits: [["MUSIC","VENTURE"],["DESIGN","VENTURE"],["CODE","CLAUDE"],["GROUP","XANADU"]]
+};
+
+/* ======================= SETUP ======================= */
+const W = 320, H = 200;
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+const img = ctx.createImageData(W, H);
+const px = new Uint32Array(img.data.buffer);
+const FONT = '"Press Start 2P", monospace';
+const TAU = Math.PI * 2;
+const pack = (r, g, b) => (255 << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255);
+const BLACK = pack(0, 0, 0);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const smooth = x => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+
+function grad(stops) {
+  const r = new Float32Array(256), g = new Float32Array(256), b = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const p = i / 255; let k = 0;
+    while (k < stops.length - 2 && p > stops[k + 1][0]) k++;
+    const a = stops[k], c = stops[k + 1], f = (p - a[0]) / ((c[0] - a[0]) || 1);
+    r[i] = a[1] + (c[1] - a[1]) * f; g[i] = a[2] + (c[2] - a[2]) * f; b[i] = a[3] + (c[3] - a[3]) * f;
+  }
+  return { r, g, b };
+}
+function buildPal(base, shift, bright, out, dim = 1) {
+  for (let i = 0; i < 256; i++) {
+    const j = (i + shift) & 255;
+    const R = base.r[j] * dim, G = base.g[j] * dim, B = base.b[j] * dim;
+    out[i] = pack(R + (255 - R) * bright, G + (255 - G) * bright, B + (255 - B) * bright);
+  }
+  return out;
+}
+const P_CRYSTAL = grad([[0,0,0,24],[0.18,10,40,150],[0.38,40,200,255],[0.5,240,255,255],[0.62,210,90,255],[0.82,90,10,150],[1,0,0,24]]);
+const P_PASTEL  = grad([[0,30,15,70],[0.3,120,60,170],[0.5,255,190,225],[0.7,80,170,210],[1,30,15,70]]);
+const P_FIRE    = grad([[0,0,0,0],[0.22,80,0,10],[0.42,210,30,0],[0.62,255,150,0],[0.82,255,235,90],[1,255,255,255]]);
+const P_GOLD    = grad([[0,10,0,40],[0.25,70,10,160],[0.5,255,110,40],[0.72,255,240,170],[1,10,0,40]]);
+const pal = new Uint32Array(256);
+const shadePals = Array.from({ length: 16 }, () => new Uint32Array(256));
+
+/* ---- textures & tables ---- */
+const tex = new Uint8Array(256 * 256);
+for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) {
+  const d = Math.abs((x & 63) - 32) + Math.abs((y & 63) - 32);         // diamonds
+  tex[y * 256 + x] = (((x ^ y) & 127) + (d < 22 ? 128 : 0) + (d < 10 ? 64 : 0)) & 255;
+}
+const SIN = new Uint8Array(1024);
+for (let i = 0; i < 1024; i++) SIN[i] = Math.round(Math.sin(i / 1024 * TAU) * 31.5 + 31.5);
+const TW = W * 2, TH = H * 2;
+const angT = new Uint8Array(TW * TH), depT = new Uint8Array(TW * TH), shT = new Uint8Array(TW * TH);
+for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) {
+  const dx = x - W, dy = (y - H) * 1.2, d = Math.sqrt(dx * dx + dy * dy) || 1, i = y * TW + x;
+  depT[i] = (6000 / d) & 255;
+  angT[i] = ((Math.atan2(dy, dx) / TAU + 1) * 256) & 255;
+  shT[i] = Math.min(15, (d / 7) | 0);
+}
+const heat = new Uint8Array(W * (H + 3));
+const RND = new Uint8Array(65536); for (let i = 0; i < RND.length; i++) RND[i] = (Math.random() * 5) | 0;
+let rndPos = 0;
+
+/* stars */
+const stars = Array.from({ length: 520 }, () => newStar(true));
+function newStar(any) { return { x: (Math.random() * 2 - 1) * W, y: (Math.random() * 2 - 1) * H, z: any ? Math.random() * 255 + 1 : 256 }; }
+
+/* bobs shapes */
+const NB = 180, shapes = [[], [], []];
+for (let i = 0; i < NB; i++) {
+  const y = 1 - 2 * (i + .5) / NB, r = Math.sqrt(1 - y * y), ph = i * 2.39996;
+  shapes[0].push([Math.cos(ph) * r, y, Math.sin(ph) * r]);
+  const u = (i % 18) / 18 * TAU, v = Math.floor(i / 18) / 10 * TAU;
+  shapes[1].push([(0.8 + 0.38 * Math.cos(v)) * Math.cos(u), 0.38 * Math.sin(v), (0.8 + 0.38 * Math.cos(v)) * Math.sin(u)]);
+  shapes[2].push([((i % 6) / 5 * 2 - 1) * .75, ((Math.floor(i / 6) % 6) / 5 * 2 - 1) * .75, (Math.floor(i / 36) / 4 * 2 - 1) * .75]);
+}
+const bob = document.createElement("canvas"); bob.width = bob.height = 16;
+{ const b = bob.getContext("2d"), gr = b.createRadialGradient(6, 6, 0, 8, 8, 8);
+  gr.addColorStop(0, "#fff"); gr.addColorStop(.35, "#8ff"); gr.addColorStop(.75, "#46c"); gr.addColorStop(1, "rgba(20,0,80,0)");
+  b.fillStyle = gr; b.fillRect(0, 0, 16, 16); }
+
+/* gem geometry */
+const GV = [], GF = [];
+for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; GV.push([Math.cos(a) * .55, -.5, Math.sin(a) * .55]); }
+for (let i = 0; i < 8; i++) { const a = (i + .5) / 8 * TAU; GV.push([Math.cos(a), -.1, Math.sin(a)]); }
+GV.push([0, 1.25, 0]);
+GF.push([0, 1, 2, 3, 4, 5, 6, 7]);
+for (let i = 0; i < 8; i++) { const j = (i + 1) & 7; GF.push([i, j, 8 + i]); GF.push([j, 8 + j, 8 + i]); GF.push([8 + i, 8 + j, 16]); }
+{ const oc = [0, 0.2, 0];
+  for (const f of GF) {
+    const a = GV[f[0]], b = GV[f[1]], c = GV[f[2]];
+    const n = cross(sub(b, a), sub(c, a)), fc = centroid(f.map(k => GV[k]));
+    if (dot(n, sub(fc, oc)) < 0) f.reverse();
+  } }
+function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function centroid(ps) { const c = [0, 0, 0]; for (const p of ps) { c[0] += p[0]; c[1] += p[1]; c[2] += p[2]; } return c.map(v => v / ps.length); }
+function rot(p, ax, ay, az) {
+  let [x, y, z] = p, t;
+  t = x * Math.cos(ay) + z * Math.sin(ay); z = -x * Math.sin(ay) + z * Math.cos(ay); x = t;
+  t = y * Math.cos(ax) - z * Math.sin(ax); z = y * Math.sin(ax) + z * Math.cos(ax); y = t;
+  t = x * Math.cos(az) - y * Math.sin(az); y = x * Math.sin(az) + y * Math.cos(az); x = t;
+  return [x, y, z];
+}
+
+/* text canvases (built after font load) */
+let atlas, logoC, maskC, maskCtx;
+const mask = new Uint8Array(W * H);
+function buildText() {
+  { const st = [[0,[255,255,255]],[.35,[255,226,122]],[.5,[255,106,58]],[.56,[150,30,60]],[.62,[255,90,200]],[.85,[192,58,255]],[1,[90,26,160]]];
+    atlas = styledAtlas(16, "scroll", f => { let k = 0; while (k < st.length - 2 && f > st[k + 1][0]) k++; const A = st[k], B = st[k + 1], u = clamp((f - A[0]) / (B[0] - A[0]), 0, 1); return A[1].map((v, i) => v + (B[1][i] - v) * u); }); }
+  logoC = document.createElement("canvas"); logoC.width = W; logoC.height = 60;
+  const l = logoC.getContext("2d");
+  l.textAlign = "center"; l.textBaseline = "top";
+  const lines = [["CRYSTALLINE", 24, 2], ["DROP", 32, 28]];
+  for (const [s, sz, y] of lines) { l.font = sz + "px " + FONT; l.fillStyle = "#1a0436"; l.fillText(s, W / 2 + 3, y + 3); }
+  for (const [s, sz, y] of lines) {
+    l.font = sz + "px " + FONT;
+    const g2 = l.createLinearGradient(0, y, 0, y + sz);
+    g2.addColorStop(0, "#ffffff"); g2.addColorStop(.45, "#7ff"); g2.addColorStop(.5, "#2a3cff"); g2.addColorStop(.75, "#c47bff"); g2.addColorStop(1, "#ffffff");
+    l.fillStyle = g2; l.fillText(s, W / 2, y);
+  }
+  crispen(logoC);
+  maskC = document.createElement("canvas"); maskC.width = W; maskC.height = H;
+  maskCtx = maskC.getContext("2d", { willReadFrequently: true });
+}
+let maskText = null;
+function setMask(str) {
+  if (str === maskText) return; maskText = str;
+  maskCtx.clearRect(0, 0, W, H);
+  const sz = str.length * 16 > 300 ? 12 : 16;
+  maskCtx.font = sz + "px " + FONT; maskCtx.textAlign = "center"; maskCtx.textBaseline = "middle"; maskCtx.fillStyle = "#fff";
+  maskCtx.fillText(str, W / 2, 112);
+  const d = maskCtx.getImageData(0, 0, W, H).data;
+  for (let i = 0; i < W * H; i++) mask[i] = d[i * 4 + 3] > 100 ? 1 : 0;
+}
+
+/* ======================= AUDIO ======================= */
+const audio = new Audio(); audio.preload = "auto"; audio.setAttribute("playsinline", "");
+const urls = {};
+let actx = null, analyser = null, fdata = null;
+let cur = null, running = false, paused = false, ended = false;
+let kick = 0, avgBass = 0.3, lastBeat = -1, flash = 0, beatNo = 0, lastGrid = -1, level = 0;
+
+async function loadTrack(id) {
+  if (CFG.tracks[id].file.startsWith("data:")) { urls[id] = CFG.tracks[id].file; progress[id] = 1; showProgress(); document.getElementById("b-" + id).disabled = false; return; }
+  const res = await fetch(CFG.tracks[id].file);
+  if (!res.ok) throw new Error(res.status);
+  const total = +res.headers.get("content-length") || 0, reader = res.body.getReader(), parts = [];
+  let got = 0;
+  for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; progress[id] = total ? got / total : .5; showProgress(); }
+  urls[id] = URL.createObjectURL(new Blob(parts, { type: "audio/mpeg" }));
+  progress[id] = 1; showProgress();
+  document.getElementById("b-" + id).disabled = false;
+}
+const progress = { pt: 0 };
+const statusEl = document.getElementById("status");
+function showProgress() {
+  const p = Math.round(progress.pt * 100);
+  statusEl.textContent = p >= 100 ? "READY - PRESS START" : "LOADING MUSIC... " + p + "%";
+}
+
+function start(id) {
+  if (!urls[id]) return;
+  cur = CFG.tracks[id];
+  try {
+    if (!actx) {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = actx.createMediaElementSource(audio);
+      analyser = actx.createAnalyser(); analyser.fftSize = 1024; analyser.smoothingTimeConstant = 0.5;
+      src.connect(analyser); analyser.connect(actx.destination);
+      fdata = new Uint8Array(analyser.frequencyBinCount);
+    }
+    actx.resume();
+  } catch (e) { analyser = null; }
+  audio.src = urls[id]; audio.currentTime = 0;
+  audio.play().catch(() => {});
+  try { const s = document.getElementById("screen"); (s.requestFullscreen || s.webkitRequestFullscreen || (() => {})).call(s); } catch (e) {}
+  document.getElementById("menu").style.display = "none";
+  running = true; paused = false; ended = false; flash = 1; sceneIdx = -1; hiShow(false); hair = null;
+}
+function toMenu() {
+  audio.pause(); running = false; hiShow(false);
+  document.getElementById("menu").style.display = "flex";
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+}
+function togglePause() {
+  if (!running || ended) return;
+  paused = !paused; paused ? audio.pause() : audio.play().catch(() => {});
+}
+function seek(d) { if (!running) return; audio.currentTime = clamp(audio.currentTime + d, 0, (audio.duration || 999) - .5); ended = false; if (paused) togglePause(); }
+audio.addEventListener("ended", () => { ended = true; });
+
+document.getElementById("b-pt").onclick = () => start("pt");
+document.getElementById("b-safe").onclick = e => { SAFE = !SAFE; e.currentTarget.textContent = "FLASHING: " + (SAFE ? "REDUCED" : "FULL"); };
+document.getElementById("screen").addEventListener("pointerdown", e => {
+  if (!running) return;
+  if (ended) { toMenu(); return; }
+  const r = cv.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width;
+  fx < .33 ? seek(-10) : fx > .67 ? seek(10) : togglePause();
+});
+addEventListener("keydown", e => {
+  if (!running) { if (e.key === "1" || e.key === "Enter") start("pt"); return; }
+  if (e.key === " ") { e.preventDefault(); ended ? toMenu() : togglePause(); }
+  else if (e.key === "ArrowLeft") seek(-10);
+  else if (e.key === "ArrowRight") seek(10);
+  else if (e.key === "Escape") toMenu();
+});
+
+function analyse(t, dt) {
+  let beat = false;
+  if (analyser) {
+    analyser.getByteFrequencyData(fdata);
+    let b = 0; for (let i = 1; i <= 5; i++) b += fdata[i]; b /= 5 * 255;
+    let l = 0; for (let i = 0; i < 200; i++) l += fdata[i]; level = l / (200 * 255);
+    if (b > avgBass * 1.12 && b > .42 && t - lastBeat > .22) beat = true;
+    avgBass += (b - avgBass) * Math.min(1, dt * 4);
+  }
+  const grid = Math.floor(beatOf(t));
+  if ((!analyser || level === 0) && grid !== lastGrid) beat = true;
+  lastGrid = grid;
+  if (t < lastBeat) lastBeat = -1;
+  if (beat) { kick = 1; lastBeat = t; beatNo++; }
+  kick *= Math.exp(-dt * 7);
+}
+
+/* ======================= EFFECTS ======================= */
+function fxStars(dt, speed) {
+  px.fill(BLACK);
+  for (const s of stars) {
+    s.z -= speed * dt;
+    if (s.z < 1) Object.assign(s, newStar(false));
+    const sx = (s.x * 128 / s.z + W / 2) | 0, sy = (s.y * 128 / s.z + H / 2) | 0;
+    if (sx < 0 || sx >= W - 1 || sy < 0 || sy >= H) continue;
+    const c = clamp(280 - s.z, 0, 255) | 0, col = pack(c * .8, c * .9, c);
+    px[sy * W + sx] = col;
+    if (c > 190) px[sy * W + sx + 1] = col;
+  }
+}
+function fxPlasma(t, base, speed, bright) {
+  buildPal(base, (t * 40 * speed) | 0, bright, pal);
+  const a = (t * 90 * speed) | 0, b = (t * 70 * speed) | 0, c = (t * 120 * speed) | 0, d = (t * 50 * speed) | 0;
+  const rx = new Uint8Array(W), ry = new Uint8Array(H);
+  for (let x = 0; x < W; x++) rx[x] = SIN[(x * 11 + a) & 1023] + SIN[(x * 6 - b) & 1023];
+  for (let y = 0; y < H; y++) ry[y] = SIN[(y * 13 + c) & 1023] + SIN[(y * 5 - d + 300) & 1023];
+  const e = (t * 60 * speed) | 0;
+  let i = 0;
+  for (let y = 0; y < H; y++) { const ryy = ry[y]; for (let x = 0; x < W; x++) px[i++] = pal[((rx[x] + ryy + SIN[((x + y) * 8 + e) & 1023]) * 2) & 255]; }
+}
+function fxRoto(t, base, bright) {
+  buildPal(base, (t * 30) | 0, bright, pal);
+  const ang = t * .45 + Math.sin(t * .3) * 1.2, zoom = .55 + .45 * Math.sin(t * .5) - kick * .12;
+  const ca = Math.cos(ang) * zoom, sa = Math.sin(ang) * zoom, cx = t * 40, cy = t * 25;
+  let i = 0;
+  for (let y = 0; y < H; y++) {
+    let u = cx - (W / 2) * ca - (y - H / 2) * sa, v = cy - (W / 2) * sa + (y - H / 2) * ca;
+    for (let x = 0; x < W; x++) { px[i++] = pal[tex[(((v | 0) & 255) << 8) | ((u | 0) & 255)]]; u += ca; v += sa; }
+  }
+}
+function fxTunnel(t, base, bright, dim = 1) {
+  for (let s = 0; s < 16; s++) buildPal(base, (t * 20) | 0, bright * (1 - s / 16), shadePals[s], dim * (0.12 + s / 17));
+  const ox = (W / 2 + Math.sin(t * .7) * W * .42) | 0, oy = (H / 2 + Math.sin(t * .9 + 1) * H * .42) | 0;
+  const sz = (t * 140) | 0, sa = (t * 25 + Math.sin(t * .4) * 60) | 0;
+  let i = 0;
+  for (let y = 0; y < H; y++) {
+    let k = (y + oy) * TW + ox;
+    for (let x = 0; x < W; x++, k++) px[i++] = shadePals[shT[k]][tex[(((depT[k] + sz) & 255) << 8) | ((angT[k] + sa) & 255)]];
+  }
+}
+function fxFire(t, dt, str) {
+  setMask(str);
+  const base = (H + 1) * W;
+  for (let x = 0; x < W; x++) { const v = Math.random() < .55 ? 255 : 40; heat[base + x] = v; heat[base + W + x] = v; }
+  for (let i = 0; i < W * H; i++) if (mask[i] && Math.random() < .7) heat[i] = 200 + kick * 55;
+  for (let y = 0; y < H + 1; y++) for (let x = 1; x < W - 1; x++) {
+    const i = y * W + x;
+    const s = heat[i + W - 1] + heat[i + W] + heat[i + W + 1] + heat[i + 2 * W];
+    let v = (s >> 2) - RND[rndPos = (rndPos + 1) & 65535];
+    heat[i] = v < 0 ? 0 : v;
+  }
+  buildPal(P_FIRE, 0, kick * .15, pal);
+  for (let i = 0; i < W * H; i++) px[i] = pal[heat[i]];
+}
+function copper(t, n = 6, amp = 70, cy = H / 2) {
+  const cols = [[255, 60, 60], [255, 180, 40], [60, 255, 120], [60, 200, 255], [170, 80, 255], [255, 80, 200]];
+  for (let b = 0; b < n; b++) {
+    const yc = cy + Math.sin(t * 1.7 + b * .55) * amp, col = cols[b % cols.length];
+    for (let dy = -7; dy <= 7; dy++) {
+      const y = (yc + dy) | 0; if (y < 0 || y >= H) continue;
+      const k = 1 - Math.abs(dy) / 8, hi = dy === -2 ? .5 : 0;
+      px.fill(pack(col[0] * k + 255 * hi, col[1] * k + 255 * hi, col[2] * k + 255 * hi), y * W, y * W + W);
+    }
+  }
+}
+
+/* overlays on ctx */
+function scroller(t, y0, amp = 14) {
+  const sp = 70, scroll = Math.floor(t * sp / 2) * 2, txt = CFG.scroll, len = txt.length * 16;
+  ctx.fillStyle = "rgba(0,0,30,.55)"; ctx.fillRect(0, y0 - amp - 2, W, 20 + amp * 2);
+  for (let x = 0; x < W; x += 2) {
+    const p = (scroll + x) % len, ci = (p / 16) | 0, col = p % 16;
+    let code = txt.charCodeAt(ci) - 32; if (code < 0 || code > 63) code = 0;
+    if (code === 0) continue;
+    const y = y0 + Math.sin(x * .025 + t * 3.2) * amp;
+    ctx.drawImage(atlas, code * 18 + col, 0, 2, 18, x, (y | 0) - 1, 2, 18);
+  }
+}
+function logo(y0, t, amp, alpha = 1) {
+  ctx.globalAlpha = alpha;
+  for (let y = 0; y < logoC.height; y++) {
+    const dx = Math.sin(y * .18 + t * 4) * amp + Math.sin(t * 1.3) * amp * .5;
+    ctx.drawImage(logoC, 0, y, W, 1, dx | 0, y0 + y, W, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+/* ---- crisp pixel text: thresholded glyphs, chrome gradient, hard outline ---- */
+let tNow = 0;
+const maskCache = {}, styleCache = new Map();
+function glyphMask(size) {
+  if (maskCache[size]) return maskCache[size];
+  const c = document.createElement("canvas"); c.width = 64 * size; c.height = size;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.font = size + "px " + FONT; g.textBaseline = "top"; g.fillStyle = "#fff";
+  for (let i = 0; i < 64; i++) g.fillText(String.fromCharCode(32 + i), i * size, 0);
+  const d = g.getImageData(0, 0, c.width, size).data, m = new Uint8Array(c.width * size);
+  for (let j = 0; j < m.length; j++) m[j] = d[j * 4 + 3] > 110 ? 1 : 0;
+  return (maskCache[size] = { m, w: c.width, h: size });
+}
+const hex = h => h.length === 4 ? [1, 2, 3].map(i => parseInt(h[i], 16) * 17) : [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+function chrome(col) {
+  const c = typeof col === "string" ? hex(col) : col;
+  return f => f < .45 ? c.map(v => v + (255 - v) * (1 - f / .45) * .75) : f < .55 ? c.map(v => v * .72) : c.map(v => v * (1 - (f - .55) * .9));
+}
+function styledAtlas(size, key, rowFn) {
+  const k = size + "|" + key; if (styleCache.has(k)) return styleCache.get(k);
+  const { m, w, h } = glyphMask(size), st = size + 2, cw = 64 * st, ch = h + 2;
+  const c = document.createElement("canvas"); c.width = cw; c.height = ch;
+  const g = c.getContext("2d"), id = g.createImageData(cw, ch), o = id.data;
+  for (let gi = 0; gi < 64; gi++) {
+    const at = (x, y) => x >= 0 && y >= 0 && x < size && y < h && m[y * w + gi * size + x];
+    for (let y = 0; y < ch; y++) {
+      const rc = rowFn((y - 1) / (h - 1));
+      for (let x = 0; x < st; x++) {
+        const j = (y * cw + gi * st + x) * 4, sx = x - 1, sy = y - 1;
+        if (at(sx, sy)) { o[j] = rc[0]; o[j + 1] = rc[1]; o[j + 2] = rc[2]; o[j + 3] = 255; }
+        else if (at(sx - 1, sy) || at(sx + 1, sy) || at(sx, sy - 1) || at(sx, sy + 1) || at(sx - 1, sy - 1)) { o[j] = 0; o[j + 1] = 0; o[j + 2] = 20; o[j + 3] = 255; }
+      }
+    }
+  }
+  g.putImageData(id, 0, 0); styleCache.set(k, c); return c;
+}
+function text(s, x, y, size, color, alpha = 1, align = "center", wave = 0) {
+  if (alpha <= 0.01) return;
+  if (size % 8) size = s.length * 16 <= 312 ? 16 : 8;
+  if (s.length * size > 318 && size > 8) size = s.length * 16 <= 318 ? 16 : 8;
+  const at = styledAtlas(size, color, chrome(color)), wd = s.length * size;
+  const x0 = Math.round(align === "center" ? x - wd / 2 : align === "right" ? x - wd : x);
+  ctx.globalAlpha = alpha;
+  for (let i = 0; i < s.length; i++) {
+    let code = s.charCodeAt(i) - 32; if (code < 0 || code > 63) code = 0;
+    if (s[i] === "·") { ctx.fillStyle = color; ctx.fillRect(x0 + i * size + size / 2 - size / 8, y + size / 2 - size / 8 + (wave ? Math.sin(tNow * 5 + i * .55) * wave : 0), size / 4, size / 4); continue; }
+    if (code === 0) continue;
+    const dy = wave ? Math.round(Math.sin(tNow * 5 + i * .55) * wave) : 0;
+    ctx.drawImage(at, code * (size + 2), 0, size + 2, size + 2, x0 + i * size - 1, Math.round(y) + dy - 1, size + 2, size + 2);
+  }
+  ctx.globalAlpha = 1;
+}
+function crispen(c) {
+  const g = c.getContext("2d"), d = g.getImageData(0, 0, c.width, c.height);
+  for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0;
+  g.putImageData(d, 0, 0);
+}
+function drawBobs(t, local, speed) {
+  const per = 4.6, ph = local / per, si = Math.floor(ph) % 3, m = smooth((ph % 1 - .7) / .3);
+  const A = shapes[si], B = shapes[(si + 1) % 3], pts = [];
+  const ax = t * .7 * speed, ay = t * 1.1 * speed, az = Math.sin(t * .5) * .5, sc = 1 + kick * .15;
+  for (let i = 0; i < NB; i++) {
+    const p = [A[i][0] + (B[i][0] - A[i][0]) * m, A[i][1] + (B[i][1] - A[i][1]) * m, A[i][2] + (B[i][2] - A[i][2]) * m];
+    const r = rot(p, ax, ay, az), z = r[2] * sc + 3.2;
+    pts.push([W / 2 + r[0] * sc / z * 230, H / 2 + r[1] * sc / z * 230, z]);
+  }
+  pts.sort((a, b) => b[2] - a[2]);
+  for (const [x, y, z] of pts) { const s = 26 / z; ctx.drawImage(bob, x - s / 2, y - s / 2, s, s); }
+}
+function drawGem(t, scale, cx, cy) {
+  const ax = Math.sin(t * .7) * .55, ay = t * 1.2, az = Math.sin(t * .5) * .3, s = scale * (1 + kick * .12);
+  const R = GV.map(v => { const r = rot(v, ax, ay, az); return [r[0] * s, r[1] * s, r[2] * s + 3.4]; });
+  const L = (() => { const l = [-.45, -.65, -1], n = Math.hypot(...l); return l.map(v => v / n); })();
+  if (kick > .2) {
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 90 * scale);
+    g.addColorStop(0, `rgba(160,240,255,${kick * .5})`); g.addColorStop(1, "rgba(80,0,160,0)");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  GF.forEach((f, fi) => {
+    const a = R[f[0]], b = R[f[1]], c = R[f[2]];
+    const n = cross(sub(b, a), sub(c, a)), nl = Math.hypot(...n) || 1;
+    const fc = centroid(f.map(k => R[k]));
+    if (dot(n, fc) >= 0) return;
+    const diff = Math.max(0, dot(n, L) / nl);
+    const spec = Math.pow(diff, 10) * 255;
+    const hue = fi === 0 ? [180, 250, 255] : (fi % 3 === 2 ? [150, 70, 255] : (fi % 2 ? [60, 200, 255] : [90, 120, 255]));
+    const k = .18 + .82 * diff;
+    ctx.fillStyle = `rgb(${clamp(hue[0] * k + spec, 0, 255) | 0},${clamp(hue[1] * k + spec, 0, 255) | 0},${clamp(hue[2] * k + spec, 0, 255) | 0})`;
+    ctx.beginPath();
+    f.forEach((vi, j) => { const p = R[vi], x = cx + p[0] / p[2] * 200, y = cy + p[1] / p[2] * 200; j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = .6; ctx.stroke();
+  });
+}
+
+/* ======================= MORE EFFECTS (v2) ======================= */
+/* --- voxel landscape --- */
+const hm = new Uint8Array(65536), vR = new Uint8Array(65536), vG = new Uint8Array(65536), vB = new Uint8Array(65536);
+{
+  const f = new Float32Array(65536);
+  for (let s = 64, amp = 1; s >= 2; s >>= 1, amp *= .5) {
+    const n = 256 / s, g = new Float32Array(n * n).map(() => Math.random());
+    for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) {
+      const gx = x / s, gy = y / s, x0 = gx | 0, y0 = gy | 0, fx = smooth(gx - x0), fy = smooth(gy - y0);
+      const a = g[(y0 % n) * n + x0 % n], b = g[(y0 % n) * n + (x0 + 1) % n], c = g[((y0 + 1) % n) * n + x0 % n], d = g[((y0 + 1) % n) * n + (x0 + 1) % n];
+      f[y * 256 + x] += amp * ((a + (b - a) * fx) * (1 - fy) + (c + (d - c) * fx) * fy);
+    }
+  }
+  let mn = 1e9, mx = -1e9; for (const v of f) { mn = Math.min(mn, v); mx = Math.max(mx, v); }
+  for (let i = 0; i < 65536; i++) hm[i] = Math.pow((f[i] - mn) / (mx - mn), 1.6) * 255;
+  const land = grad([[0,20,10,70],[0.22,50,20,130],[0.45,190,50,150],[0.65,255,130,80],[0.82,255,220,170],[1,255,255,255]]);
+  for (let i = 0; i < 65536; i++) {
+    const h = hm[i], sl = clamp(1 + (h - hm[(i + 257) & 65535]) / 18, .45, 1.5);
+    vR[i] = clamp(land.r[h] * sl, 0, 255); vG[i] = clamp(land.g[h] * sl, 0, 255); vB[i] = clamp(land.b[h] * sl, 0, 255);
+  }
+}
+const sky = new Uint32Array(H), SKY = grad([[0,5,0,30],[0.25,40,10,90],[0.42,200,60,140],[0.5,255,170,90],[1,255,170,90]]);
+for (let y = 0; y < H; y++) { const k = (y / H * 255) | 0; sky[y] = pack(SKY.r[k], SKY.g[k], SKY.b[k]); }
+let camH = 200;
+function fxVoxel(t, dt) {
+  for (let y = 0; y < H; y++) px.fill(sky[y], y * W, y * W + W);
+  const ang = t * .12 + Math.sin(t * .27) * .6, cx = 128 + t * 32 * Math.cos(t * .05), cy = t * 26;
+  const gi = (((cy | 0) & 255) << 8) | ((cx | 0) & 255);
+  camH += (hm[gi] * .5 + 55 - camH) * Math.min(1, dt * 1.5);
+  const hor = 62 + Math.sin(t * .6) * 8, sc = 120, fr = 255, fg = 170, fb = 90, MAXZ = 300;
+  for (let x = 0; x < W; x++) {
+    const a = ang + (x / W - .5) * 1.1, ca = Math.cos(a), sa = Math.sin(a);
+    let yb = H, z = 2, dz = .8;
+    while (z < MAXZ && yb > 0) {
+      const i = ((((cy + sa * z) | 0) & 255) << 8) | (((cx + ca * z) | 0) & 255);
+      let sy = ((camH - hm[i] * .5) / z * sc + hor) | 0;
+      if (sy < yb) {
+        if (sy < 0) sy = 0;
+        const f = (z / MAXZ) * (z / MAXZ), col = pack(vR[i] + (fr - vR[i]) * f, vG[i] + (fg - vG[i]) * f, vB[i] + (fb - vB[i]) * f);
+        for (let y = sy; y < yb; y++) px[y * W + x] = col;
+        yb = sy;
+      }
+      z += dz; dz *= 1.018;
+    }
+  }
+}
+/* --- twisters --- */
+function fxTwister(t) {
+  for (let y = 0; y < H; y++) { const k = y / H; px.fill(pack(10 + 30 * k, 0, 40 + 50 * Math.sin(k * 3.14)), y * W, y * W + W); }
+  const cols = [[255, 70, 90], [255, 200, 60], [70, 220, 255], [180, 90, 255]], R = 30;
+  for (const [cx0, dir] of [[62, 1], [258, -1]]) {
+    for (let y = 0; y < H; y++) {
+      const a = dir * t * 1.8 + Math.sin(y * .016 + t * 1.1) * 2.4 + kick * .6;
+      const cx = cx0 + Math.sin(y * .02 + t * 1.5) * 14, xs = [];
+      for (let k = 0; k < 4; k++) xs.push(cx + Math.sin(a + k * Math.PI / 2) * R);
+      for (let k = 0; k < 4; k++) {
+        const x1 = xs[k], x2 = xs[(k + 1) & 3]; if (x2 <= x1) continue;
+        const sh = .25 + .75 * (x2 - x1) / (R * 1.42), c = cols[k], row = y * W;
+        const col = pack(c[0] * sh, c[1] * sh, c[2] * sh), hi = pack(255, 255, 255);
+        for (let x = x1 | 0; x < (x2 | 0); x++) if (x >= 0 && x < W) px[row + x] = col;
+        if (x1 >= 0 && x1 < W) px[row + (x1 | 0)] = hi;
+      }
+    }
+  }
+}
+/* --- waving Dannebrog --- */
+function fxParty(t, dt) {
+  fxStars(dt, 50);
+  const x0 = 72, y0 = 44, fw = 180, fh = 124, cx1 = fw * 12 / 37, cx2 = fw * 16 / 37, cy1 = fh * 12 / 28, cy2 = fh * 16 / 28;
+  for (let y = y0 - 14; y < H; y++) { px[y * W + x0 - 2] = pack(200, 200, 210); px[y * W + x0 - 3] = pack(120, 120, 140); }
+  for (let u = 0; u < fw; u++) {
+    const w = u / fw, ph = u * .055 - t * 5, dy = Math.sin(ph) * 9 * w, sh = Math.min(1, .78 + Math.cos(ph) * .22 * (.3 + w) + kick * .12);
+    const x = x0 + u; if (x >= W) continue;
+    const white = u >= cx1 && u < cx2;
+    for (let v = 0; v < fh; v++) {
+      const y = (y0 + v + dy) | 0; if (y < 0 || y >= H) continue;
+      const isW = white || (v >= cy1 && v < cy2);
+      px[y * W + x] = isW ? pack(255 * sh, 255 * sh, 255 * sh) : pack(210 * sh, 16 * sh, 46 * sh);
+    }
+  }
+}
+/* --- glenz vectors (tetrakis hexahedron) --- */
+const ZV = [], ZF = [];
+for (const x of [-1, 1]) for (const y of [-1, 1]) for (const z of [-1, 1]) ZV.push([x, y, z]);
+const ci = (x, y, z) => ZV.findIndex(v => v[0] === x && v[1] === y && v[2] === z);
+for (let ax = 0; ax < 3; ax++) for (const s of [-1, 1]) {
+  const c = [0, 0, 0]; c[ax] = s * 1.55; ZV.push(c); const ce = ZV.length - 1;
+  const b = (ax + 1) % 3, d = (ax + 2) % 3, sq = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+  for (let k = 0; k < 4; k++) {
+    const p = [0, 0, 0], q = [0, 0, 0]; p[ax] = q[ax] = s;
+    p[b] = sq[k][0]; p[d] = sq[k][1]; q[b] = sq[(k + 1) & 3][0]; q[d] = sq[(k + 1) & 3][1];
+    const f = [ce, ci(...p), ci(...q)];
+    const n = cross(sub(ZV[f[1]], ZV[f[0]]), sub(ZV[f[2]], ZV[f[0]]));
+    if (dot(n, centroid(f.map(i => ZV[i]))) < 0) f.reverse();
+    ZF.push(f);
+  }
+}
+function drawGlenz(t) {
+  const L = [-.4, -.6, -.7], all = [];
+  for (const [sc, sp, pal2, ox] of [[1.05, 1, 0, 0], [.55, -1.6, 1, 0]]) {
+    const s = sc * (1 + kick * .1);
+    const R = ZV.map(v => { const r = rot(v, t * .9 * sp, t * 1.2 * sp, t * .4); return [r[0] * s + ox, r[1] * s, r[2] * s + 4.2]; });
+    ZF.forEach((f, fi) => {
+      const p = f.map(i => R[i]), n = cross(sub(p[1], p[0]), sub(p[2], p[0])), c = centroid(p);
+      all.push({ p, z: c[2], front: dot(n, c) < 0, lit: Math.max(0, dot(n, L) / (Math.hypot(...n) || 1)), alt: fi & 1, pal2 });
+    });
+  }
+  all.sort((a, b) => b.z - a.z);
+  const PAL = [[[90, 200, 255], [255, 255, 255]], [[255, 90, 200], [255, 220, 90]]];
+  for (const f of all) {
+    const c = PAL[f.pal2][f.alt], k = f.front ? .55 + .6 * f.lit : .3;
+    ctx.fillStyle = `rgba(${clamp(c[0] * k, 0, 255) | 0},${clamp(c[1] * k, 0, 255) | 0},${clamp(c[2] * k, 0, 255) | 0},${f.front ? .55 : .45})`;
+    ctx.beginPath();
+    f.p.forEach((q, j) => { const x = W / 2 + q[0] / q[2] * 230, y = H / 2 - 6 + q[1] / q[2] * 230; j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.closePath(); ctx.fill();
+    if (f.front) { ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = .5; ctx.stroke(); }
+  }
+}
+/* --- bump mapping --- */
+let bnx, bny; const env = new Uint8Array(65536);
+for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) { const d = Math.hypot(x - 128, y - 128) / 128; env[y * 256 + x] = Math.pow(Math.max(0, 1 - d), 2) * 255; }
+function buildBump() {
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const b = c.getContext("2d", { willReadFrequently: true });
+  b.fillStyle = "#000"; b.fillRect(0, 0, W, H); b.fillStyle = "#fff"; b.textAlign = "center"; b.textBaseline = "middle";
+  b.font = "40px " + FONT; b.fillText("XANADU", W / 2, 62);
+  b.font = "16px " + FONT; b.fillText("VENTURE", W / 2, 104);
+  b.strokeStyle = "#888"; b.lineWidth = 2; b.strokeRect(14, 22, W - 28, 100);
+  const d = b.getImageData(0, 0, W, H).data; let h = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) h[i] = d[i * 4] + Math.random() * 10 + (((i % W) + ((i / W) | 0)) % 6 === 0 ? 8 : 0);
+  for (let pass = 0; pass < 3; pass++) {
+    const o = new Float32Array(W * H);
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x; o[i] = (h[i - 1] + h[i + 1] + h[i - W] + h[i + W] + h[i] * 2) / 6; }
+    h = o;
+  }
+  bnx = new Int16Array(W * H); bny = new Int16Array(W * H);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x; bnx[i] = (h[i + 1] - h[i - 1]) * .9; bny[i] = (h[i + W] - h[i - W]) * .9; }
+}
+function fxBump(t) {
+  const l1x = W / 2 + Math.sin(t * 1.1) * 130, l1y = 75 + Math.sin(t * 1.7) * 55, l2x = W / 2 + Math.cos(t * .8) * 130, l2y = 75 + Math.cos(t * 1.3) * 55;
+  const boost = 1 + kick * .4;
+  let i = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++, i++) {
+    let ex = (x - l1x + bnx[i] + 128) | 0, ey = (y - l1y + bny[i] + 128) | 0;
+    const a = (ex & ~255 || ey & ~255) ? 0 : env[ey * 256 + ex];
+    ex = (x - l2x + bnx[i] + 128) | 0; ey = (y - l2y + bny[i] + 128) | 0;
+    const b = (ex & ~255 || ey & ~255) ? 0 : env[ey * 256 + ex];
+    px[i] = pack(clamp((a + b * .25) * boost, 0, 255), clamp((a * .72 + b * .6) * boost, 0, 255), clamp((a * .25 + b) * boost, 0, 255));
+  }
+}
+/* --- metaballs --- */
+const P_BLOB = grad([[0,0,0,20],[0.3,40,0,90],[0.48,230,40,150],[0.52,255,255,255],[0.58,255,120,200],[0.8,120,40,255],[1,255,255,255]]);
+const mdx = Array.from({ length: 5 }, () => new Float32Array(W));
+function fxBlobs(t) {
+  buildPal(P_BLOB, 0, kick * .2, pal);
+  const B = [];
+  for (let k = 0; k < 5; k++) B.push([W / 2 + Math.sin(t * (.7 + k * .23) + k * 2) * 120, H / 2 + Math.cos(t * (.9 + k * .17) + k) * 70, Math.pow(26 + k * 3 + kick * 6, 2)]);
+  for (let k = 0; k < 5; k++) for (let x = 0; x < W; x++) { const d = x - B[k][0]; mdx[k][x] = d * d; }
+  let i = 0;
+  for (let y = 0; y < H; y++) {
+    const d0 = (y - B[0][1]) ** 2, d1 = (y - B[1][1]) ** 2, d2 = (y - B[2][1]) ** 2, d3 = (y - B[3][1]) ** 2, d4 = (y - B[4][1]) ** 2;
+    for (let x = 0; x < W; x++) {
+      const f = B[0][2] / (mdx[0][x] + d0 + 1) + B[1][2] / (mdx[1][x] + d1 + 1) + B[2][2] / (mdx[2][x] + d2 + 1) + B[3][2] / (mdx[3][x] + d3 + 1) + B[4][2] / (mdx[4][x] + d4 + 1);
+      px[i++] = pal[f > 2.5 ? 255 : (f * 102) | 0];
+    }
+  }
+}
+let miniC;
+function buildMini() {
+  miniC = document.createElement("canvas"); miniC.width = W; miniC.height = 64;
+  const m = miniC.getContext("2d"); m.textAlign = "center"; m.textBaseline = "top"; m.font = "56px " + FONT;
+  m.fillStyle = "#2a0030"; m.fillText("MINI", W / 2 + 4, 6);
+  const g = m.createLinearGradient(0, 2, 0, 58);
+  g.addColorStop(0, "#fff"); g.addColorStop(.4, "#ffe27a"); g.addColorStop(.5, "#ff3a8a"); g.addColorStop(.8, "#ffb0e0"); g.addColorStop(1, "#fff");
+  m.fillStyle = g; m.fillText("MINI", W / 2, 2); crispen(miniC);
+}
+
+/* ======================= TECHNO DISCO + SHADOW DANCER (v4) ======================= */
+const HZ = 156, GROUND = 193, DS = 1.6;
+const SR = [[255, 30, 90], [255, 150, 0], [255, 240, 40], [40, 255, 120], [0, 210, 255], [120, 60, 255], [255, 40, 220]];
+let SAFE = false;
+const beatOf = t => (t - (cur.off || 0)) * cur.bpm / 60;
+const ease = x => .5 - .5 * Math.cos(Math.PI * clamp(x, 0, 1));
+const shaped = (x, k) => Math.sign(x) * Math.pow(Math.abs(x), k);
+const add2 = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const rp = (v, a) => [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.sin(a) + v[1] * Math.cos(a)];
+const lerp2 = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+
+/* ---- choreography: 8-beat moves, blended ---- */
+function move(id, b) {
+  const s = Math.sin(b * Math.PI / 2), c = Math.cos(b * Math.PI / 2);
+  const sw = shaped(s, .55), dip = Math.pow(Math.abs(Math.cos(b * Math.PI)), 4);
+  const P = { px: 0, py: 1, pt: 0, cx: 0, ct: 0, hx: 0, ht: 0, fl: [-8, 0], fr: [8, 0], hl: [-12, -56], hr: [12, -56] };
+  if (id === 0) {            // arms overhead, deep hip sway
+    P.px = sw * 7.5; P.pt = -sw * .14; P.cx = -sw * 2.6; P.ct = -sw * .06; P.py = 1.5 + dip * 1.6; P.ht = sw * .1;
+    P.hl = [-2.5 + sw * 5, -114]; P.hr = [2.5 + sw * 5, -112.5];
+  } else if (id === 1) {     // hand through hair, hand on hip, head roll
+    P.px = sw * 6.5; P.pt = -sw * .13; P.cx = -sw * 2.2; P.py = 2 + dip * 1.2;
+    P.ht = Math.sin(b * Math.PI / 2 + 1) * .22; P.hx = Math.sin(b * Math.PI / 2) * 1.2;
+    P.hr = [6 + P.hx + sw * 2, -102]; P.hl = [-10.5 + sw * 6.5, -55]; P.fl = [-7, 0]; P.fr = [9.5, 0];
+  } else if (id === 2) {     // step-touch with arm point
+    const w = shaped(s, .35);
+    P.px = w * 8.5; P.pt = -w * .11; P.cx = -w * 2.4; P.ct = w * .05; P.py = 2 + dip * 2.2;
+    P.fl = [-9 + Math.max(0, w) * 6, -Math.max(0, w) * 2.5 * dip]; P.fr = [9 + Math.min(0, w) * 6, Math.min(0, w) * 2.5 * dip];
+    const upR = [26, -114 + dip * 4], upL = [-26, -114 + dip * 4], chR = [-3, -77], chL = [3, -77], fR = clamp(.5 + w * .5, 0, 1);
+    P.hr = lerp2(chR, upR, fR); P.hl = lerp2(upL, chL, fR);
+  } else if (id === 3) {     // low body roll, hands sliding down thighs
+    const sl = (Math.sin(b * Math.PI / 4) + 1) / 2;
+    P.py = 8.5 + dip * 1.5 - sl * 3; P.px = s * 6; P.pt = -s * .11; P.cx = -c * 2.4; P.ct = c * .05; P.ht = -.12 + Math.sin(b * Math.PI / 4) * .14;
+    P.hl = [-11.5 - sl * 1.5 + s * 3, -66 + sl * 22]; P.hr = [11.5 + sl * 1.5 + s * 3, -66 + sl * 22]; P.fl = [-12, 0]; P.fr = [12, 0];
+  } else {                   // hair whips, arms wide and flowing
+    P.ht = .55 * shaped(s, .3); P.px = sw * 4; P.py = 2 + dip * 1.5; P.cx = -sw * 1.5; P.ct = sw * .06;
+    P.hl = [-29, -90 + Math.sin(b * Math.PI) * 7]; P.hr = [29, -90 - Math.sin(b * Math.PI) * 7];
+  }
+  return P;
+}
+const SEQ = [0, 1, 2, 3, 0, 4, 2, 3, 1, 4];
+function pose(b) {
+  const mi = Math.floor(b / 8), f = b / 8 - mi;
+  const A = move(SEQ[((mi % SEQ.length) + SEQ.length) % SEQ.length], b);
+  if (f < .875) return A;
+  const B = move(SEQ[(((mi + 1) % SEQ.length) + SEQ.length) % SEQ.length], b), u = ease((f - .875) * 8), o = {};
+  for (const k in A) o[k] = Array.isArray(A[k]) ? lerp2(A[k], B[k], u) : A[k] + (B[k] - A[k]) * u;
+  return o;
+}
+function ik(a, b, l1, l2, side) {
+  let dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy); const mx = l1 + l2 - .05;
+  if (d > mx) { dx *= mx / d; dy *= mx / d; d = mx; b = [a[0] + dx, a[1] + dy]; }
+  d = Math.max(d, .01);
+  const ang = Math.acos(clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1)), base = Math.atan2(dy, dx);
+  const k1 = [a[0] + Math.cos(base + ang) * l1, a[1] + Math.sin(base + ang) * l1], k2 = [a[0] + Math.cos(base - ang) * l1, a[1] + Math.sin(base - ang) * l1];
+  return [k1[0] * side > k2[0] * side ? k1 : k2, b];
+}
+function skeleton(P) {
+  const pel = [P.px, -50 + P.py];
+  const HL = add2(pel, rp([-6, 0], P.pt)), HR = add2(pel, rp([6, 0], P.pt));
+  const wai = add2(pel, [P.cx * .45, -12.5]), ch = add2(pel, [P.cx, -29]);
+  const SL = add2(ch, rp([-10, 0], P.ct)), SR_ = add2(ch, rp([10, 0], P.ct)), N = add2(ch, rp([0, -4.5], P.ct));
+  const ha = P.ht + P.ct, head = add2(N, [P.hx + Math.sin(ha) * 8.6, -Math.cos(ha) * 8.6]);
+  const [EL, HdL] = ik(SL, P.hl, 16, 14.5, -1), [ER, HdR] = ik(SR_, P.hr, 16, 14.5, 1);
+  const leg = (H, f, side) => {
+    const A = [f[0], -6.5 + f[1]], [K, A2] = ik(H, A, 23.5, 22, side), mid = lerp2(H, A2, .5);
+    return [H, lerp2(mid, K, .42), A2, [A2[0] + side * .9, f[1]]];
+  };
+  return { pel, wai, ch, ct: P.ct, pt: P.pt, SL, SR: SR_, N, head, ha, EL, HdL, ER, HdR, LL: leg(HL, P.fl, -1), LR: leg(HR, P.fr, 1) };
+}
+/* ---- hair physics (verlet) ---- */
+const HAIR_N = 8, HAIR_SEG = 4.3, HAIR_K = 9;
+let hair = null, hairT = -1;
+function hairRoots(S) {
+  const r = [];
+  for (let k = 0; k < HAIR_N; k++) { const a = -1.35 + k * (2.7 / (HAIR_N - 1)); r.push(add2(S.head, rp([Math.sin(a) * 5.4, -Math.cos(a) * 6.2 + 1], S.ha))); }
+  return r;
+}
+function hairStep(S, t, dt) {
+  const roots = hairRoots(S);
+  if (!hair || Math.abs(t - hairT) > .25) {
+    hair = roots.map(r => Array.from({ length: HAIR_K }, (_, i) => ({ x: r[0], y: r[1] + i * HAIR_SEG, px: r[0], py: r[1] + i * HAIR_SEG })));
+  }
+  hairT = t;
+  const sub = 3, h = Math.min(dt, .05) / sub;
+  for (let st = 0; st < sub; st++) for (let k = 0; k < HAIR_N; k++) {
+    const s = hair[k]; s[0].x = roots[k][0]; s[0].y = roots[k][1];
+    for (let i = 1; i < HAIR_K; i++) { const n = s[i], vx = (n.x - n.px) * .975, vy = (n.y - n.py) * .975; n.px = n.x; n.py = n.y; n.x += vx; n.y += vy + 780 * h * h; }
+    for (let it = 0; it < 4; it++) {
+      for (let i = 1; i < HAIR_K; i++) {
+        const a = s[i - 1], b = s[i], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, df = (d - HAIR_SEG) / d;
+        if (i === 1) { b.x -= dx * df; b.y -= dy * df; } else { a.x += dx * df * .5; a.y += dy * df * .5; b.x -= dx * df * .5; b.y -= dy * df * .5; }
+      }
+      for (let i = 2; i < HAIR_K; i++) {
+        const a = s[i - 2], b = s[i], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, mn = HAIR_SEG * 1.75;
+        if (d < mn) { const df = (d - mn) / d * .5; b.x -= dx * df; b.y -= dy * df; }
+      }
+      for (let i = 1; i < HAIR_K; i++) {
+        const n = s[i], dx = n.x - S.head[0], dy = n.y - S.head[1], d = Math.hypot(dx, dy) || 1;
+        if (d < 6.6) { n.x = S.head[0] + dx / d * 6.6; n.y = S.head[1] + dy / d * 6.6; }
+      }
+    }
+  }
+}
+/* ---- silhouette rendering ---- */
+function capsule(g, a, b, ra, rb) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d;
+  g.beginPath();
+  g.moveTo(a[0] + nx * ra, a[1] + ny * ra); g.lineTo(b[0] + nx * rb, b[1] + ny * rb);
+  g.lineTo(b[0] - nx * rb, b[1] - ny * rb); g.lineTo(a[0] - nx * ra, a[1] - ny * ra); g.closePath(); g.fill();
+  g.beginPath(); g.arc(a[0], a[1], ra, 0, TAU); g.fill(); g.beginPath(); g.arc(b[0], b[1], rb, 0, TAU); g.fill();
+}
+function spline(g, pts) {
+  const n = pts.length; g.beginPath();
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    if (!i) g.moveTo(p1[0], p1[1]);
+    g.bezierCurveTo(p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]);
+  }
+  g.closePath(); g.fill();
+}
+function drawSilhouette(g, S, color, sc, ox, oy) {
+  g.save(); g.setTransform(sc, 0, 0, sc, ox, oy); g.fillStyle = g.strokeStyle = color;
+  const cl = v => add2(S.ch, rp(v, S.ct)), pl = v => add2(S.pel, rp(v, S.pt)), wl = v => add2(S.wai, v);
+  // legs
+  for (const [L, sd] of [[S.LL, -1], [S.LR, 1]]) {
+    const [H, K, A, T] = L, calf = add2(lerp2(K, A, .33), [sd * .5, 0]);
+    capsule(g, H, K, 5.1, 3.0); capsule(g, K, calf, 3.0, 3.35); capsule(g, calf, A, 3.35, 1.35); capsule(g, A, T, 1.35, .9);
+  }
+  // torso
+  spline(g, [cl([2.2, -4.6]), cl([8.6, -1.3]), cl([10.9, 1.6]), cl([9.3, 6.2]), cl([9.9, 9.8]), cl([8.0, 13.6]), wl([6.0, 0]), pl([9.4, -5]), pl([10.7, 1]), pl([8.6, 5.6]), pl([0, 6.8]),
+    pl([-8.6, 5.6]), pl([-10.7, 1]), pl([-9.4, -5]), wl([-6.0, 0]), cl([-8.0, 13.6]), cl([-9.9, 9.8]), cl([-9.3, 6.2]), cl([-10.9, 1.6]), cl([-8.6, -1.3]), cl([-2.2, -4.6])]);
+  // arms
+  for (const [Sh, E, Hd] of [[S.SL, S.EL, S.HdL], [S.SR, S.ER, S.HdR]]) {
+    capsule(g, Sh, E, 2.55, 1.8); capsule(g, E, Hd, 1.8, 1.2);
+    const dx = Hd[0] - E[0], dy = Hd[1] - E[1], d = Math.hypot(dx, dy) || 1;
+    capsule(g, Hd, [Hd[0] + dx / d * 4.6, Hd[1] + dy / d * 4.6], 1.35, .8);
+  }
+  // neck + head
+  const hb = add2(S.head, rp([0, 5.2], S.ha)); capsule(g, S.N, hb, 2.1, 1.9);
+  g.beginPath(); g.ellipse(S.head[0], S.head[1], 5.5, 7.0, S.ha, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(S.head[0], S.head[1], 6.4, 7.4, S.ha, Math.PI * 1.05, Math.PI * 1.95); g.fill();
+  const hc = add2(S.head, rp([0, -1.2], S.ha)); g.beginPath(); g.ellipse(hc[0], hc[1], 6.5, 7.2, S.ha, Math.PI * .95, TAU + .05); g.fill();
+  // hair
+  if (hair) for (const s of hair) for (let i = 1; i < HAIR_K; i++) {
+    const r0 = 2.5 * (1 - (i - 1) / HAIR_K) + .45, r1 = 2.5 * (1 - i / HAIR_K) + .45;
+    capsule(g, [s[i - 1].x, s[i - 1].y], [s[i].x, s[i].y], r0, r1);
+  }
+  g.restore();
+}
+/* ---- the club ---- */
+const dist2 = new Uint16Array(W * HZ);
+for (let y = 0; y < HZ; y++) for (let x = 0; x < W; x++) dist2[y * W + x] = Math.hypot(x - W / 2, (y - 70) * 1.2) | 0;
+const rowA = new Uint32Array(W), cols = Array.from({ length: 7 }, () => [0, 0]);
+const hash = (a, b) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; };
+function fxClub(t, beat) {
+  const bi = Math.floor(beat), bar = Math.floor(beat / 4), mode = bar % 4, pulse = Math.max(Math.pow(1 - (beat - bi), 2.4), kick);
+  const k = .14 + .86 * pulse, strobe = !SAFE && bar % 8 === 7;
+  for (let i = 0; i < 7; i++) { const c = SR[i]; cols[i][0] = pack(c[0] * k, c[1] * k, c[2] * k); cols[i][1] = pack(c[0] * k * .4, c[1] * k * .4, c[2] * k * .4); }
+  if (strobe) {
+    const on = beat - bi < .5, c = on ? pack(255, 255, 255) : pack(0, 0, 0);
+    px.fill(c, 0, HZ * W);
+  } else if (mode === 0) {
+    const off = (t * 140) | 0;
+    for (let y = 0; y < HZ; y++) px.fill(cols[(((y + off) >> 3) + bi) % 7][y & 1], y * W, y * W + W);
+  } else if (mode === 1) {
+    const off = (t * 180) | 0;
+    for (let y = 0; y < HZ; y++) { const L = y & 1, row = y * W; for (let x = 0; x < W; x++) px[row + x] = cols[(((x + off) >> 4) + bi) % 7][L]; }
+  } else if (mode === 2) {
+    for (let y = 0; y < HZ; y++) { const L = y & 1, row = y * W, cy = y >> 5; for (let x = 0; x < W; x++) { const cx = x >> 5; px[row + x] = ((cx + cy + bi) & 1) ? cols[(cx + bi) % 7][L] : pack(0, 0, 8); } }
+  } else {
+    const off = (t * 110) | 0;
+    for (let i = 0, y = 0; y < HZ; y++) { const L = y & 1; for (let x = 0; x < W; x++, i++) px[i] = cols[((((dist2[i] - off) >> 3) % 7) + 7 + bi) % 7][L]; }
+  }
+  // light-up disco floor
+  for (let y = HZ; y < H; y++) {
+    const z = 60 / (y - HZ + 6), v = z * 3 + t * 2.2, row = y * W, vi = Math.floor(v), fv = v - vi;
+    for (let x = 0; x < W; x++) {
+      const u = (x - W / 2) * z / 22 + 50, ui = Math.floor(u), fu = u - ui;
+      if (fu < .06 || fv < .08) { px[row + x] = pack(8, 0, 18); continue; }
+      const h = hash(ui, vi + bi * 7);
+      if (h % 3 === 0) { const c = SR[h % 7], kk = (.25 + .75 * pulse) * Math.min(1, 8 / z); px[row + x] = pack(c[0] * kk, c[1] * kk, c[2] * kk); }
+      else px[row + x] = pack(20, 4, 40);
+    }
+  }
+  return { pulse, bar, bi, strobe };
+}
+function lasers(t, beat, pulse, bar) {
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  const em = [[-4, -4, "80,255,120"], [W + 4, -4, "0,220,255"], [W / 2, -6, "255,60,220"]];
+  em.forEach(([ex, ey, c], e) => {
+    for (let j = 0; j < 7; j++) {
+      let a;
+      if (bar % 3 === 0) a = Math.PI / 2 + (j - 3) * .16 + Math.sin(t * 1.7 + e * 2) * .7;
+      else if (bar % 3 === 1) a = Math.PI / 2 + (e === 0 ? -1 : e === 1 ? 1 : 0) * .5 * -1 + (j - 3) * .09 * Math.sin(t * 3);
+      else a = Math.PI / 2 + Math.sin(t * 2.4 + j * .9 + e) * .9;
+      const x2 = ex + Math.cos(a) * 420, y2 = ey + Math.sin(a) * 420;
+      ctx.strokeStyle = `rgba(${c},${.25 + .5 * pulse})`; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.strokeStyle = `rgba(255,255,255,${.15 + .3 * pulse})`; ctx.lineWidth = .5; ctx.stroke();
+    }
+  });
+  for (let i = 0; i < 3; i++) {
+    const ax = W * (.18 + i * .32), a = Math.PI / 2 + Math.sin(t * .9 + i * 2.1) * .55, w = .2, L = 260;
+    const g = ctx.createLinearGradient(ax, 0, ax + Math.cos(a) * L, Math.sin(a) * L);
+    const c = ["255,80,200", "120,220,255", "255,255,255"][i];
+    g.addColorStop(0, `rgba(${c},${.35 + pulse * .3})`); g.addColorStop(1, `rgba(${c},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(ax, -2);
+    ctx.lineTo(ax + Math.cos(a - w) * L, Math.sin(a - w) * L); ctx.lineTo(ax + Math.cos(a + w) * L, Math.sin(a + w) * L); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function eq(pulse) {
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  const n = 32, bw = W / n;
+  for (let i = 0; i < n; i++) {
+    let v;
+    if (analyser && fdata) { const b0 = Math.floor(2 * Math.pow(1.13, i)), b1 = Math.floor(2 * Math.pow(1.13, i + 1)) + 1; let s = 0; for (let b = b0; b < b1; b++) s += fdata[b] || 0; v = s / (b1 - b0) / 255; }
+    else v = .3 + .6 * pulse * Math.abs(Math.sin(i * 1.7 + tNow * 4));
+    const h = v * v * 60, c = SR[i % 7];
+    for (let y = 0; y < h; y += 3) { ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${.55 - y / 160})`; ctx.fillRect(i * bw + 1, HZ - 2 - y, bw - 2, 2); }
+  }
+  ctx.restore();
+}
+function sparkles(t, pulse) {
+  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 70; i++) {
+    const lon = i * 2.39996 + t * .7, lat = ((i * 7) % 23) / 23 * Math.PI - Math.PI / 2;
+    if (Math.cos(lon) < 0) continue;
+    const x = W / 2 + Math.sin(lon) * Math.cos(lat) * 230, y = 70 + Math.sin(lat) * 110;
+    ctx.fillStyle = `rgba(255,255,255,${(.3 + .7 * pulse) * Math.cos(lon)})`; ctx.fillRect(x, y, 1.5, 1.5);
+  }
+  ctx.restore();
+}
+const WALLWORDS = ["TP93", "RAVE", "XANADU", "HERNING", "VENTURE", "1993"];
+let danceLastT = -1;
+const silC = document.createElement("canvas"); silC.width = W; silC.height = H; const silX = silC.getContext("2d");
+function silLayer(S, sc, ox, oy, alpha) {
+  silX.setTransform(1, 0, 0, 1, 0, 0); silX.clearRect(0, 0, W, H);
+  drawSilhouette(silX, S, "#000", sc, ox, oy);
+  ctx.globalAlpha = alpha; ctx.drawImage(silC, 0, 0); ctx.globalAlpha = 1;
+}
+function sceneDancer(t, dt, l) {
+  const beat = beatOf(t), C = fxClub(t, beat); ctx.putImageData(img, 0, 0);
+  if (!C.strobe) {
+    eq(C.pulse);
+    const w = WALLWORDS[Math.floor(C.bar / 2) % WALLWORDS.length];
+    text(w, W / 2, 44, w.length > 6 ? 40 : 48, "#fff", .14 + C.pulse * .22);
+  }
+  const P = pose(beat), S = skeleton(P), cx = W / 2 + Math.sin(t * .23) * 14;
+  if (Math.abs(t - danceLastT) > .25) hair = null;
+  hairStep(S, t, Math.max(1 / 120, Math.min(dt, .05))); danceLastT = t;
+  const glow = ctx.createRadialGradient(cx, 96, 0, cx, 96, 120);
+  glow.addColorStop(0, `rgba(255,240,255,${C.strobe ? 0 : .45 + C.pulse * .4})`); glow.addColorStop(1, "rgba(255,200,255,0)");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, HZ);
+  silLayer(S, DS * 1.12, cx + 62, HZ + 22, .5);                                    // giant shadow on the wall
+  if (!C.strobe) lasers(t, beat, C.pulse, C.bar);
+  drawSilhouette(ctx, S, "#000", DS, cx, GROUND);                                   // the dancer
+  ctx.save(); ctx.translate(0, GROUND); ctx.scale(1, -.26); ctx.translate(0, -GROUND);
+  silLayer(S, DS, cx, GROUND, .55); ctx.restore();                                  // floor reflection
+  if (!C.strobe) sparkles(t, C.pulse);
+  else if (beat - C.bi >= .5) { ctx.fillStyle = "rgba(0,0,0,.9)"; ctx.fillRect(0, 0, W, H); }
+  if (kick > .9 && !SAFE) flash = Math.max(flash, .18);
+}
+
+/* ======================= THE MESSAGE + 2027 HI-RES REVEAL ======================= */
+const MSG = ["THIS DEMO IS A LOVE LETTER TO 1993.", "", "MAY IT INSPIRE YOUNG CODERS,", "GRAPHIC ARTISTS, MUSICIANS", "AND AI WIZARDS", "TO GIVE THE SCENE A REVIVAL!", "", "WHAT DOES THE AI DEMOSCENE", "LOOK LIKE IN 2027?"];
+const hi = document.getElementById("hi"), hx = hi.getContext("2d");
+let parts = null, hiW = 0, hiH = 0, hiOn = false;
+function hiShow(on, instant) { if (on === hiOn) return; hiOn = on; hi.style.transition = instant ? "none" : "opacity 1.2s"; hi.style.opacity = on ? 1 : 0; if (!on) parts = null; }
+function hiInit() {
+  hiResize();
+  const o = document.createElement("canvas"); o.width = hiW; o.height = hiH;
+  const g = o.getContext("2d", { willReadFrequently: true });
+  g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.font = `900 ${Math.round(hiH * .34)}px Orbitron, "Press Start 2P", sans-serif`; g.fillText("2027", hiW / 2, hiH * .4);
+  const d = g.getImageData(0, 0, hiW, hiH).data, step = Math.max(3, Math.round(hiW / 230)), pts = [];
+  for (let y = 0; y < hiH; y += step) for (let x = 0; x < hiW; x += step) if (d[(y * hiW + x) * 4 + 3] > 128) pts.push([x, y]);
+  while (pts.length > 3200) pts.splice((Math.random() * pts.length) | 0, 1);
+  parts = pts.map(([x, y]) => {
+    const a = Math.random() * TAU, r0 = Math.random() * hiW * .02;
+    return { x: hiW / 2 + Math.cos(a) * r0, y: hiH * .4 + Math.sin(a) * r0, vx: Math.cos(a) * (200 + Math.random() * 900), vy: Math.sin(a) * (200 + Math.random() * 900), tx: x, ty: y, h: 185 + (x / hiW) * 140, s: Math.random() * TAU };
+  });
+}
+function hiDraw(t, dt, l) {
+  if (!parts) hiInit();
+  const u = hiW / 1000;
+  hx.globalCompositeOperation = "source-over"; hx.fillStyle = "rgba(2,0,12,.32)"; hx.fillRect(0, 0, hiW, hiH);
+  hx.globalCompositeOperation = "lighter";
+  const pull = smooth((l - .6) / 2.2), sz = Math.max(1.2, 1.9 * u);
+  for (const p of parts) {
+    p.vx *= Math.exp(-dt * 2.2); p.vy *= Math.exp(-dt * 2.2);
+    p.x += p.vx * dt * (1 - pull); p.y += p.vy * dt * (1 - pull);
+    const k = Math.min(1, dt * 3.5 * pull); p.x += (p.tx - p.x) * k; p.y += (p.ty - p.y) * k;
+    const tw = .55 + .45 * Math.sin(t * 3 + p.s);
+    hx.fillStyle = `hsla(${p.h + Math.sin(t * .7) * 25},100%,${55 + tw * 20}%,${.5 + tw * .5})`;
+    hx.fillRect(p.x + Math.sin(t * 2 + p.s) * 1.5 * u, p.y + Math.cos(t * 2.3 + p.s) * 1.5 * u, sz, sz);
+  }
+  hx.globalCompositeOperation = "source-over"; hx.textAlign = "center"; hx.textBaseline = "middle";
+  const line = (s, y, size, w, col, a, blur) => {
+    if (a <= .01) return; hx.globalAlpha = a; hx.font = `${w} ${Math.round(size * hiH)}px Orbitron, sans-serif`;
+    hx.shadowColor = col; hx.shadowBlur = blur * u; hx.fillStyle = "#fff"; hx.fillText(s, hiW / 2, y * hiH); hx.shadowBlur = 0; hx.globalAlpha = 1;
+  };
+  line("THE AI DEMOSCENE", .12, .045, 600, "#0ff", smooth((l - 1.2) / 1.2), 30);
+  line("SHOW ME WHAT AMAZING LOOKS LIKE!", .7, .052, 900, "#f0f", smooth((l - 3.4) / 1.2), 40);
+  line("CODERS · ARTISTS · MUSICIANS · AI WIZARDS — THE PARTY STARTS NOW", .79, .022, 600, "#ff0", smooth((l - 5) / 1.2), 18);
+  line("VENTURE OF XANADU · 1993 → 2026", .88, .022, 600, "#0ff", smooth((l - 6.2) / 1.2), 14);
+  if (ended && l > 7 && Math.floor(t * 2) % 2) line("TAP TO RETURN", .95, .018, 600, "#fff", .8, 0);
+}
+function sceneEnd(t, dt, l) {
+  const REVEAL = 12.5;
+  fxStars(dt, 30 + Math.max(0, l - 10) * 120); ctx.putImageData(img, 0, 0);
+  const fadeOut = 1 - smooth((l - (REVEAL - 1.2)) / 1.2);
+  logo(4, t, 1.5, smooth(l / 1.5) * fadeOut);
+  let chars = Math.max(0, (l - 1.2) * 24);
+  MSG.forEach((s, i) => {
+    const n = Math.min(s.length, Math.floor(chars)); chars -= s.length + 4;
+    if (n > 0) text(s.slice(0, n), W / 2, 70 + i * 13, 8, i >= 7 ? "#ffe27a" : i === 0 ? "#9ff" : "#fff", fadeOut);
+  });
+  if (l > REVEAL - 1.2) { hiShow(true); }
+  if (hiOn) hiDraw(t, dt, l - REVEAL);
+}
+
+/* ======================= 2027: DIGITISED SHADOW DANCER (3D, orbit camera) ======================= */
+const M3 = {
+  rx(a) { const c = Math.cos(a), s = Math.sin(a); return [1, 0, 0, 0, c, -s, 0, s, c]; },
+  ry(a) { const c = Math.cos(a), s = Math.sin(a); return [c, 0, s, 0, 1, 0, -s, 0, c]; },
+  rz(a) { const c = Math.cos(a), s = Math.sin(a); return [c, -s, 0, s, c, 0, 0, 0, 1]; },
+  mul(A, B) { const o = new Array(9); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) o[i * 3 + j] = A[i * 3] * B[j] + A[i * 3 + 1] * B[3 + j] + A[i * 3 + 2] * B[6 + j]; return o; },
+  ap(A, v) { return [A[0] * v[0] + A[1] * v[1] + A[2] * v[2], A[3] * v[0] + A[4] * v[1] + A[5] * v[2], A[6] * v[0] + A[7] * v[1] + A[8] * v[2]]; }
+};
+const v3 = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mul: (a, s) => [a[0] * s, a[1] * s, a[2] * s], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  len: a => Math.hypot(a[0], a[1], a[2]), norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  lerp: (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]
+};
+const eul = (y, p, r) => M3.mul(M3.mul(M3.ry(y), M3.rx(p)), M3.rz(r));
+function ik3(A, B, l1, l2, pole) {
+  let d = v3.sub(B, A), L = v3.len(d); const mx = l1 + l2 - .1;
+  if (L > mx) { d = v3.mul(d, mx / L); L = mx; B = v3.add(A, d); }
+  L = Math.max(L, .01); const dir = v3.mul(d, 1 / L);
+  let pp = v3.sub(pole, A); pp = v3.norm(v3.sub(pp, v3.mul(dir, v3.dot(pp, dir))));
+  const ca = clamp((l1 * l1 + L * L - l2 * l2) / (2 * l1 * L), -1, 1), sa = Math.sqrt(1 - ca * ca);
+  return [v3.add(A, v3.add(v3.mul(dir, ca * l1), v3.mul(pp, sa * l1))), B];
+}
+/* ---- choreography (cm / radians, body faces +z) ---- */
+function mv(id, b) {
+  const s = Math.sin(b * Math.PI / 2), c = Math.cos(b * Math.PI / 2), sw = shaped(s, .55), dip = Math.pow(Math.abs(Math.cos(b * Math.PI)), 3), bt = ((b % 8) + 8) % 8;
+  const P = { F: 0, pel: [0, 0, 0], pr: [0, 0, 0], ch: [0, 0, 0], cr: [0, 0, 0], hr: [0, 0, 0], hl: [-24, 96, 8], hR: [24, 96, 8], fl: [-12, 0, 0], fr: [12, 0, 0], lift: [0, 0] };
+  if (id === 0) {            // deep hip sway, arms overhead
+    P.pel = [sw * 8, -3 - dip * 3, 0]; P.pr = [sw * .28, .05, -sw * .16]; P.cr = [-sw * .22, 0, sw * .1]; P.ch = [-sw * 2, 0, 0]; P.hr = [sw * .15, -.05, sw * .12];
+    P.hl = [-4 + sw * 7, 197, 5]; P.hR = [4 + sw * 7, 194, 7];
+  } else if (id === 1) {     // body wave
+    const w0 = Math.sin(b * Math.PI / 2), w1 = Math.sin(b * Math.PI / 2 - .9), w2 = Math.sin(b * Math.PI / 2 - 1.8);
+    P.pel = [sw * 3, -5 - Math.max(0, w0) * 6, w0 * 7]; P.pr = [sw * .12, -w0 * .25, -sw * .06]; P.cr = [0, w1 * .35, 0]; P.ch = [0, 0, w1 * 5]; P.hr = [0, w2 * .4, sw * .1];
+    P.hl = [-20, 112 + w1 * 10, 22]; P.hR = [26 + w0 * 4, 160 + w1 * 8, 18]; P.fl = [-14, 0, 3]; P.fr = [14, 0, -3];
+  } else if (id === 2) {     // low hip circle, hands sliding down thighs
+    const sl = (Math.sin(b * Math.PI / 4) + 1) / 2;
+    P.pel = [s * 9, -17 - sl * 6, c * 7]; P.pr = [s * .2, c * .12, -s * .15]; P.cr = [-s * .15, .15 - c * .12, s * .08]; P.hr = [0, .25 - sl * .3, 0];
+    P.hl = [-21, 80 + sl * 24, 14 - sl * 4]; P.hR = [21, 80 + sl * 24, 14 - sl * 4]; P.fl = [-25, 0, 0]; P.fr = [25, 0, 0];
+  } else if (id === 3) {     // step-touch + hair whips, arms flowing
+    const w = shaped(s, .35);
+    P.pel = [w * 11, -4 - dip * 4, 0]; P.pr = [w * .3, 0, -w * .14]; P.cr = [-w * .25, 0, w * .08]; P.hr = [0, -.1, .6 * shaped(s, .3)];
+    P.fl = [-14 + Math.max(0, w) * 9, 0, Math.max(0, w) * 6]; P.fr = [14 + Math.min(0, w) * 9, 0, -Math.min(0, w) * 6];
+    P.lift = [Math.max(0, w) * dip * 5, -Math.min(0, w) * dip * 5];
+    P.hl = [-54, 140 + Math.sin(b * Math.PI) * 14, 10]; P.hR = [54, 140 - Math.sin(b * Math.PI) * 14, 10];
+  } else if (id === 4) {     // spin
+    const u = ease(clamp((bt - 2) / 4, 0, 1)), open = Math.sin(clamp((bt - 2) / 4, 0, 1) * Math.PI);
+    P.F = u * TAU; P.pel = [0, -4 - dip * 2, 0]; P.hr = [0, -.1 * open, 0];
+    P.hl = [-30 - open * 26, 148 + open * 16, 5]; P.hR = [30 + open * 26, 148 + open * 16, 5]; P.fl = [-8, 0, 0]; P.fr = [8, 0, 0]; P.lift = [0, open * 4];
+  } else {                   // hand on hip, arm sweeps an arc, chest pops
+    const arc = (((b % 4) + 4) % 4) / 4 * Math.PI;
+    P.pel = [sw * 7, -3 - dip * 2, 0]; P.pr = [sw * .25, 0, -sw * .15]; P.cr = [-sw * .2, -dip * .12, sw * .1]; P.ch = [0, 0, dip * 3]; P.hr = [sw * .2, 0, sw * .1];
+    P.hl = [-25, 99, 5]; P.hR = [Math.cos(arc) * 56, 140 + Math.sin(arc) * 60, 14];
+  }
+  return P;
+}
+const SEQ3 = [0, 1, 5, 2, 3, 4, 0, 1, 2, 3, 4];
+function pose3(b) {
+  const mi = Math.floor(b / 8), f = b / 8 - mi, n = SEQ3.length;
+  const A = mv(SEQ3[((mi % n) + n) % n], b);
+  if (f < .85) return A;
+  const B = mv(SEQ3[(((mi + 1) % n) + n) % n], b), u = ease((f - .85) / .15), o = {};
+  for (const k in A) o[k] = Array.isArray(A[k]) ? A[k].map((v, i) => v + (B[k][i] - v) * u) : A[k] + (B[k] - A[k]) * u;
+  o.F = A.F >= Math.PI && B.F === 0 ? A.F + (TAU - A.F) * u : o.F;
+  return o;
+}
+function skel3(P) {
+  const R0 = M3.ry(P.F), at = v => M3.ap(R0, v);
+  const pc = at([P.pel[0], 92 + P.pel[1], P.pel[2]]);
+  const Rp = M3.mul(R0, eul(P.pr[0], P.pr[1], P.pr[2])), Rc = M3.mul(Rp, eul(P.cr[0], P.cr[1], P.cr[2]));
+  const Rw = M3.mul(Rp, eul(P.cr[0] * .5, P.cr[1] * .5, P.cr[2] * .5)), Rh = M3.mul(Rc, eul(P.hr[0], P.hr[1], P.hr[2]));
+  const cc = v3.add(v3.add(pc, M3.ap(Rp, [0, 34, 0])), at(P.ch));
+  const wc = v3.lerp(v3.add(pc, M3.ap(Rp, [0, 17, 0])), v3.lerp(pc, cc, .5), .5);
+  const S = { pc, cc, wc, Rp, Rc, Rw, Rh };
+  S.hipL = v3.add(pc, M3.ap(Rp, [-9, -2, 0])); S.hipR = v3.add(pc, M3.ap(Rp, [9, -2, 0]));
+  S.shL = v3.add(cc, M3.ap(Rc, [-16.5, 11, -1])); S.shR = v3.add(cc, M3.ap(Rc, [16.5, 11, -1]));
+  S.nk = v3.add(cc, M3.ap(Rc, [0, 17, -1])); S.hd = v3.add(S.nk, M3.ap(Rh, [0, 13, 1.5])); S.chin = v3.add(S.hd, M3.ap(Rh, [0, -6.5, 3.5]));
+  [S.elL, S.wrL] = ik3(S.shL, at(P.hl), 27, 24, v3.add(S.shL, M3.ap(Rc, [-35, -15, -30])));
+  [S.elR, S.wrR] = ik3(S.shR, at(P.hR), 27, 24, v3.add(S.shR, M3.ap(Rc, [35, -15, -30])));
+  [S.knL, S.anL] = ik3(S.hipL, at([P.fl[0], 9 + P.lift[0], P.fl[2]]), 44, 43, v3.add(S.hipL, at([-6, -20, 60])));
+  [S.knR, S.anR] = ik3(S.hipR, at([P.fr[0], 9 + P.lift[1], P.fr[2]]), 44, 43, v3.add(S.hipR, at([6, -20, 60])));
+  S.toL = v3.add(S.anL, at(M3.ap(M3.ry(-.25), [0, -8, 13]))); S.toR = v3.add(S.anR, at(M3.ap(M3.ry(.25), [0, -8, 13])));
+  return S;
+}
+/* ---- 3D hair ---- */
+const H3N = 12, H3K = 10, H3SEG = 5.4;
+let hair3 = null, hair3T = -1;
+function hairRoots3(S) {
+  const r = [];
+  for (let k = 0; k < H3N; k++) { const a = -1.45 + k * (2.9 / (H3N - 1)); r.push(v3.add(S.hd, M3.ap(S.Rh, [Math.sin(a) * 9, 3 + Math.cos(a) * 3, -6 - Math.cos(a) * 2.5]))); }
+  return r;
+}
+function hairStep3(S, t, dt) {
+  const roots = hairRoots3(S);
+  if (!hair3 || Math.abs(t - hair3T) > .25) hair3 = roots.map(r => Array.from({ length: H3K }, (_, i) => { const p = [r[0], r[1] - i * H3SEG, r[2] - i * 1.5]; return { p, q: p.slice() }; }));
+  hair3T = t;
+  const col = [[S.hd, 11.2], [S.nk, 6.5], [v3.add(S.cc, M3.ap(S.Rc, [0, 4, -3])), 13.5], [v3.add(S.cc, M3.ap(S.Rc, [-12, 9, -2])), 6.5], [v3.add(S.cc, M3.ap(S.Rc, [12, 9, -2])), 6.5]];
+  const sub = 3, h = Math.min(dt, .05) / sub;
+  for (let st = 0; st < sub; st++) for (let k = 0; k < H3N; k++) {
+    const s = hair3[k]; s[0].p = roots[k].slice();
+    for (let i = 1; i < H3K; i++) { const n = s[i]; for (let a = 0; a < 3; a++) { const v = (n.p[a] - n.q[a]) * .955; n.q[a] = n.p[a]; n.p[a] += v; } n.p[1] -= 980 * h * h; }
+    for (let it = 0; it < 4; it++) {
+      for (let i = 1; i < H3K; i++) {
+        const a = s[i - 1].p, b = s[i].p, d = v3.sub(b, a), L = v3.len(d) || 1, df = (L - H3SEG) / L;
+        if (i === 1) { for (let j = 0; j < 3; j++) b[j] -= d[j] * df; } else for (let j = 0; j < 3; j++) { a[j] += d[j] * df * .5; b[j] -= d[j] * df * .5; }
+      }
+      for (let i = 2; i < H3K; i++) {
+        const a = s[i - 2].p, b = s[i].p, d = v3.sub(b, a), L = v3.len(d) || 1, mn = H3SEG * 1.25;
+        if (L < mn) { const df = (L - mn) / L * .5; for (let j = 0; j < 3; j++) b[j] -= d[j] * df; }
+      }
+      for (let i = 1; i < H3K; i++) for (const [c, r] of col) {
+        const p = s[i].p, d = v3.sub(p, c), L = v3.len(d) || 1;
+        if (L < r) for (let j = 0; j < 3; j++) p[j] = c[j] + d[j] / L * r;
+      }
+    }
+  }
+}
+/* ---- body as primitives ---- */
+const RINGS = [["p", -9, 7, 7, 0], ["p", -3, 15.5, 11, -.5], ["p", 4, 17.5, 12, -1], ["p", 12, 15.5, 10.5, 0], ["w", 0, 12.5, 9, 0],
+  ["c", -12, 13.5, 10, 1], ["c", -6, 15, 12, 3], ["c", 1, 15, 10.5, 1], ["c", 8, 16.5, 9, -1], ["c", 13, 10.5, 7, -1], ["c", 17, 5.5, 5, -1]];
+function prims3(S) {
+  const F = { p: [S.pc, S.Rp], w: [S.wc, S.Rw], c: [S.cc, S.Rc] }, rings = [];
+  for (const [fr, y, rx, rz, zo] of RINGS) {
+    const [c, R] = F[fr], pts = [];
+    for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; pts.push(v3.add(c, M3.ap(R, [rx * Math.cos(a), y, rz * Math.sin(a) + zo]))); }
+    rings.push(pts);
+  }
+  const caps = [], sph = [];
+  for (const [hp, kn, an, to] of [[S.hipL, S.knL, S.anL, S.toL], [S.hipR, S.knR, S.anR, S.toR]]) {
+    const calf = v3.add(v3.lerp(kn, an, .3), v3.mul(v3.norm(v3.sub(an, kn)), 0));
+    caps.push([hp, kn, 10, 6.2], [kn, calf, 6, 6.9], [calf, an, 6.9, 3.4], [an, to, 3.4, 2.2], [an, v3.add(an, [0, -9, -3]), 1.6, 1]);
+  }
+  for (const [sh, el, wr] of [[S.shL, S.elL, S.wrL], [S.shR, S.elR, S.wrR]]) {
+    const dir = v3.norm(v3.sub(wr, el));
+    caps.push([sh, el, 5.6, 4.1], [el, wr, 4.1, 2.8], [wr, v3.add(wr, v3.mul(dir, 16)), 3.1, 1.9]);
+  }
+  caps.push([S.nk, v3.add(S.hd, M3.ap(S.Rh, [0, -5, -1])), 5.4, 5]); const nBody = caps.length;
+  sph.push([S.hd, 10.4], [S.chin, 7.3], [v3.add(S.hd, M3.ap(S.Rh, [0, 2, -2.5])), 11.4]);
+  if (hair3) for (const s of hair3) for (let i = 1; i < H3K; i++) {
+    const r0 = 3.4 * (1 - (i - 1) / H3K) + .7, r1 = 3.4 * (1 - i / H3K) + .7;
+    caps.push([s[i - 1].p, s[i].p, r0, r1]);
+  }
+  return { rings, caps, sph, nBody };
+}
+function hull2(P) {
+  P.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const p of P) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function drawPrims(g, pr, proj) {
+  for (let i = 0; i < pr.rings.length - 1; i++) {
+    const pts = [];
+    for (const p of pr.rings[i].concat(pr.rings[i + 1])) { const q = proj(p); if (q) pts.push(q); }
+    if (pts.length < 3) continue;
+    const h = hull2(pts); g.beginPath(); h.forEach((q, j) => j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fill();
+  }
+  for (const [a, b, ra, rb] of pr.caps) { const A = proj(a), B = proj(b); if (A && B) capsule(g, A, B, ra * A[2], rb * B[2]); }
+  for (const [c, r] of pr.sph) { const q = proj(c); if (q) { g.beginPath(); g.arc(q[0], q[1], r * q[2], 0, TAU); g.fill(); } }
+}
+/* ---- 9 Fingers-style polygonised rendering: faceted shapes, 3 flat tones, world-fixed light ---- */
+function capPoly(g, a, b, ra, rb) {
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), pts = [];
+  for (let i = 0; i <= 4; i++) { const t = ang + Math.PI / 2 + i * Math.PI / 4; pts.push([b[0] + Math.cos(t - Math.PI) * rb, b[1] + Math.sin(t - Math.PI) * rb]); }
+  for (let i = 0; i <= 4; i++) { const t = ang + Math.PI / 2 + i * Math.PI / 4; pts.push([a[0] + Math.cos(t) * ra, a[1] + Math.sin(t) * ra]); }
+  g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fill();
+}
+function octo(g, x, y, r) { g.beginPath(); for (let i = 0; i < 8; i++) { const t = i / 8 * TAU + .39; i ? g.lineTo(x + Math.cos(t) * r, y + Math.sin(t) * r) : g.moveTo(x + Math.cos(t) * r, y + Math.sin(t) * r); } g.closePath(); g.fill(); }
+const LIGHT3 = v3.norm([-.55, .65, .55]);
+const TONES = [["#140a36", "#4b5bd6", "#c8ecff"], ["#26062c", "#b8338f", "#ffd2f0"], ["#06181e", "#1a9aa0", "#d8fff4"], ["#101010", "#5a5a66", "#f0f0f4"]];
+function drawPrimsShaded(g, pr, proj, tones, noHairHi) {
+  const passes = [[1, 0, tones[0]], [.8, .24, tones[1]], [.42, .55, tones[2]]];
+  passes.forEach(([k, sh, col], pi) => {
+    g.fillStyle = col;
+    for (let i = 0; i < pr.rings.length - 1; i++) {
+      const pts = [];
+      for (const ring of [pr.rings[i], pr.rings[i + 1]]) {
+        const c = centroid(ring), r = ring.reduce((m, p) => m + v3.len(v3.sub(p, c)), 0) / ring.length;
+        for (let j = 0; j < ring.length; j += pi ? 1 : 1) { const p = v3.add(v3.add(c, v3.mul(v3.sub(ring[j], c), k)), v3.mul(LIGHT3, sh * r)); const q = proj(p); if (q) pts.push(q); }
+      }
+      if (pts.length < 3) continue;
+      const h = hull2(pts); g.beginPath(); h.forEach((q, j) => j ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fill();
+    }
+    pr.caps.forEach(([a, b, ra, rb], ci) => {
+      if (pi > 0 && noHairHi && ci >= pr.nBody) return;
+      const A = proj(v3.add(a, v3.mul(LIGHT3, sh * ra))), B = proj(v3.add(b, v3.mul(LIGHT3, sh * rb)));
+      if (A && B) capPoly(g, A, B, ra * k * A[2], rb * k * B[2]);
+    });
+    for (const [c, r] of pr.sph) { const q = proj(v3.add(c, v3.mul(LIGHT3, sh * r))); if (q) octo(g, q[0], q[1], r * k * q[2]); }
+  });
+}
+
+/* ---- camera + projections ---- */
+function makeCam(l, dur, Wd, Hd) {
+  const u = clamp(l / dur, 0, 1), su = Math.sin(u * Math.PI);
+  const yaw = -Math.PI / 2 * .96 + Math.PI * .96 * ease(u) + Math.sin(l * .37) * .05;
+  const pitch = -.12 + .9 * Math.pow(su, 1.4) * (.6 + .4 * Math.sin(u * TAU * 1.5)) + Math.sin(l * .53) * .02;
+  const dist = 420 - 85 * su, tg = [0, 94 + 4 * su, 0];
+  const pos = v3.add(tg, [Math.sin(yaw) * Math.cos(pitch) * dist, Math.sin(pitch) * dist, Math.cos(yaw) * Math.cos(pitch) * dist]);
+  const fw = v3.norm(v3.sub(tg, pos)), rt = v3.norm(v3.cross(fw, [0, 1, 0])), up = v3.cross(rt, fw), f = Hd * 1.5;
+  const proj = p => { const d = v3.sub(p, pos), z = v3.dot(d, fw); if (z < 5) return null; return [Wd / 2 + v3.dot(d, rt) / z * f, Hd * .5 - v3.dot(d, up) / z * f, f / z]; };
+  return { proj, pos, fw };
+}
+const WALLZ = -140, WX = 260, WY = 330, FZ = 120;
+function planeShadow(L, plane) {
+  return p => {
+    const d = v3.sub(p, L), tt = plane === "wall" ? (WALLZ - L[2]) / (d[2] || -1e-3) : (0.2 - L[1]) / (d[1] || -1e-3);
+    if (tt <= 0) return null;
+    return [v3.add(L, v3.mul(d, tt)), tt];
+  };
+}
+/* ---- offscreen layers ---- */
+let L27 = null;
+function layers27() {
+  if (L27 && L27.w === hiW && L27.h === hiH) return L27;
+  const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return [c, c.getContext("2d")]; };
+  const [dan, danX] = mk(hiW, hiH), [ghost, ghostX] = mk(hiW, hiH), [shq, shqX] = mk(hiW >> 2, hiH >> 2), [pix, pixX] = mk(hiW, hiH), [nz, nzX] = mk(128, 128);
+  const id = nzX.createImageData(128, 128); for (let i = 0; i < id.data.length; i += 4) { const v = Math.random() * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } nzX.putImageData(id, 0, 0);
+  return (L27 = { w: hiW, h: hiH, dan, danX, ghost, ghostX, shq, shqX, pix, pixX, nz });
+}
+function hiResize() {
+  const r = hi.getBoundingClientRect(), dpr = Math.min(1.75, window.devicePixelRatio || 1);
+  const w = Math.max(320, Math.round(r.width * dpr)), h = Math.max(200, Math.round(r.height * dpr));
+  if (w !== hiW || h !== hiH) { hiW = hi.width = w; hiH = hi.height = h; parts = null; }
+}
+/* ---- the 2027 scene ---- */
+const LEDC = [[255, 40, 110], [255, 150, 0], [255, 240, 60], [40, 255, 140], [0, 210, 255], [130, 70, 255], [255, 50, 230]];
+function polyPath(g, pts) { g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); }
+let d27T = -1;
+function sceneDancer27(t, dt, l, left) {
+  ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+  hiResize(); hiShow(true, true);
+  const Lr = layers27(), Wd = hiW, Hd = hiH, u = Hd / 600, g = hx;
+  const beat = beatOf(t), bi = Math.floor(beat), bar = Math.floor(beat / 4), pulse = Math.max(Math.pow(1 - (beat - bi), 2.2), kick * .8);
+  const strobe = !SAFE && bar % 8 === 7, sOn = strobe && beat - bi < .5;
+  const cam = makeCam(l, l + left, Wd, Hd), proj = cam.proj;
+  const P = pose3(beat), S = skel3(P);
+  if (Math.abs(t - d27T) > .25) hair3 = null;
+  hairStep3(S, t, Math.max(1 / 120, Math.min(dt, .05))); d27T = t;
+  const pr = prims3(S);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; g.shadowBlur = 0;
+  // background haze
+  const bgG = g.createRadialGradient(Wd / 2, Hd * .45, 0, Wd / 2, Hd * .45, Wd * .7);
+  bgG.addColorStop(0, "#140a2a"); bgG.addColorStop(1, "#010006"); g.fillStyle = bgG; g.fillRect(0, 0, Wd, Hd);
+  // wall
+  const wq = [[-WX, 0, WALLZ], [WX, 0, WALLZ], [WX, WY, WALLZ], [-WX, WY, WALLZ]].map(proj), wallOk = wq.every(Boolean);
+  if (wallOk) { polyPath(g, wq); g.fillStyle = sOn ? "#d8d8e8" : "#0d0620"; g.fill(); }
+  // LED matrix
+  g.globalCompositeOperation = "lighter";
+  const mode = bar % 4;
+  for (let cx = 0; cx < 21; cx++) for (let cy = 0; cy < 13; cy++) {
+    const q = proj([-250 + cx * 25, 12 + cy * 25, WALLZ + .5]); if (!q) continue;
+    let on, ci;
+    if (strobe) { on = sOn ? 1 : 0; ci = -1; }
+    else if (mode === 0) { on = Math.max(0, Math.sin(cx * .55 - t * 7)) ; ci = (cx + bi) % 7; }
+    else if (mode === 1) { const d = Math.hypot(cx - 10, (cy - 6) * 1.3); on = Math.max(0, Math.sin(d * .9 - t * 9)); ci = ((d | 0) + bi) % 7; }
+    else if (mode === 2) { on = ((cx + cy + bi) & 1) ? 1 : .08; ci = (cx * 3 + bi) % 7; }
+    else { let v = .5; if (fdata) v = (fdata[2 + cx * 4] || 0) / 255; on = cy / 13 < v * v * 1.3 ? 1 : .05; ci = (12 - cy + bi) % 7; }
+    if (on < .03) continue;
+    const c = ci < 0 ? [255, 255, 255] : LEDC[ci], k = on * (.25 + .75 * pulse), sz = 9 * q[2];
+    g.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${k})`; g.fillRect(q[0] - sz / 2, q[1] - sz / 2, sz, sz);
+    if (k > .5) { g.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${k * .18})`; g.fillRect(q[0] - sz * 1.4, q[1] - sz * 1.4, sz * 2.8, sz * 2.8); }
+  }
+  g.globalCompositeOperation = "source-over";
+  // shadows (quarter-res, upscaled = soft)
+  const L1 = [Math.sin(l * .28) * 140, 135, 270], L2 = [0, 520, 60];
+  const shadowTo = (L, plane, alpha, clipPts) => {
+    if (!clipPts) return;
+    const m = planeShadow(L, plane), sx = Lr.shqX;
+    sx.setTransform(1, 0, 0, 1, 0, 0); sx.clearRect(0, 0, Lr.shq.width, Lr.shq.height); sx.setTransform(.25, 0, 0, .25, 0, 0); sx.fillStyle = "#000";
+    drawPrims(sx, pr, p => { const r = m(p); if (!r) return null; const q = proj(r[0]); if (!q) return null; q[2] *= r[1]; return q; });
+    g.save(); polyPath(g, clipPts); g.clip(); g.globalAlpha = alpha; g.imageSmoothingEnabled = true; g.drawImage(Lr.shq, 0, 0, Wd, Hd); g.restore();
+  };
+  shadowTo(L1, "wall", sOn ? .9 : .78, wallOk ? wq : null);
+  // floor
+  const fq = [[-WX, 0, WALLZ], [WX, 0, WALLZ], [WX, 0, FZ], [-WX, 0, FZ]].map(proj), floorOk = fq.every(Boolean);
+  if (floorOk) {
+    polyPath(g, fq); const fg = g.createLinearGradient(0, Math.min(...fq.map(q => q[1])), 0, Math.max(...fq.map(q => q[1])));
+    fg.addColorStop(0, "#0a0418"); fg.addColorStop(1, "#030108"); g.fillStyle = fg; g.fill();
+    g.strokeStyle = `rgba(120,80,255,${.12 + pulse * .2})`; g.lineWidth = Math.max(1, u);
+    for (let x = -WX; x <= WX; x += 40) { const a = proj([x, 0, WALLZ]), b = proj([x, 0, FZ]); if (a && b) { g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); } }
+    for (let z = WALLZ; z <= FZ; z += 40) { const a = proj([-WX, 0, z]), b = proj([WX, 0, z]); if (a && b) { g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); } }
+    shadowTo(L2, "floor", .7, fq);
+    // reflection
+    g.save(); polyPath(g, fq); g.clip(); g.globalAlpha = .2; g.fillStyle = "#000";
+    const rf = p => proj([p[0], -p[1], p[2]]); drawPrims(g, pr, rf); g.restore();
+  }
+  // volumetric beams
+  if (!strobe) {
+    g.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 4; i++) {
+      const ax = -210 + i * 140, A = [ax, 420, 30], T = [Math.sin(t * .8 + i * 1.7) * 140, 0, Math.cos(t * .6 + i) * 70];
+      const a = proj(A), b0 = proj(T); if (!a || !b0) continue;
+      const side = v3.mul(v3.norm(v3.cross(v3.sub(T, A), cam.fw)), 55), b1 = proj(v3.add(T, side)), b2 = proj(v3.sub(T, side)); if (!b1 || !b2) continue;
+      const c = LEDC[(i * 2 + bar) % 7], gr = g.createLinearGradient(a[0], a[1], b0[0], b0[1]);
+      gr.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${.28 + pulse * .25})`); gr.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+      g.fillStyle = gr; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b1[0], b1[1]); g.lineTo(b2[0], b2[1]); g.closePath(); g.fill();
+    }
+    g.globalCompositeOperation = "source-over";
+  }
+  // back light so the silhouette pops
+  const chq = proj(S.cc);
+  if (chq && !strobe) {
+    const bl = g.createRadialGradient(chq[0], chq[1], 0, chq[0], chq[1], Hd * .55);
+    bl.addColorStop(0, `rgba(255,220,255,${.22 + pulse * .3})`); bl.addColorStop(1, "rgba(255,200,255,0)");
+    g.globalCompositeOperation = "lighter"; g.fillStyle = bl; g.fillRect(0, 0, Wd, Hd); g.globalCompositeOperation = "source-over";
+  }
+  // the dancer: digitised-video look (ghost frame + rim glow)
+  // State of the Art / 9 Fingers echo trails: time-lagged flat-colour copies
+  if (!strobe) {
+    const hNow = S.hd;
+    for (let e = 3; e >= 1; e--) {
+      const Se = skel3(pose3(beat - e * .2)), pe = prims3(Se), dh = v3.sub(Se.hd, hNow);
+      pe.caps = pe.caps.map((c, i) => i >= pe.nBody ? [v3.add(c[0], dh), v3.add(c[1], dh), c[2], c[3]] : c);
+      const c = LEDC[(bar + e * 2) % 7]; g.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${.62 - e * .14})`;
+      const ex = Lr.ghostX; ex.setTransform(1, 0, 0, 1, 0, 0); ex.clearRect(0, 0, Wd, Hd); ex.fillStyle = g.fillStyle; drawPrims(ex, pe, proj);
+      g.drawImage(Lr.ghost, 0, 0);
+    }
+  }
+  const dx = Lr.danX; dx.setTransform(1, 0, 0, 1, 0, 0); dx.clearRect(0, 0, Wd, Hd);
+  if (strobe) { dx.fillStyle = "#000"; drawPrims(dx, pr, proj); } else drawPrimsShaded(dx, pr, proj, TONES[Math.floor(bar / 2) % TONES.length]);
+  const rim = strobe ? "rgba(0,0,0,0)" : `rgba(${LEDC[(bar + 4) % 7].join(",")},${.45 + pulse * .45})`;
+  g.shadowColor = rim; g.shadowBlur = 12 * u; g.drawImage(Lr.dan, 0, 0); g.shadowBlur = 0;
+  // strobe off-phase
+  if (strobe && !sOn) { g.fillStyle = "rgba(0,0,0,.92)"; g.fillRect(0, 0, Wd, Hd); }
+  // grain + HUD
+  g.globalAlpha = .07; g.fillStyle = g.createPattern(Lr.nz, "repeat"); g.save(); g.translate(-Math.random() * 128, -Math.random() * 128); g.fillRect(0, 0, Wd + 128, Hd + 128); g.restore(); g.globalAlpha = 1;
+  g.font = `600 ${Math.round(13 * u)}px Orbitron, sans-serif`; g.textBaseline = "alphabetic";
+  g.fillStyle = "rgba(255,255,255,.75)"; g.textAlign = "left"; g.fillText("2027 · REALTIME · CAM A", 18 * u, Hd - 18 * u);
+  g.textAlign = "right"; g.fillText("VENTURE / XANADU", Wd - 18 * u, Hd - 18 * u);
+  if (Math.floor(t * 2) % 2) { g.fillStyle = "#f33"; g.beginPath(); g.arc(24 * u, 26 * u, 5 * u, 0, TAU); g.fill(); g.fillStyle = "rgba(255,255,255,.75)"; g.textAlign = "left"; g.fillText("REC", 36 * u, 31 * u); }
+  if (kick > .9 && bar % 4 === 0 && !SAFE) { g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(0, 0, Wd, Hd); }
+  // 1993 → 2027 resolution morph in, and back out
+  const tr = Math.min(l, left);
+  if (tr < 1) {
+    const steps = [40, 24, 14, 8, 4, 2], k = steps[Math.min(steps.length - 1, Math.floor(tr / (1 / steps.length)))];
+    const sw = Math.max(1, Math.round(Wd / k)), sh = Math.max(1, Math.round(Hd / k)), px2 = Lr.pixX;
+    px2.setTransform(1, 0, 0, 1, 0, 0); px2.imageSmoothingEnabled = true; px2.clearRect(0, 0, Wd, Hd); px2.drawImage(hi, 0, 0, sw, sh);
+    g.imageSmoothingEnabled = false; g.drawImage(Lr.pix, 0, 0, sw, sh, 0, 0, Wd, Hd); g.imageSmoothingEnabled = true;
+  }
+}
+
+/* ======================= SCENES ======================= */
+const cyc = (arr, l, dur) => { const n = arr.length, d = dur / n, i = Math.min(n - 1, Math.floor(l / d)), lt = l - i * d; return [arr[i], smooth(lt / .4) * smooth((d - lt) / .4)]; };
+const FX = {
+  intro(t, dt, l) {
+    fxStars(dt, 40 + l * 6); ctx.putImageData(img, 0, 0);
+    const typ = (s, t0) => s.slice(0, clamp(Math.floor((l - t0) * 12), 0, s.length)), a = smooth((13.5 - l) / 1);
+    if (l > 1 && l < 13.5) text(typ("VENTURE", 1), W / 2, 66, 24, "#9ff", a, "center", 2);
+    if (l > 3 && l < 13.5) text(typ("OF XANADU", 3), W / 2, 92, 8, "#c8f", a);
+    if (l > 6 && l < 13.5) text(typ("PRESENTS", 6), W / 2, 108, 8, "#fff", a);
+    if (l > 9 && l < 13.5) text(typ("A 1993 PRODUCTION", 9), W / 2, 130, 8, "#ffe27a", a);
+  },
+  logo(t, dt, l) {
+    fxStars(dt, 120 + l * 10); ctx.putImageData(img, 0, 0);
+    const drop = l < 2 ? -70 + (1 - Math.pow(1 - l / 2, 3)) * 130 + Math.sin(l * 9) * 10 * (1 - l / 2) : 60;
+    logo(drop | 0, t, 2 + kick * 6);
+    if (l > 3 && Math.floor(t * 2) % 2) text("A REALTIME DEMO IN 320X200", W / 2, 150, 8, "#ffe27a");
+  },
+  plasma(t, dt, l) { fxPlasma(t, P_CRYSTAL, 1, kick * .25); ctx.putImageData(img, 0, 0); logo(6, t, 3 + kick * 5); scroller(t, 158); },
+  voxel(t, dt, l) {
+    fxVoxel(t, dt); ctx.putImageData(img, 0, 0);
+    text("VOXEL SPACE", W / 2, 8, 8, "#fff", smooth(l / 1.5) * smooth((22 - l) / 1.5));
+    scroller(t, 170, 8);
+  },
+  roto(t, dt, l) { fxRoto(t, P_GOLD, kick * .3); ctx.putImageData(img, 0, 0); scroller(t, 92, 30); },
+  twister(t, dt, l, left) {
+    fxTwister(t); ctx.putImageData(img, 0, 0);
+    const [s, a] = cyc(CFG.journey, l, l + left);
+    text("THE JOURNEY OF", W / 2, 60, 8, "#ffe27a", .9);
+    text(s, W / 2, 86, s.length > 12 ? 16 : 24, "#fff", a, "center", 2);
+    if (s === "VENTURE") text("OF XANADU", W / 2, 112, 8, "#9ff", a);
+    scroller(t, 166, 6);
+  },
+  tunnel(t, dt, l) { fxTunnel(t, P_CRYSTAL, kick * .35); ctx.putImageData(img, 0, 0); logo(4, t, 2, .85); scroller(t, 162, 10); },
+  party(t, dt, l, left) {
+    fxParty(t, dt); ctx.putImageData(img, 0, 0);
+    text("TRIBUTE TO", W / 2, 8, 8, "#ffe27a");
+    text("THE PARTY 1993", W / 2, 20, 16, "#fff", 1, "center", 2);
+    const [s, a] = cyc(CFG.party.slice(1), l, l + left);
+    ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(0, 176, W, 20);
+    text(s, W / 2, 182, 8, "#fff", a);
+  },
+  fire(t, dt, l) {
+    const bar = 60 / cur.bpm * 4, gi = Math.floor(l / (bar * 2)) % CFG.greets.length, g = CFG.greets[gi];
+    fxFire(t, dt, g); ctx.putImageData(img, 0, 0);
+    text(gi <= 1 ? "MEGA GREETINGS TO MY MATE" : "GREETINGS FLY OUT TO", W / 2, 34, 8, "#ffe27a", .9);
+    text(g, W / 2, 104, g.length * 16 > 300 ? 8 : 16, "#fff", .9, "center", 1.5);
+  },
+  bobs(t, dt, l, left) {
+    px.fill(pack(0, 0, 16)); copper(t, 6, 80); ctx.putImageData(img, 0, 0);
+    ctx.fillStyle = "rgba(0,0,20,.55)"; ctx.fillRect(0, 0, W, H);
+    drawBobs(t, l, 1 + l * .05);
+    if (left < 5 && Math.floor(t * 4) % 2) text("GET READY!", W / 2, 168, 16, "#f63", 1, "center", 3);
+    else if (left >= 5) text("VECTOR BOBS · 180 POINTS", W / 2, 182, 8, "#8ff", .8);
+  },
+  dancer(t, dt, l, left) { sceneDancer27(t, dt, l, left); },
+  gem(t, dt, l) { fxTunnel(t * 1.3, P_CRYSTAL, kick * .25, .55); ctx.putImageData(img, 0, 0); drawGem(t, 1.05, W / 2, 82); scroller(t, 166, 10); },
+  glenz(t, dt, l) {
+    px.fill(pack(0, 0, 24)); copper(t * 1.3, 6, 90); ctx.putImageData(img, 0, 0);
+    ctx.fillStyle = "rgba(0,0,30,.6)"; ctx.fillRect(0, 0, W, H);
+    drawGlenz(t);
+    text("GLENZ VECTORS", W / 2, 8, 8, "#ffe27a", smooth(l / 1) * smooth((12 - l) / 1));
+    scroller(t, 172, 6);
+  },
+  bump(t, dt, l, left) {
+    fxBump(t); ctx.putImageData(img, 0, 0);
+    const dur = l + left;
+    CFG.credits.forEach(([k, v], i) => {
+      const a = smooth((l - i * dur * .15) / .6);
+      text(k, 70, 142 + i * 13, 8, "#ffe27a", a, "left"); text(v, 132, 142 + i * 13, 8, "#fff", a, "left");
+    });
+  },
+  mini(t, dt, l, left) {
+    fxBlobs(t); ctx.putImageData(img, 0, 0);
+    text("SPECIAL GREETINGS TO", W / 2, 30, 8, "#fff", smooth(l / .8));
+    ctx.globalAlpha = smooth((l - .3) / .8);
+    for (let y = 0; y < 64; y++) ctx.drawImage(miniC, 0, y, W, 1, (Math.sin(y * .15 + t * 5) * (3 + kick * 8)) | 0, 58 + y, W, 1);
+    ctx.globalAlpha = 1;
+    text("MY OLD MATE", W / 2, 130, 8, "#ffe27a", smooth((l - 1) / .8));
+    text("FRIENDS FOREVER · VENTURE", W / 2, 150, 8, "#9ff", smooth((l - 2) / .8));
+  },
+  finale(t, dt, l) {
+    fxRoto(t * 1.4, P_CRYSTAL, kick * .45); ctx.putImageData(img, 0, 0);
+    if (kick > .9) flash = Math.max(flash, .35);
+    logo(2, t, 4 + kick * 8); drawGem(t * 1.5, .8, W / 2, 112); scroller(t, 170, 8);
+  },
+  end(t, dt, l) { sceneEnd(t, dt, l); }
+};
+
+let sceneIdx = -1, last = performance.now(), endT = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (!running) { idle(now / 1000, dt); return; }
+  if (paused) { text("PAUSED", W / 2, 92, 16, "#fff"); return; }
+  let t = audio.currentTime; tNow = t;
+  if (ended) { endT += dt; t = (audio.duration || t) + endT; } else endT = 0;
+  analyse(t, dt);
+  const cues = cur.cues; let i = 0;
+  while (i < cues.length - 1 && t >= cues[i + 1][0]) i++;
+  if (i !== sceneIdx) { if (sceneIdx >= 0) flash = 1; sceneIdx = i; }
+  const local = t - cues[i][0], left = (cues[i + 1] ? cues[i + 1][0] : t + 99) - t;
+  if (cues[i][1] !== "dancer" && cues[i][1] !== "end") hiShow(false, true);
+  FX[cues[i][1]](t, dt, local, left);
+  if (SAFE) flash = Math.min(flash, .12);
+  if (flash > .01) { ctx.fillStyle = `rgba(255,255,255,${flash})`; ctx.fillRect(0, 0, W, H); flash *= Math.exp(-dt * 7); }
+}
+function idle(t, dt) { if (window.__hold) return; fxPlasma(t, P_CRYSTAL, .3, 0); ctx.putImageData(img, 0, 0); }
+
+/* ======================= BOOT ======================= */
+(async () => {
+  try { await Promise.race([document.fonts.load('16px "Press Start 2P"'), new Promise(r => setTimeout(r, 3000))]); } catch (e) {}
+  buildText(); buildBump(); buildMini();
+  requestAnimationFrame(frame);
+  showProgress();
+  for (const id of ["pt"]) loadTrack(id).catch(() => { statusEl.textContent = "COULD NOT LOAD " + CFG.tracks[id].name; });
+})();
+/* debug hook for previews: ?scene not allowed, so expose a function */
+window.__demo = { FX, setCur: id => { cur = CFG.tracks[id]; }, frameAt(t, name) { kick = .6; tNow = t; ctx.clearRect(0, 0, W, H); FX[name](t, 1 / 60, t - 0, 10); } };
+</script>
+</body>
+</html>

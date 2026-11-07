@@ -1,0 +1,10 @@
+# Deliberately broken test prod. CI asserts that prodcheck reports findings here.
+title: "Broken Intro"
+group: Nobody
+handles: [Ghost]
+platform: web
+category: intro-4k
+year: 2025              # drift: folder says 2027
+license: MIT            # drift: not the default and no LICENSE file
+provenance:
+  type: human           # drift: nfo.txt credits an AI tool

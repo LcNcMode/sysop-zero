@@ -1,0 +1,48 @@
+ ___________________________________________________________________________
+|                                                                           |
+|              C R Y S T A L L I N E   D R O P  -  a 1993 demo              |
+|___________________________________________________________________________|
+
+  group ....... Xanadu
+  credits ..... Venture  - concept, design, music design
+                Claude   - code
+  platform .... web browser (realtime, 320x200, 256 colours, Mode 13h feel)
+  category .... demo
+  music ....... "Crystalline Drop" - ProTracker edition (Suno v6, from
+                Venture's prompts)
+  released .... 2026-11-07, styled as 1993
+  license ..... CC BY-NC-SA 4.0 (fonts in render/fonts: SIL OFL 1.1)
+
+  ABOUT
+  -----
+  Venture is back on the keyboard after more than 30 years. Once in Aros-D,
+  then Paramount and finally Xanadu - now teaming up with Claude for one more
+  production. Starfield, logo drop, plasma, voxel space, glenz vectors,
+  twisters, tunnel, a tribute to The Party 1993 in Herning, fire greetings,
+  vector bobs, a 2027 dance scene, bump mapping, metaballs, rotozoom and a
+  message to the next generation.
+
+  > This demo is a love letter to 1993. May it inspire young coders, graphic
+  > artists, musicians and AI wizards to give the scene a revival. What does
+  > the AI demoscene look like in 2027? Show me what amazing looks like!
+
+  CONTROLS
+  --------
+  tap left / right = skip 10 s   middle = pause
+  keys: SPACE, LEFT, RIGHT, ESC
+  WARNING: contains strobe and flashing lights (a reduced mode is in the menu)
+
+  GREETINGS
+  ---------
+  Mini, Zodiak / Cascada, all of Xanadu, Aros-D, Paramount, The Party crew,
+  Future Crew, Sanity, Spaceballs, Kefrens, Phenomena, Melon Dezign,
+  The Black Lotus, Complex and all tracker heroes.
+
+  FILES
+  -----
+  index.html       the demo (open it via a web server or the gallery)
+  protracker.mp3   music, loaded relative to index.html
+  render/          offline renderer to 9:16 video (see render/README.md)
+  PROMPTS.md       music-generation prompts (provenance)
+  CHANGELOG.md     v1 -> v6
+___________________________________________________________________________

@@ -1,0 +1,70 @@
+# Validates every prod (schema, build, size budget), reports drift between declared
+# (prod.yaml) and observed facts, and proves the drift detector still fires on a
+# deliberately broken fixture. Runs with a read-only token, so it is safe for fork PRs;
+# the report is posted as a PR comment by drift-comment.yml.
+name: Prod check
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: prod-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r scripts/requirements.txt
+      - name: Validate, build and measure prods
+        id: prods
+        run: python3 scripts/prodcheck.py --report prods-report.md --json prods-report.json --site-out _site
+      - name: Self-test — drift detector must fire on the broken fixture
+        if: always()
+        run: python3 scripts/prodcheck.py --prods tests/fixtures/prods --title "Self-test (deliberately broken fixture, expected to fail)" --report selftest-report.md --expect-findings
+      - name: CODEOWNERS in sync with prod.yaml
+        if: always()
+        run: python3 scripts/gen_codeowners.py --check
+      - name: Portability — no hardcoded owner name
+        if: always()
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: scripts/check_portability.sh "$OWNER"
+      - name: Assemble drift report
+        if: always()
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OUTCOME: ${{ steps.prods.outcome }}
+        run: |
+          mkdir -p drift-report
+          {
+            echo "<!-- sysop-zero:drift-report -->"
+            echo "## 📡 Sysop Zero — drift report"
+            echo
+            echo "Declared = \`prod.yaml\` (human-owned). Observed = measured by CI. Mismatches are drift."
+            echo
+            cat prods-report.md 2>/dev/null || echo "_prod check did not produce a report (outcome: ${OUTCOME})_"
+            echo
+            echo "<details><summary>Self-test: the detector still fires on <code>tests/fixtures/prods</code></summary>"
+            echo
+            cat selftest-report.md 2>/dev/null || echo "_no self-test report_"
+            echo
+            echo "</details>"
+          } > drift-report/report.md
+          echo "${PR_NUMBER}" > drift-report/pr_number
+          cat drift-report/report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'pull_request'
+        with:
+          name: drift-report
+          path: drift-report/
+          retention-days: 7

@@ -1,0 +1,17 @@
+## What
+
+<!-- New prod / update to a prod / engine / site / tooling. One prod per PR. -->
+
+## Prod checklist (skip if not a prod)
+
+- [ ] Folder is `prods/<year>-<slug>/` and contains `prod.yaml` and `nfo.txt`
+- [ ] `prod.yaml` validates: `python3 scripts/prodcheck.py`
+- [ ] Provenance declared honestly (`human` / `ai` / `hybrid`, with `models` for ai/hybrid)
+- [ ] Handles only — no legal names of anyone, in files or on screen
+- [ ] I have the right to release all assets (music, samples, fonts, AI output) under the declared license
+- [ ] Commits are signed off (`git commit -s`, DCO)
+
+## Drift
+
+Sysop Zero posts a drift report on this PR (declared `prod.yaml` vs. what CI observed).
+If it reports drift, fix the prod or explain why the declaration is right.

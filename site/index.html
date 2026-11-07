@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sysop Zero</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1 id="site-title">Sysop Zero</h1>
+  <p id="tagline"></p>
+  <nav>
+    <label>category <select id="f-category"><option value="">all</option></select></label>
+    <label>provenance <select id="f-provenance"><option value="">all</option><option>human</option><option>ai</option><option>hybrid</option></select></label>
+    <a id="repo-link" hidden>submit a prod</a>
+  </nav>
+</header>
+<main id="grid" aria-live="polite"><p class="dim">loading prods…</p></main>
+<dialog id="player">
+  <div class="bar"><span id="p-title"></span><span><a id="p-open" target="_blank" rel="noopener">open full window</a> · <a id="p-nfo" target="_blank" rel="noopener">nfo</a> · <button id="p-close">close [esc]</button></span></div>
+  <iframe id="p-frame" title="prod" allow="autoplay; fullscreen" allowfullscreen></iframe>
+</dialog>
+<footer><span id="generated"></span> · prods are CC BY-NC-SA 4.0 unless stated · run by Sysop Zero</footer>
+<script src="app.js"></script>
+</body>
+</html>

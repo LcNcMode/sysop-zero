@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "prod.schema.json",
+  "title": "Sysop Zero prod.yaml",
+  "description": "Declared metadata for a prod. Human-owned. CI compares it against observed facts and reports drift.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "group", "handles", "platform", "category", "provenance", "license", "year"],
+  "properties": {
+    "title":    { "type": "string", "minLength": 1, "maxLength": 120 },
+    "group":    { "type": "string", "minLength": 1, "maxLength": 80, "description": "Group name, or the creator's handle for solo prods." },
+    "handles":  {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^[^\\n@]+$" },
+      "description": "Scene handles of the creators. Handles, not legal names."
+    },
+    "maintainers": {
+      "type": "array", "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$" },
+      "description": "Optional GitHub logins (without @) that own this folder. Used to generate CODEOWNERS."
+    },
+    "platform": { "enum": ["web", "amiga", "dos", "windows", "linux", "macos", "c64", "atari-st", "zx-spectrum", "other"] },
+    "category": { "enum": ["demo", "intro-4k", "intro-64k", "music", "gfx"] },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type":   { "enum": ["human", "ai", "hybrid"] },
+        "models": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "notes":  { "type": "string" }
+      },
+      "if": { "properties": { "type": { "enum": ["ai", "hybrid"] } } },
+      "then": { "required": ["models"], "properties": { "models": { "minItems": 1 } } }
+    },
+    "license":  { "type": "string", "minLength": 1, "description": "SPDX identifier, e.g. CC-BY-NC-SA-4.0 (default), CC-BY-4.0, CC0-1.0." },
+    "party":    { "type": "string", "minLength": 1, "description": "Party slug from parties/ or a free-text party name." },
+    "year":     { "type": "integer", "minimum": 1970, "maximum": 2100 },
+    "released": { "type": "string", "format": "date" },
+    "entry":    { "type": "string", "minLength": 1, "pattern": "^[^/\\\\.][^\\\\]*$", "description": "Path, relative to the prod folder, of the file that runs (web) or the binary that is measured (intros). Default: index.html." },
+    "tags":     { "type": "array", "items": { "type": "string" } }
+  }
+}

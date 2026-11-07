@@ -1,0 +1,40 @@
+name: Compo entry
+description: Enter an existing or new prod into a party compo.
+title: "[compo] <party> / <compo> — <title> by <handle>"
+labels: [compo-entry]
+body:
+  - type: input
+    id: party
+    attributes: { label: Party, description: "Slug from parties/ (e.g. 2027-sysop-zero-party)." }
+    validations: { required: true }
+  - type: dropdown
+    id: compo
+    attributes:
+      label: Compo
+      options: [demo, intro-4k, intro-64k, music, gfx]
+    validations: { required: true }
+  - type: input
+    id: prod
+    attributes: { label: Prod, description: "Path to prods/<year>-<slug>/, or a link to your submission issue/PR." }
+    validations: { required: true }
+  - type: dropdown
+    id: provenance
+    attributes:
+      label: Provenance
+      options: [human, ai, hybrid]
+    validations: { required: true }
+  - type: textarea
+    id: models
+    attributes: { label: AI models and tools used, description: "Required for ai/hybrid." }
+  - type: textarea
+    id: notes
+    attributes: { label: Notes for the compo organisers (runtime, hardware, special instructions) }
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Rules
+      options:
+        - label: The entry fits the compo's size budget and platform rules.
+          required: true
+        - label: Provenance is declared honestly; I accept disqualification if it is not.
+          required: true
