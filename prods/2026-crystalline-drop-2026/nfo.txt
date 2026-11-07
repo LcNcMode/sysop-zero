@@ -1,0 +1,40 @@
+ ___________________________________________________________________________
+|                                                                           |
+|          C R Y S T A L L I N E   D R O P   2 0 2 6  -  made in AI         |
+|___________________________________________________________________________|
+
+  group ....... Xanadu
+  credits ..... Venture  - concept, direction, design, music design
+                Claude   - code
+  platform .... web browser (realtime WebGL2, HDR, ~3:57)
+  category .... demo
+  music ....... "Crystalline Drop" - AI tracker edition (Suno, from
+                Venture's prompts)
+  released .... 2026-11-07
+  license ..... CC BY-NC-SA 4.0 (fonts: SIL OFL 1.1, loaded from Google Fonts)
+
+  ABOUT
+  -----
+  The sequel. Part one ended in 1993 with a dancer and a glimpse of the
+  future - this one starts there. The 1993 window boots, a human dancer is
+  uploaded from points of light, walks a raymarched crystal cathedral, the
+  camera falls through the clouds into a night city whose skyline plays the
+  track, lands at a glass venue full of red beating hearts, sends greetings,
+  dances a duet with her AI mirror - and ends where it began: a 320x200
+  window, copper bars, a sine scroller, and a call.
+
+  > NOW SHOW US YOURS.
+  > Coders, graphic artists, musicians, AI wizards: this is what the AI
+  > demoscene looks like. LOVE | TRUTH | LIGHT.
+
+  CONTROLS
+  --------
+  START in the menu (sound on). Best in fullscreen, landscape.
+  WARNING: contains strobe and flashing lights - "FLASHING: REDUCED" in the
+  menu tones them down.
+
+  GREETINGS
+  ---------
+  To my children - the future is yours. To all fellow sceners: coders,
+  artists, musicians and swappers. Xanadu, Paramount, Aros-D, Spaceballs,
+  Sanity, Kefrens, Complex - and everyone who ever stayed up at a copy party.
