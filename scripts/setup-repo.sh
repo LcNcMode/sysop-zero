@@ -33,8 +33,8 @@ run "4. Actions: default GITHUB_TOKEN read-only, Actions may not approve PRs" \
 {"default_workflow_permissions":"read","can_approve_pull_request_reviews":false}
 JSON
 
-run "5. Pages: build from GitHub Actions (POST creates; if Pages already exists use -X PUT)" \
-  gh api -X POST "repos/$REPO/pages" -f build_type=workflow </dev/null
+run "5. Pages: build from GitHub Actions (creates Pages, or switches an existing site to Actions)" \
+  bash -c "gh api -X POST 'repos/$REPO/pages' -f build_type=workflow 2>/dev/null || gh api -X PUT 'repos/$REPO/pages' -f build_type=workflow" </dev/null
 
 run "6. Ruleset on the default branch (admins may bypass via PR only; the Sysop Zero App may not)" \
   gh api -X POST "repos/$REPO/rulesets" --input - <<'JSON'

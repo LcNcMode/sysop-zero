@@ -49,7 +49,14 @@ Each job narrows the token further with `permission-*` inputs; the triage job ge
 | `pages.yml` | push to main | `pages: write`, `id-token: write` | builds and deploys the gallery |
 | `sysop-zero.yml` | issues opened, maintainer `@sysop-zero` comments | App token | triage and assist, per `.github/SYSOP.md` |
 
-Hardening backlog: pin third-party actions to commit SHAs; add Dependabot for `github-actions`.
+Supply chain: every action is pinned to a full commit SHA (version in a trailing comment).
+`.github/dependabot.yml` opens weekly PRs for `github-actions` and `pip` updates; review the
+upstream changelog before merging, especially for `anthropics/claude-code-action` and
+`actions/create-github-app-token`, which handle secrets.
+
+Sysop Zero tool scope: it never executes repo code (no `python3 scripts/...` in its allowlist).
+Being able to edit a script *and* run it is arbitrary code execution with the App token and the
+API key in reach. CI runs the scripts with a read-only token; Sysop reads the results.
 
 **Residual risk, accepted:** the `assist` job needs `contents: write` to push `sysop/*` branches,
 which in principle also allows merging an already-approved, green PR through the API. The
