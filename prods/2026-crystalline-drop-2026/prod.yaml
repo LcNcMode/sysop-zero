@@ -1,0 +1,24 @@
+# Declared metadata. Human-owned: CI never edits this file, it only compares it
+# against what it observes (see docs/PROVENANCE.md and the drift report).
+title: "Crystalline Drop 2026"
+group: Xanadu
+handles:
+  - Venture
+platform: web
+category: demo
+year: 2026
+released: 2026-11-07
+entry: index.html
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+    - Claude (Anthropic) — code
+    - Suno — music generation (output owned by the author)
+  notes: >
+    Sequel to "Crystalline Drop — a 1993 demo". Concept, direction, scene design and
+    music design by Venture. Realtime WebGL2 code written with Claude in an iterative
+    chat session (v0.1 → v0.8). Music: "Crystalline Drop – AI tracker edition",
+    generated with Suno from Venture's prompts. Fonts are loaded from Google Fonts
+    (Orbitron, Press Start 2P, SIL OFL 1.1) and are not covered by the prod license.
+tags: [webgl2, realtime, raymarching, hdr, bloom, dancer, city, "2026", sequel]
