@@ -1,0 +1,8 @@
+{
+  "_comment": "Size budgets per category. 'measure' = entry (the entry file only) or folder (all files in the prod folder).",
+  "intro-4k":  { "limit_bytes": 4096,     "measure": "entry" },
+  "intro-64k": { "limit_bytes": 65536,    "measure": "entry" },
+  "demo":      { "limit_bytes": 52428800, "measure": "folder" },
+  "music":     { "limit_bytes": 52428800, "measure": "folder" },
+  "gfx":       { "limit_bytes": 52428800, "measure": "folder" }
+}

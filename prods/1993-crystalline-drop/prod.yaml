@@ -1,0 +1,24 @@
+# Declared metadata. Human-owned: CI never edits this file, it only compares it
+# against what it observes (see docs/PROVENANCE.md and the drift report).
+title: "Crystalline Drop — a 1993 demo"
+group: Xanadu
+handles:
+  - Venture
+platform: web
+category: demo
+year: 1993            # the year the prod is styled as; see `released` for the real date
+released: 2026-11-07
+entry: index.html
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+    - Claude (Anthropic) — code
+    - Suno v6 — music generation (paid plan, output owned by the author)
+  notes: >
+    Concept, direction, design and music design by Venture. Realtime code written
+    with Claude in an iterative chat session (v1 → v6). Music generated with Suno v6
+    from Venture's prompts (see PROMPTS.md); only the ProTracker edition is kept.
+    Fonts in render/fonts/ are third-party (SIL OFL 1.1) and are not covered by the
+    prod license.
+tags: [oldschool, "320x200", tracker, plasma, voxel, glenz, tunnel, "2027"]

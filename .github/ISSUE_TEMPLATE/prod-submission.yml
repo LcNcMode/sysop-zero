@@ -1,0 +1,76 @@
+name: Prod submission
+description: Release a prod on Sysop Zero (demo, intro, music or gfx).
+title: "[prod] <title> by <handle>"
+labels: [prod-submission]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Welcome, scener. The fastest route is a pull request that adds `prods/<year>-<slug>/` with
+        `prod.yaml` and `nfo.txt` (see docs/CONTRIBUTING.md). Use this form if you want Sysop Zero
+        to check your submission first. **Handles only — no legal names.**
+  - type: input
+    id: title
+    attributes: { label: Title }
+    validations: { required: true }
+  - type: input
+    id: group
+    attributes: { label: Group, description: "Group name, or your handle for solo prods." }
+    validations: { required: true }
+  - type: input
+    id: handles
+    attributes: { label: Handles, description: "Comma-separated scene handles of all creators." }
+    validations: { required: true }
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options: [demo, intro-4k, intro-64k, music, gfx]
+    validations: { required: true }
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [web, amiga, dos, windows, linux, macos, c64, atari-st, zx-spectrum, other]
+    validations: { required: true }
+  - type: dropdown
+    id: provenance
+    attributes:
+      label: Provenance
+      description: "Who made it? See docs/PROVENANCE.md. Honest declaration is the only rule that matters."
+      options: [human, ai, hybrid]
+    validations: { required: true }
+  - type: textarea
+    id: models
+    attributes:
+      label: AI models and tools used
+      description: "One per line, with what each did (e.g. 'Model X — shader code'). Required for ai/hybrid."
+  - type: input
+    id: year
+    attributes: { label: Year, description: "Release year, or the year the prod is styled as (explain in notes)." }
+    validations: { required: true }
+  - type: input
+    id: license
+    attributes: { label: License, description: "SPDX id. Default: CC-BY-NC-SA-4.0." , value: CC-BY-NC-SA-4.0 }
+    validations: { required: true }
+  - type: input
+    id: party
+    attributes: { label: Party (optional) }
+  - type: input
+    id: link
+    attributes: { label: Where are the files?, description: "Fork branch, release URL or archive." }
+    validations: { required: true }
+  - type: textarea
+    id: notes
+    attributes: { label: Notes / nfo }
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Release terms
+      options:
+        - label: I have the right to release everything in this prod under the license above (including music, samples, fonts and AI output under the tools' terms).
+          required: true
+        - label: I declared AI use honestly, and I will sign off my commits (DCO).
+          required: true
+        - label: I follow the Code of Conduct.
+          required: true
