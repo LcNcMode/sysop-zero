@@ -25,6 +25,7 @@ import os
 import re
 import shutil
 import sys
+import urllib.parse
 from pathlib import Path
 
 import yaml
@@ -36,6 +37,21 @@ BUDGETS = {k: v for k, v in json.loads((ROOT / "scripts/categories.json").read_t
 DEFAULT_LICENSE = "CC-BY-NC-SA-4.0"
 AI_HINTS = re.compile(r"\b(claude|chatgpt|gpt-?\d|openai|gemini|suno|udio|midjourney|stable diffusion|dall-?e|copilot|llama)\b", re.I)
 FOLDER_RE = re.compile(r"^(\d{4})-[a-z0-9][a-z0-9-]*$")
+
+# The gallery serves prods from the same origin as the gallery (and, on <owner>.github.io, as every
+# other Pages site of the owner). They are only safe inside the gallery's sandboxed iframe, so:
+#  - file types that run scripts when opened directly, and that the guard below cannot cover, are
+#    refused (SVG only when it carries script);
+#  - every HTML file gets a guard at build time (see build_site).
+BLOCKED_EXT = {".xhtml", ".xht", ".xml", ".xsl", ".xslt", ".shtml", ".svgz", ".mht", ".mhtml"}
+SVG_SCRIPT = re.compile(rb"<script|\bon[a-z]+\s*=|javascript:|<foreignObject", re.I)
+# Runs before any prod code. Inside the gallery's sandbox the document has an opaque origin
+# ("null"); anywhere else (opened directly, or framed by another site) the guard stops the HTML
+# parser, so no prod script runs, and sends the visitor to the sandboxed player instead.
+GUARD = ('<script>/* sysop-zero: run only inside the gallery sandbox */'
+         'if(self.origin!=="null"){{document.write("<plaintext hidden>");'
+         'location.replace({target})}}</script>')
+DOCTYPE = re.compile(rb"^(\xef\xbb\xbf)?\s*<!doctype[^>]*>", re.I)
 
 
 class _DateSafeLoader(yaml.SafeLoader):
@@ -56,6 +72,16 @@ def human(n: int) -> str:
     return str(n)
 
 
+def _is_utf8(raw: bytes) -> bool:
+    if raw.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return False
+    try:
+        raw.decode("utf-8")
+        return True
+    except UnicodeDecodeError:
+        return False
+
+
 def folder_size(p: Path) -> int:
     return sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
 
@@ -64,6 +90,9 @@ def check_prod(folder: Path) -> dict:
     res = {"slug": folder.name, "path": folder.as_posix(), "errors": [], "drift": [], "observed": {}, "declared": None}
     err, drift, obs = res["errors"].append, res["drift"].append, res["observed"]
 
+    if folder.is_symlink():
+        err("the prod folder is a symlink; prods must contain real files only")
+        return res
     yml = folder / "prod.yaml"
     if not yml.is_file():
         err("missing prod.yaml")
@@ -80,6 +109,21 @@ def check_prod(folder: Path) -> dict:
     for e in sorted(Draft202012Validator(SCHEMA).iter_errors(decl), key=lambda e: list(e.path)):
         loc = "/".join(str(x) for x in e.path) or "(root)"
         err(f"schema: `{loc}`: {e.message}")
+    if res["errors"]:
+        return res
+
+    # --- files that would be unsafe to publish ------------------------------
+    for f in sorted(folder.rglob("*")):
+        rel = f.relative_to(folder).as_posix()
+        if f.is_symlink():
+            err(f"`{rel}` is a symlink; prods must contain real files only")
+        elif f.is_file() and f.suffix.lower() in BLOCKED_EXT:
+            err(f"`{rel}`: {f.suffix.lower()} files are not allowed in a prod (they can run scripts outside the gallery sandbox)")
+        elif f.is_file() and f.suffix.lower() in (".html", ".htm") and not _is_utf8(f.read_bytes()):
+            # A UTF-16 byte-order mark beats the server's charset, which would garble the guard.
+            err(f"`{rel}`: HTML must be UTF-8 (no UTF-16 byte-order mark)")
+        elif f.is_file() and f.suffix.lower() == ".svg" and SVG_SCRIPT.search(f.read_bytes()):
+            err(f"`{rel}`: SVG with script, event handlers or foreignObject is not allowed (use a script-free SVG, or draw it from your HTML)")
     if res["errors"]:
         return res
 
@@ -189,6 +233,21 @@ def render_report(results: list[dict], title: str) -> str:
     return "\n".join(out)
 
 
+def guard_html(dst: Path, out: Path, slug: str) -> None:
+    """Prepend GUARD to every HTML file of a published prod (after the doctype, so the prod keeps
+    standards mode). Size budgets are measured on the source, so the guard costs a prod nothing."""
+    for f in sorted(dst.rglob("*")):
+        if not (f.is_file() and f.suffix.lower() in (".html", ".htm")):
+            continue
+        up = "../" * (len(f.relative_to(out).parts) - 1)
+        target = json.dumps(up + "play.html#/" + urllib.parse.quote(slug, safe=""))  # a safe JS string
+        guard = GUARD.format(target=target).encode()
+        raw = f.read_bytes()
+        m = DOCTYPE.match(raw)
+        cut = m.end() if m else (3 if raw.startswith(b"\xef\xbb\xbf") else 0)
+        f.write_bytes(raw[:cut] + guard + raw[cut:])
+
+
 def build_site(results: list[dict], out: Path) -> None:
     if out.exists():
         shutil.rmtree(out)
@@ -204,7 +263,8 @@ def build_site(results: list[dict], out: Path) -> None:
             continue
         d, src = r["declared"], Path(r["path"])
         dst = out / "prods" / r["slug"]
-        shutil.copytree(src, dst)
+        shutil.copytree(src, dst, symlinks=True)  # check_prod refuses symlinks; never follow one
+        guard_html(dst, out, r["slug"])
         index.append({
             "slug": r["slug"], **{k: d.get(k) for k in ("title", "group", "handles", "platform", "category", "year", "released", "license", "party", "tags")},
             "provenance": d["provenance"], "entry": d.get("entry", "index.html"),

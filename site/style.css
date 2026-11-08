@@ -18,3 +18,4 @@ dialog::backdrop{background:#000c}
 .bar{display:flex;justify-content:space-between;gap:1rem;padding:.4rem .6rem;border-bottom:1px solid #1f3560;font-size:.85rem}
 iframe{width:100%;height:calc(100% - 2.4rem);border:0;background:#000}
 footer{padding:1rem;text-align:center;color:var(--dim);font-size:.8rem}
+body.full{height:100vh;overflow:hidden}body.full iframe{height:calc(100vh - 2.4rem)}

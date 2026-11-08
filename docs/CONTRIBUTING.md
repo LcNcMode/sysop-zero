@@ -70,6 +70,12 @@ it's due, and a recipe others can learn from.
 - **Only release what you may release.** Samples, music, fonts and AI output must be yours or licensed for this. Third-party assets keep their own license and must be noted (e.g. `fonts/OFL.txt`).
 - **No malware, no tracking, no network calls home** in web prods beyond loading their own assets and public fonts.
 - Web prods run in a sandboxed iframe with an opaque origin: no cookies, `localStorage` or access to the gallery page. Load your own assets with relative URLs (GitHub Pages serves them with CORS headers).
+  When the gallery is built, every HTML file in your prod gets a one-line guard at the top, so it only
+  runs inside that sandbox; opened any other way, it forwards to the gallery's player. Size budgets
+  are measured on your files as you committed them, so the guard costs you nothing.
+- **Real files only.** No symlinks, and no `.xhtml`, `.xml`, `.xsl(t)`, `.shtml`, `.svgz` or
+  `.mht(ml)` files. SVGs are fine as long as they carry no `<script>`, event handlers or
+  `foreignObject`. CI refuses the rest, because those could run code outside the sandbox.
 - Flashing content must carry a warning (and ideally a reduced mode).
 - Follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 

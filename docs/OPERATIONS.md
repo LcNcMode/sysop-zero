@@ -60,6 +60,16 @@ its own. That is why the drift report flags every PR touching `scripts/`, `tests
 (`pull_request_target` would run base-branch workflows, but with a write token next to
 untrusted code, which is the worse trade.)
 
+Gallery sandbox: prods are published on the gallery's origin, which on `<owner>.github.io` is
+shared with every other Pages site of the owner. A prod is therefore only safe inside the
+gallery's sandboxed iframe (`allow-scripts`, never `allow-same-origin`; `site/player.js`).
+`prodcheck.py` enforces that at build time: it refuses symlinks and file types that could run
+script outside the sandbox (`.xhtml`, `.xml`, script-carrying SVG, …), and prepends a guard to
+every published HTML file that stops the page unless it has an opaque origin (`self.origin ===
+"null"`), forwarding the visitor to `play.html`. The `selftest` job fails if a published page
+lacks the guard. The gallery pages carry a strict CSP. A custom domain (`site/config.json`)
+gives the gallery its own origin and removes the shared-origin risk altogether.
+
 Supply chain: every action is pinned to a full commit SHA (version in a trailing comment).
 `.github/dependabot.yml` opens weekly PRs for `github-actions` and `pip` updates; review the
 upstream changelog before merging, especially for `anthropics/claude-code-action` and
