@@ -80,7 +80,7 @@ run "6b. Ruleset 'main-checks': required CI, no deletion, no force-push — no b
     { "type": "non_fast_forward" },
     { "type": "required_status_checks", "parameters": {
         "strict_required_status_checks_policy": false,
-        "required_status_checks": [ { "context": "check" } ] } }
+        "required_status_checks": [ { "context": "check" }, { "context": "selftest" } ] } }
   ]
 }
 JSON

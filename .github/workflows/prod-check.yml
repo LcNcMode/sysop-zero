@@ -1,7 +1,19 @@
 # Validates every prod (schema, build, size budget), reports drift between declared
-# (prod.yaml) and observed facts, and proves the drift detector still fires on a
-# deliberately broken fixture. Runs with a read-only token, so it is safe for fork PRs;
-# the report is posted as a PR comment by drift-comment.yml.
+# (prod.yaml) and observed facts, and proves the checks still fire on deliberately broken
+# fixtures. Runs with a read-only token, so it is safe for fork PRs; the report is posted
+# as a PR comment by drift-comment.yml.
+#
+# Two jobs, two kinds of trust:
+#  - check:    the verdict on a PR's *data* (prods/, CODEOWNERS). It runs the checking code
+#              (scripts/, tests/) from the base branch, not from the PR, so a PR cannot raise
+#              its own size budget, loosen the schema or rewrite prodcheck.py to pass.
+#  - selftest: the PR's *own* scripts and self-tests, so changes to the tooling are tested too.
+# Both are required checks (ruleset main-checks). Keep the job ids stable, or update
+# scripts/setup-repo.sh and re-apply it in the same change.
+#
+# Limit: on pull_request, GitHub runs the workflow file from the PR itself, so a PR that
+# edits this file can change what runs. The drift report flags every PR that touches
+# .github/, scripts/ or tests/; review those as code changes, never as prod releases.
 name: Prod check
 on:
   pull_request:
@@ -21,6 +33,29 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Make sure the PR did not ship its own .trusted/ folder
+        if: github.event_name == 'pull_request'
+        run: rm -rf .trusted
+      - name: Check out the checking code from the base branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .trusted
+          persist-credentials: false
+      - name: Use the base branch's scripts/ and tests/ (PR data stays as it is)
+        if: github.event_name == 'pull_request'
+        run: |
+          : > tooling-changes.txt
+          for p in scripts tests .github; do
+            diff -rq ".trusted/$p" "$p" 2>/dev/null | sed -E \
+              -e 's#^Files \.trusted/(.*) and .* differ$#changed: \1#' \
+              -e 's#^Only in \.trusted/([^:]*): (.*)$#removed: \1/\2#' \
+              -e 's#^Only in ([^:]*): (.*)$#added:   \1/\2#' >> tooling-changes.txt || true
+          done
+          rm -rf scripts tests
+          cp -r .trusted/scripts .trusted/tests .
+          rm -rf .trusted
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
@@ -31,9 +66,6 @@ jobs:
       - name: Self-test — drift detector must fire on the broken fixture
         if: always()
         run: python3 scripts/prodcheck.py --prods tests/fixtures/prods --title "Self-test (deliberately broken fixture, expected to fail)" --report selftest-report.md --expect-findings
-      - name: Self-test — triage gives the expected answer on every fixture issue
-        if: always()
-        run: python3 scripts/triage.py --self-test
       - name: CODEOWNERS in sync with prod.yaml
         if: always()
         run: python3 scripts/gen_codeowners.py --check
@@ -53,6 +85,21 @@ jobs:
             echo "<!-- sysop-zero:drift-report -->"
             echo "## 📡 Sysop Zero — drift report"
             echo
+            if [ -s tooling-changes.txt ]; then
+              echo "> [!WARNING]"
+              echo "> This PR changes checking code or automation (\`scripts/\`, \`tests/\` or \`.github/\`)."
+              echo "> The verdict below used the base branch's checks; the \`selftest\` job runs the PR's own."
+              echo "> Review it as a code change, not as a prod release."
+              echo
+              echo "<details><summary>Changed paths</summary>"
+              echo
+              echo '```'
+              head -n 50 tooling-changes.txt
+              echo '```'
+              echo
+              echo "</details>"
+              echo
+            fi
             echo "Declared = \`prod.yaml\` (human-owned). Observed = measured by CI. Mismatches are drift."
             echo
             cat prods-report.md 2>/dev/null || echo "_prod check did not produce a report (outcome: ${OUTCOME})_"
@@ -71,3 +118,32 @@ jobs:
           name: drift-report
           path: drift-report/
           retention-days: 7
+
+  selftest:
+    # The PR's own tooling: its scripts must pass on the prods and on every fixture.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r scripts/requirements.txt
+      - name: Prods pass with the PR's own scripts
+        run: python3 scripts/prodcheck.py --site-out _site
+      - name: Drift detector fires on the broken fixture
+        if: always()
+        run: python3 scripts/prodcheck.py --prods tests/fixtures/prods --expect-findings
+      - name: Triage gives the expected answer on every fixture issue
+        if: always()
+        run: python3 scripts/triage.py --self-test
+      - name: CODEOWNERS in sync with prod.yaml
+        if: always()
+        run: python3 scripts/gen_codeowners.py --check
+      - name: Portability — no hardcoded owner name
+        if: always()
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: scripts/check_portability.sh "$OWNER"

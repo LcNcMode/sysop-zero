@@ -34,7 +34,7 @@ does not use the App at all.
 | area | setting |
 |---|---|
 | Ruleset `main` | PR required (1 approval, stale reviews dismissed, last push approved, threads resolved), linear history. Bypass: repository admins, via PR only (lets the sole maintainer merge). |
-| Ruleset `main-checks` | required check `check` (Prod check), no force-push, no deletion. **No bypass, admins included.** A bypass actor skips every rule in a ruleset, so CI lives in its own ruleset. If CI itself is broken: disable `main-checks`, merge the fix, re-enable. Keep the job id `check` in `prod-check.yml` stable, or update this ruleset in the same PR. |
+| Ruleset `main-checks` | required checks `check` and `selftest` (Prod check), no force-push, no deletion. **No bypass, admins included.** A bypass actor skips every rule in a ruleset, so CI lives in its own ruleset. If CI itself is broken: disable `main-checks`, merge the fix, re-enable. Keep the job ids `check` and `selftest` in `prod-check.yml` stable, or update this ruleset in the same PR. |
 | Merge | squash only, delete branch on merge |
 | Pages | source: GitHub Actions (`pages.yml`) |
 | Discussions | on |
@@ -45,11 +45,20 @@ does not use the App at all.
 
 | workflow | trigger | token | does |
 |---|---|---|---|
-| `prod-check.yml` | PR, push to main | read-only | schema, size budget, gallery build, drift report, detector self-test, triage self-test, CODEOWNERS sync, portability |
+| `prod-check.yml` → `check` | PR, push to main | read-only | the verdict on a PR's data: schema, size budget, gallery build, drift report, CODEOWNERS sync, portability. On PRs it runs `scripts/` and `tests/` **from the base branch**, so a PR cannot change the rules it is judged by. Flags PRs that touch `scripts/`, `tests/` or `.github/`. |
+| `prod-check.yml` → `selftest` | PR, push to main | read-only | the PR's own scripts: prods, detector self-test, triage self-test, CODEOWNERS sync, portability |
 | `drift-comment.yml` | after Prod check | `pull-requests: write` | posts/updates the drift report comment (artifact treated as data; checks the head SHA) |
 | `pages.yml` | push to main | `pages: write`, `id-token: write` | builds and deploys the gallery |
 | `sysop-zero.yml` → `triage` | `prod-submission` / `compo-entry` issue opened, edited or reopened | `GITHUB_TOKEN`: `issues: write` | runs `scripts/triage.py` (no AI): one updated comment + `needs-info` or `ready-for-pr` |
 | `sysop-zero.yml` → `assist` | maintainer `@sysop-zero` comments | App token | the AI admin, per `.github/SYSOP.md` |
+
+Trusted checks, and their limit: `check` judges a PR with the base branch's `scripts/` and
+`tests/`. On `pull_request`, though, GitHub always runs the workflow file from the PR itself,
+so a PR that edits `.github/workflows/` can change what runs; no workflow can prevent that on
+its own. That is why the drift report flags every PR touching `scripts/`, `tests/` or
+`.github/`: review those as code, and keep prod releases and tooling changes in separate PRs.
+(`pull_request_target` would run base-branch workflows, but with a write token next to
+untrusted code, which is the worse trade.)
 
 Supply chain: every action is pinned to a full commit SHA (version in a trailing comment).
 `.github/dependabot.yml` opens weekly PRs for `github-actions` and `pip` updates; review the
