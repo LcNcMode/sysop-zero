@@ -35,6 +35,11 @@ C_DMAG      equ 232
 
 start:
         cld
+        ; DOS does not zero memory past the .COM image: clear the BSS first
+        mov di, bss_start
+        mov cx, bss_end - bss_start
+        xor al, al
+        rep stosb
         ; back buffer = 64 KiB segment after ours
         mov ax, cs
         add ax, 1000h
@@ -899,7 +904,7 @@ scene_plasma:
         mov [wphase], ax
         mov word [tscale], 2
         mov eax, [lb]
-        imul eax, eax, 52
+        imul eax, eax, SCROLL_SPEED
         shr eax, 8
         mov dx, 320
         sub dx, ax
@@ -1384,11 +1389,14 @@ s_what1         db "WHAT DOES THE AI DEMOSCENE", 0
 s_what2         db "LOOK LIKE IN 2027?", 0
 s_amazing       db "SHOW ME WHAT AMAZING LOOKS LIKE!", 0
 s_y2027         db "2027", 0
-s_scroll        db "    REAL MODE, REAL MODE 13H, REAL 386 ASSEMBLER ... "
-                db "GREETINGS TO MINI AND ZODIAK / CASCADA ... ALL OF XANADU, "
-                db "AROS-D, PARAMOUNT, THE PARTY 1993 CREW IN HERNING ... "
-                db "FUTURE CREW, SPACEBALLS, SANITY, KEFRENS ... "
-                db "CODE BY CLAUDE, DIRECTION BY VENTURE ...      ", 0
+s_scroll        db "REAL MODE 13H, REAL 386 ASSEMBLER ... "
+                db "GREETINGS TO MINI AND ZODIAK / CASCADA ... XANADU, AROS-D, "
+                db "PARAMOUNT, THE PARTY 1993 CREW ... FUTURE CREW, SPACEBALLS, "
+                db "SANITY, KEFRENS ... CODE BY CLAUDE, DIRECTION BY VENTURE", 0
+SCROLL_LEN      equ $ - s_scroll - 1
+; pixels per beat so the whole text (16 px per char) crosses the screen in
+; 46 of the plasma scene's 48 beats
+SCROLL_SPEED    equ (SCROLL_LEN * 16 + 320 + 45) / 46
 shotname        db "SHOT.RAW", 0
 msg_bye         db "CRYSTALLINE DROP - a 1993 demo - asm edition v0.2", 13, 10
                 db "Venture of Xanadu, code with Claude. See you in 2027!", 13, 10, "$"
@@ -1401,6 +1409,7 @@ msg_silent      db "CRYSTALLINE DROP - asm edition v0.2 (ran silent: no Sound Bl
 
 ; ---------------------------------------------------------------------------
 section .bss
+bss_start:
 ticks       resd 1
 sbon        resb 1
 sbbase      resw 1
@@ -1496,3 +1505,4 @@ fontbuf     resb 2048
 colterm     resb 320
 rowterm     resb 200
 stars       resw NSTARS*3
+bss_end:
