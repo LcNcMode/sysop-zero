@@ -10,7 +10,7 @@ Start from the template: `cp -r templates/prod prods/<year>-<slug>`.
 |---|---|
 | `prod.yaml` | the release card: title, group, handles, category, platform, license and **provenance**. Yours to write; CI never edits it. |
 | `nfo.txt` | the nfo: credits (every handle and the group), greetings, controls, warnings |
-| `index.html` | the prod itself for web prods (or set `entry:`). Other platforms: the binary. |
+| `index.html` | the prod itself for web prods (or set `entry:`). Music: an audio file plus a small player page. Other platforms: the binary. |
 | `LICENSE` | only if you pick something other than the default CC BY-NC-SA 4.0 |
 
 Third-party assets (fonts, samples) keep their own license text next to them.

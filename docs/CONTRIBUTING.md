@@ -48,6 +48,21 @@ Budgets live in `scripts/categories.json`. Everything in git stays in the histor
 clone downloads it, so keep audio and video lean (e.g. a 128–192 kbps MP3 or a tracker module).
 Need more room? Ask in an issue before you open the PR.
 
+## Music prods
+
+Any common audio format works: MP3, OGG, FLAC, WAV, or a tracker module (MOD/XM/S3M/IT).
+Human-made, AI-generated or both are all welcome; declare it in `provenance`.
+
+To make a track play in the gallery, ship a small `index.html` with an audio player next to
+the file (`<audio src="track.mp3" controls>`), and keep `platform: web`. The template in
+`templates/prod/` is a good start.
+
+## AI tools are welcome
+
+Use AI to write code, paint, compose, explore ideas or learn the craft. We encourage it.
+Name the tools in `prod.yaml`, say who did what in the nfo, and everyone wins: credit where
+it's due, and a recipe others can learn from.
+
 ## Rules of the house
 
 - **Provenance is mandatory and honest** — see [PROVENANCE.md](PROVENANCE.md).

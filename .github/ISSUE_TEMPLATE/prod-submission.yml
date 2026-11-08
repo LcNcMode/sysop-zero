@@ -28,6 +28,7 @@ body:
     id: category
     attributes:
       label: Category
+      description: "Music can be a tracker module or an audio file (MP3, OGG, FLAC, WAV). AI-generated work is welcome, just declare it below."
       options: [demo, intro-4k, intro-64k, music, gfx]
     validations: { required: true }
   - type: dropdown
