@@ -26,6 +26,7 @@ import re
 import shutil
 import sys
 import urllib.parse
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import yaml
@@ -44,14 +45,20 @@ FOLDER_RE = re.compile(r"^(\d{4})-[a-z0-9][a-z0-9-]*$")
 #    refused (SVG only when it carries script);
 #  - every HTML file gets a guard at build time (see build_site).
 BLOCKED_EXT = {".xhtml", ".xht", ".xml", ".xsl", ".xslt", ".shtml", ".svgz", ".mht", ".mhtml"}
-SVG_SCRIPT = re.compile(rb"<script|\bon[a-z]+\s*=|javascript:|<foreignObject", re.I)
+# SVG is parsed as XML and checked element by element (namespace prefixes and character
+# references don't hide anything from a parser). Anything that can run script is refused.
+SVG_BAD_ELEMENTS = {"script", "foreignobject", "iframe", "embed", "object", "handler", "listener"}
+SVG_ANIMATE = {"set", "animate", "animatetransform", "animatemotion"}
+SVG_MAX_BYTES = 2 * 1024 * 1024
 # Runs before any prod code. Inside the gallery's sandbox the document has an opaque origin
 # ("null"); anywhere else (opened directly, or framed by another site) the guard stops the HTML
 # parser, so no prod script runs, and sends the visitor to the sandboxed player instead.
 GUARD = ('<script>/* sysop-zero: run only inside the gallery sandbox */'
          'if(self.origin!=="null"){{document.write("<plaintext hidden>");'
          'location.replace({target})}}</script>')
-DOCTYPE = re.compile(rb"^(\xef\xbb\xbf)?\s*<!doctype[^>]*>", re.I)
+# Only the plain HTML5 doctype is accepted, so the guard always lands in executable position.
+DOCTYPE = re.compile(rb"^(\xef\xbb\xbf)?[ \t\r\n]*<!doctype[ \t\r\n]+html[ \t\r\n]*>", re.I)
+ANY_DOCTYPE = re.compile(rb"^(\xef\xbb\xbf)?[ \t\r\n]*<!doctype", re.I)
 
 
 class _DateSafeLoader(yaml.SafeLoader):
@@ -80,6 +87,40 @@ def _is_utf8(raw: bytes) -> bool:
         return True
     except UnicodeDecodeError:
         return False
+
+
+def _local(name: str) -> str:
+    return name.rsplit("}", 1)[-1].rsplit(":", 1)[-1].lower()
+
+
+def svg_problem(raw: bytes) -> str | None:
+    """Return why an SVG may not be published, or None if it is script-free."""
+    if len(raw) > SVG_MAX_BYTES:
+        return "SVG larger than 2 MiB"
+    if not _is_utf8(raw):
+        return "SVG must be UTF-8"
+    head = raw[:200].decode("utf-8", "replace").lower()
+    if "encoding=" in head and not re.search(r"encoding=[\"']utf-?8[\"']", head):
+        return "SVG must declare UTF-8 (or no encoding)"
+    if b"<!doctype" in raw.lower() or b"<!entity" in raw.lower():
+        return "SVG with a DOCTYPE or entities"
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError as e:
+        return f"SVG is not well-formed XML ({e})"
+    for el in root.iter():
+        tag = _local(el.tag) if isinstance(el.tag, str) else ""
+        if tag in SVG_BAD_ELEMENTS:
+            return f"SVG with <{tag}>"
+        for k, v in el.attrib.items():
+            name, val = _local(k), re.sub(r"[\s\x00-\x1f]", "", v).lower()
+            if name.startswith("on"):
+                return f"SVG with an event handler ({name})"
+            if "javascript:" in val or "vbscript:" in val or val.startswith("data:text/html"):
+                return "SVG with a script URL"
+            if tag in SVG_ANIMATE and name == "attributename" and _local(v) == "href":
+                return "SVG that animates an href"
+    return None
 
 
 def folder_size(p: Path) -> int:
@@ -119,11 +160,15 @@ def check_prod(folder: Path) -> dict:
             err(f"`{rel}` is a symlink; prods must contain real files only")
         elif f.is_file() and f.suffix.lower() in BLOCKED_EXT:
             err(f"`{rel}`: {f.suffix.lower()} files are not allowed in a prod (they can run scripts outside the gallery sandbox)")
-        elif f.is_file() and f.suffix.lower() in (".html", ".htm") and not _is_utf8(f.read_bytes()):
-            # A UTF-16 byte-order mark beats the server's charset, which would garble the guard.
-            err(f"`{rel}`: HTML must be UTF-8 (no UTF-16 byte-order mark)")
-        elif f.is_file() and f.suffix.lower() == ".svg" and SVG_SCRIPT.search(f.read_bytes()):
-            err(f"`{rel}`: SVG with script, event handlers or foreignObject is not allowed (use a script-free SVG, or draw it from your HTML)")
+        elif f.is_file() and f.suffix.lower() in (".html", ".htm"):
+            raw = f.read_bytes()
+            if not _is_utf8(raw):
+                # A UTF-16 byte-order mark beats the server's charset, which would garble the guard.
+                err(f"`{rel}`: HTML must be UTF-8 (no UTF-16 byte-order mark)")
+            elif ANY_DOCTYPE.match(raw) and not DOCTYPE.match(raw):
+                err(f"`{rel}`: use the plain HTML5 doctype `<!DOCTYPE html>` (or none)")
+        elif f.is_file() and f.suffix.lower() == ".svg" and (why := svg_problem(f.read_bytes())):
+            err(f"`{rel}`: refused, {why} (use a script-free UTF-8 SVG, or draw it from your HTML)")
     if res["errors"]:
         return res
 
@@ -244,6 +289,8 @@ def guard_html(dst: Path, out: Path, slug: str) -> None:
         guard = GUARD.format(target=target).encode()
         raw = f.read_bytes()
         m = DOCTYPE.match(raw)
+        if not m and ANY_DOCTYPE.match(raw):  # check_prod refuses these; never guess a boundary
+            raise SystemExit(f"refusing to publish {f}: unsupported doctype")
         cut = m.end() if m else (3 if raw.startswith(b"\xef\xbb\xbf") else 0)
         f.write_bytes(raw[:cut] + guard + raw[cut:])
 

@@ -74,8 +74,9 @@ it's due, and a recipe others can learn from.
   runs inside that sandbox; opened any other way, it forwards to the gallery's player. Size budgets
   are measured on your files as you committed them, so the guard costs you nothing.
 - **Real files only.** No symlinks, and no `.xhtml`, `.xml`, `.xsl(t)`, `.shtml`, `.svgz` or
-  `.mht(ml)` files. SVGs are fine as long as they carry no `<script>`, event handlers or
-  `foreignObject`. CI refuses the rest, because those could run code outside the sandbox.
+  `.mht(ml)` files. HTML is UTF-8 and starts with `<!DOCTYPE html>` (or no doctype). SVGs are
+  fine as plain UTF-8 XML without `<script>`, event handlers, `foreignObject`, `javascript:`
+  links or a DOCTYPE. CI refuses the rest, because those could run code outside the sandbox.
 - Flashing content must carry a warning (and ideally a reduced mode).
 - Follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
