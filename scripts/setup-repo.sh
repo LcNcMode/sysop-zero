@@ -42,7 +42,10 @@ run "5. Pages: build from GitHub Actions (creates Pages, or switches an existing
 #   main-checks — green CI, no deletion, no force-push; NOBODY may bypass, admins included.
 # Escape hatch if CI itself breaks: Settings → Rules → main-checks → Disable, merge the fix,
 # re-enable. That is a deliberate, logged act, not something that happens by accident.
-upsert_ruleset='id=$(gh api "repos/$0/rulesets" --jq ".[] | select(.name == \"$1\") | .id"); if [ -n "$id" ]; then gh api -X PUT "repos/$0/rulesets/$id" --input -; else gh api -X POST "repos/$0/rulesets" --input -; fi'
+upsert_ruleset='set -euo pipefail
+ids=$(gh api "repos/$0/rulesets" --jq ".[] | select(.name == \"$1\") | .id")  # a failed lookup aborts here
+if [ "$(printf "%s" "$ids" | grep -c .)" -gt 1 ]; then echo "more than one ruleset named $1 ($ids): remove the duplicates by hand, then re-run" >&2; exit 1; fi
+if [ -n "$ids" ]; then gh api -X PUT "repos/$0/rulesets/$ids" --input -; else gh api -X POST "repos/$0/rulesets" --input -; fi'
 
 run "6a. Ruleset 'main': review rules (admins may bypass via PR only; the Sysop Zero App may not)" \
   bash -c "$upsert_ruleset" "$REPO" main <<'JSON'
