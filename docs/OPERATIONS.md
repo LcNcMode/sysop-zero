@@ -38,7 +38,7 @@ does not use the App at all.
 | Merge | squash only, delete branch on merge |
 | Pages | source: GitHub Actions (`pages.yml`) |
 | Discussions | on |
-| Security | secret scanning + push protection on; Dependabot alerts on |
+| Security | secret scanning + push protection on; Dependabot alerts and security updates on; private vulnerability reporting on (`SECURITY.md`) |
 | Actions | default `GITHUB_TOKEN` read-only; Actions may not create or approve PRs; fork PR workflows from first-time contributors need approval |
 
 ## Workflows

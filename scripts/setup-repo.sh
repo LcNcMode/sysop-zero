@@ -28,6 +28,12 @@ JSON
 run "3. Security: Dependabot alerts" \
   gh api -X PUT "repos/$REPO/vulnerability-alerts" </dev/null
 
+run "3b. Security: Dependabot security updates (PRs for known-vulnerable dependencies)" \
+  gh api -X PUT "repos/$REPO/automated-security-fixes" </dev/null
+
+run "3c. Security: private vulnerability reporting (the 'Report a vulnerability' button SECURITY.md points to)" \
+  gh api -X PUT "repos/$REPO/private-vulnerability-reporting" </dev/null
+
 run "4. Actions: default GITHUB_TOKEN read-only, Actions may not approve PRs" \
   gh api -X PUT "repos/$REPO/actions/permissions/workflow" --input - <<'JSON'
 {"default_workflow_permissions":"read","can_approve_pull_request_reviews":false}
