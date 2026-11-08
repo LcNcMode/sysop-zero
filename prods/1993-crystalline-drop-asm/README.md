@@ -26,8 +26,9 @@ in x86 real-mode assembler (386+), VGA Mode 13h, with Sound Blaster music. v0.2,
   on time. Audio was not checked there.
 - **archive.org**: upload as a DOS software item with start command `CDROP.COM`.
 
-The gallery shows a download button for it (`download:` in `prod.yaml`). A play link
-(`links:`) goes in once the demo has a public js-dos or archive.org page.
+The gallery can show a download button for it (`download:` in `prod.yaml`). That line goes
+in with a follow-up PR, because PR checks run the base branch's schema, which doesn't know the
+field yet. A play link (`links:`) goes in once the demo has a public js-dos or archive.org page.
 
 ## Build and test
 
