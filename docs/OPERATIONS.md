@@ -6,12 +6,12 @@ How the repo is run. Nothing here is secret: secrets are listed by **name and pu
 
 | name | kind | used by | purpose |
 |---|---|---|---|
-| `ANTHROPIC_API_KEY` | secret | `sysop-zero.yml` | API key for Sysop Zero (claude-code-action). Use a dedicated key with a spend limit. |
-| `SYSOP_APP_PRIVATE_KEY` | secret | `sysop-zero.yml` | Private key (PEM) of the Sysop Zero GitHub App; used to mint short-lived installation tokens. |
-| `SYSOP_APP_ID` | variable | `sysop-zero.yml` | App ID of the Sysop Zero GitHub App (not secret). |
+| `ANTHROPIC_API_KEY` | secret | `sysop-zero.yml` (assist job only) | API key for Sysop Zero (claude-code-action). Use a dedicated key with a spend limit. |
+| `SYSOP_APP_PRIVATE_KEY` | secret | `sysop-zero.yml` (assist job only) | Private key (PEM) of the Sysop Zero GitHub App; used to mint short-lived installation tokens. |
+| `SYSOP_APP_ID` | variable | `sysop-zero.yml` (assist job only) | App ID of the Sysop Zero GitHub App (not secret). |
 
-No other secrets exist. `prod-check.yml`, `drift-comment.yml` and `pages.yml` only use the
-built-in `GITHUB_TOKEN` with per-job permissions. **Never** add a personal access token.
+No other secrets exist. `prod-check.yml`, `drift-comment.yml`, `pages.yml` and the `triage` job
+of `sysop-zero.yml` only use the built-in `GITHUB_TOKEN` with per-job permissions. **Never** add a personal access token.
 
 ## Sysop Zero GitHub App
 
@@ -26,8 +26,8 @@ Create under the owning account: Settings → Developer settings → GitHub Apps
   Rotate the key yearly or on any suspicion; delete old keys in the App settings.
 - Do **not** add the App to the ruleset bypass list.
 
-Each job narrows the token further with `permission-*` inputs; the triage job gets
-`issues: write` + `contents: read` only.
+The assist job narrows the App token further with `permission-*` inputs. The triage job
+does not use the App at all.
 
 ## Repo settings (applied by `scripts/setup-repo.sh`)
 
@@ -45,10 +45,11 @@ Each job narrows the token further with `permission-*` inputs; the triage job ge
 
 | workflow | trigger | token | does |
 |---|---|---|---|
-| `prod-check.yml` | PR, push to main | read-only | schema, size budget, gallery build, drift report, detector self-test, CODEOWNERS sync, portability |
+| `prod-check.yml` | PR, push to main | read-only | schema, size budget, gallery build, drift report, detector self-test, triage self-test, CODEOWNERS sync, portability |
 | `drift-comment.yml` | after Prod check | `pull-requests: write` | posts/updates the drift report comment (artifact treated as data; checks the head SHA) |
 | `pages.yml` | push to main | `pages: write`, `id-token: write` | builds and deploys the gallery |
-| `sysop-zero.yml` | issues opened, maintainer `@sysop-zero` comments | App token | triage and assist, per `.github/SYSOP.md` |
+| `sysop-zero.yml` → `triage` | `prod-submission` / `compo-entry` issue opened, edited or reopened | `GITHUB_TOKEN`: `issues: write` | runs `scripts/triage.py` (no AI): one updated comment + `needs-info` or `ready-for-pr` |
+| `sysop-zero.yml` → `assist` | maintainer `@sysop-zero` comments | App token | the AI admin, per `.github/SYSOP.md` |
 
 Supply chain: every action is pinned to a full commit SHA (version in a trailing comment).
 `.github/dependabot.yml` opens weekly PRs for `github-actions` and `pip` updates; review the
@@ -78,6 +79,7 @@ at build time when left empty.
 pip install -r scripts/requirements.txt
 python3 scripts/prodcheck.py --site-out _site
 python3 scripts/prodcheck.py --prods tests/fixtures/prods --expect-findings
+python3 scripts/triage.py --self-test
 python3 scripts/gen_codeowners.py --check
 scripts/check_portability.sh <owner>
 ```
