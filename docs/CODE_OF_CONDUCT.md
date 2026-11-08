@@ -4,7 +4,7 @@ The scene has always been competitive. It has also always been a family. Keep bo
 
 ## Expected
 
-- Respect every creator — human, AI-assisted or hybrid. Critique the prod, not the person or their tools.
+- Respect every creator — human, AI-assisted or hybrid. Critique the prod, not the person or their tools. Using AI is never a reason to put someone down.
 - Credit and greet. Never claim someone else's work.
 - Be honest about provenance.
 - Welcome newcomers. Everybody's first prod is bad. Ours were too.

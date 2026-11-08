@@ -3,6 +3,10 @@
 Every prod declares who made it. This is the one rule of the AI-era scene: **you may use any
 tool, but you may not hide the tool.**
 
+Sysop Zero is AI-positive: `ai` and `hybrid` prods are as welcome as `human` ones, and are
+shown with the same dignity in the gallery. Declaring AI use is not a confession. It's a
+credit, and it helps others learn how you did it.
+
 ## Declared
 
 In `prod.yaml`:
@@ -54,6 +58,13 @@ broken prod that must produce findings.
 Assets that are not the creators' own (fonts, samples, engines) are listed in `nfo.txt` or the
 prod's README with their license, and their license text travels with them
 (e.g. `render/fonts/OFL-*.txt` in Crystalline Drop).
+
+## AI music
+
+AI-generated music is welcome, in any common format: MP3, OGG, FLAC, WAV or a tracker module.
+Declare the tool in `models` (e.g. `Tool name — music generation`), and say in `notes` what
+was generated and what you did yourself: prompts, arrangement, edits, mastering. Sharing your
+prompts (e.g. in a `PROMPTS.md`) is optional, and always appreciated.
 
 ## AI output and rights
 
