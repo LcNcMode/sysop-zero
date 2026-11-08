@@ -6,9 +6,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        Welcome, scener. The fastest route is a pull request that adds `prods/<year>-<slug>/` with
-        `prod.yaml` and `nfo.txt` (see docs/CONTRIBUTING.md). Use this form if you want Sysop Zero
-        to check your submission first. **Handles only — no legal names.**
+        **Welcome, scener.** No git needed: fill this in and save. Within a minute Sysop Zero
+        replies with what's missing, or a draft `prod.yaml` when everything is in place.
+        Edit the issue any time and it checks again.
+
+        **Handles only — no legal names, emails or photos.** At home in git? A pull request
+        works too (see docs/CONTRIBUTING.md).
   - type: input
     id: title
     attributes: { label: Title }

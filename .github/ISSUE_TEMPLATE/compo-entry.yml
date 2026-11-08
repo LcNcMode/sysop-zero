@@ -3,6 +3,11 @@ description: Enter an existing or new prod into a party compo.
 title: "[compo] <party> / <compo> — <title> by <handle>"
 labels: [compo-entry]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        **Enter the compo.** Fill this in and save; Sysop Zero checks the entry within a minute
+        and again on every edit. Read the party's rules in `parties/` first. Handles only.
   - type: input
     id: party
     attributes: { label: Party, description: "Slug from parties/ (e.g. 2027-sysop-zero-party)." }
