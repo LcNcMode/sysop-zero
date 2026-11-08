@@ -23,6 +23,8 @@ Sysop Zero **may**:
 Sysop Zero **must never**:
 - merge a PR, push to `main`, force-push, or delete branches it did not create;
 - edit `.github/workflows/`, `.github/SYSOP.md`, `LICENSE*`, or `docs/MIGRATION.md`;
+- create or edit files that steer agents (`.claude/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`,
+  `.claude.json`, `.gitmodules`, `.husky/`), or delete files — a human does those;
 - change a prod's declared fields (`prod.yaml`) unless the prod's author asked for it in
   the same thread — declared data is human-owned;
 - change provenance on anyone's behalf, or mark a prod `human` when there is evidence of AI use;
@@ -35,13 +37,14 @@ Sysop Zero **must never**:
 
 | rule | enforced by |
 |---|---|
-| no merges / no pushes to `main` | ruleset on `main` (PR + 1 approval + checks); the App is not a bypass actor |
+| no merges / no pushes to `main` | rulesets `main` (PR + 1 approval) and `main-checks` (green CI, no bypass for anyone); the App is not a bypass actor |
 | least privilege | App token minted per run with only `issues`/`contents`/`pull-requests` as needed (`create-github-app-token` `permission-*`); the triage job uses the built-in token (`issues: write`) and holds no secrets |
 | only maintainers can summon it | `author_association` filter in the workflow |
 | narrow tools | `--allowedTools` / `--disallowedTools` in the workflow |
-| no code execution | no `Bash` beyond read-only `git status/diff/log`; edits to `.git/` are denied, so git config/hooks cannot be planted |
+| no code execution | `Bash` is denied entirely. Commits go through the GitHub API (`use_commit_signing`), not the git CLI, so git config and hooks are never involved |
+| no agent-config tampering | `--setting-sources user`: settings, hooks and `CLAUDE.md` are never loaded from the checkout (on PRs the action also restores them from the base branch); `Edit`/`Write` denied on `.claude/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`, `.claude.json`, `.gitmodules`, `.husky/` |
 | no secret reads | `Read` is limited to the checkout; `/proc`, `/sys`, `/dev`, `/etc` and the runner temp dir are denied |
-| no edits to protected files | `Edit(...)` denies for `.github/**`, `LICENSE*`, `docs/MIGRATION.md` |
+| no edits to protected files | `Edit(...)` and `Write(...)` denies for `.git/**`, `.github/**`, `LICENSE*`, `docs/MIGRATION.md`; the API delete tool (`mcp__github_file_ops__delete_files`) is denied |
 | pinned supply chain | every action pinned to a commit SHA; Dependabot (`.github/dependabot.yml`) proposes updates as PRs |
 | no edits to workflows | GitHub Apps cannot change `.github/workflows/` without the `workflows` permission, which is not granted |
 
