@@ -1,0 +1,27 @@
+# Declared metadata. Human-owned: CI never edits this file, it only compares it
+# against what it observes (see docs/PROVENANCE.md and the drift report).
+# Drafted by Claude at Venture's request (2026-11-08), mirroring part 1's card.
+# Venture: please confirm or change before merge.
+title: "Crystalline Drop — a 1993 demo (asm edition)"
+group: Xanadu
+handles:
+  - Venture
+platform: dos
+category: demo          # v0.2: MUSIC.RAW (1.7 MB) ships next to the .COM
+year: 1993            # the year the prod is styled as; see `released` for the real date
+released: 2026-11-08    # v0.1 and v0.2 the same day
+entry: CDROP.COM
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+    - Claude (Anthropic) — code (x86 assembler, build and test tools)
+    - Suno v6 — music generation (part 1's ProTracker edition, paid plan, output owned by the author)
+  notes: >
+    Concept, direction and the Crystalline Drop design by Venture. The x86
+    assembler code, table generator and headless DOSBox test rig were written
+    by Claude in a chat session from Venture's go-ahead ("Vi kör så"). v0.2
+    plays the first 224 beats of part 1's ProTracker edition (Suno v6, from
+    Venture's prompts, see ../1993-crystalline-drop/PROMPTS.md), converted to
+    8-bit PCM and streamed to a Sound Blaster.
+tags: [oldschool, soundblaster, "320x200", "mode13h", asm, x86, plasma, copper, starfield, "2027"]

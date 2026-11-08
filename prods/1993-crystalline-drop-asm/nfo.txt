@@ -1,0 +1,51 @@
+ ___________________________________________________________________________
+|                                                                           |
+|       C R Y S T A L L I N E   D R O P  -  a 1993 demo (asm edition)      |
+|___________________________________________________________________________|
+
+  group ....... Xanadu
+  credits ..... Venture  - concept, direction, design
+                Claude   - code (x86 assembler)
+  platform .... MS-DOS, 386+, VGA (real Mode 13h, 320x200, 256 colours),
+                Sound Blaster 2.0 or later (optional)
+  music ....... "Crystalline Drop" - ProTracker edition (Suno v6, from
+                Venture's prompts), first 224 beats
+  category .... demo (CDROP.COM is about 7 KB, MUSIC.RAW 1.7 MB)
+  released .... 2026-11-08, styled as 1993
+  license ..... CC BY-NC-SA 4.0
+
+  ABOUT
+  -----
+  Part 1 pretended to be Mode 13h in a browser. This one is the real thing:
+  a DOS .COM in hand-written 386 real-mode assembler. Starfield, copper bars,
+  a wobbling logo, plasma with a sine scroller, a beat-synced LED wall with a
+  human dancer (black silhouette, gold rim) and her AI mirror (cyan point
+  cloud), and the message to the next generation.
+
+  Everything is timed on part 1's beat grid (171.60 BPM) through a 1000 Hz
+  timer interrupt. The music is 8-bit PCM at 22 kHz, streamed from disk to
+  the Sound Blaster through an auto-init DMA ring. No card? It runs silent.
+
+  RUN
+  ---
+  DOSBox:   mount c <this folder>   c:   CDROP
+  Real PC:  CDROP.COM on a 386/486 with VGA. ESC quits.
+  Sound:    BLASTER=A220 I7 D1 is read from the environment (IRQ 3/5/7,
+            DMA 0-3). Keep MUSIC.RAW next to CDROP.COM.
+  Test:     CDROP <ms>  renders the frame at <ms> into SHOT.RAW and exits.
+
+  WARNINGS
+  --------
+  Mild beat flashes on the logo, dancer and 2027 scenes (no full-screen
+  strobe).
+
+  TOOLS
+  -----
+  NASM, Python 3 (tables, test rig), DOSBox. See README.md.
+
+  GREETINGS
+  ---------
+  Mini, Zodiak / Cascada, all of Xanadu, Aros-D, Paramount, The Party crew,
+  Future Crew, Spaceballs, Sanity, Kefrens and every coder who ever waited
+  for the vertical retrace.
+___________________________________________________________________________
