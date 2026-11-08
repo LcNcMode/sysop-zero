@@ -11,6 +11,7 @@ category: demo          # v0.2: MUSIC.RAW (1.7 MB) ships next to the .COM
 year: 1993            # the year the prod is styled as; see `released` for the real date
 released: 2026-11-08    # v0.1 and v0.2 the same day
 entry: CDROP.COM
+download: CDROP_asm_v0.2.zip   # DOSBox, js-dos and archive.org ready (tools/package.py)
 license: CC-BY-NC-SA-4.0
 provenance:
   type: hybrid
