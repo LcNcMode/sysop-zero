@@ -70,7 +70,7 @@ body:
       options:
         - label: I have the right to release everything in this prod under the license above (including music, samples, fonts and AI output under the tools' terms).
           required: true
-        - label: I declared AI use honestly, and I will sign off my commits (DCO).
+        - label: I declared AI use honestly.
           required: true
         - label: I follow the Code of Conduct.
           required: true

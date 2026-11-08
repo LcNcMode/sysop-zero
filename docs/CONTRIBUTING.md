@@ -15,7 +15,7 @@
    python3 scripts/prodcheck.py --site-out _site   # validate + drift report + build gallery
    python3 -m http.server -d _site                 # open http://localhost:8000
    ```
-5. Commit with a sign-off (see DCO below) and open a **pull request**. One prod per PR.
+5. Commit (a DCO sign-off is recommended, see below) and open a **pull request**. One prod per PR.
 6. CI validates the schema, checks the size budget for your category, builds the gallery and
    posts a **drift report** as a PR comment. Fix any errors; fix or explain any drift.
 7. A maintainer reviews and merges. Sysop Zero can help (`@sysop-zero` in a comment) but never merges.
@@ -28,9 +28,11 @@ Prefer a form? Open a **Prod submission** issue and Sysop Zero will check it fir
 |---|---|---|
 | `intro-4k` | 4 096 bytes | the `entry` file |
 | `intro-64k` | 65 536 bytes | the `entry` file |
-| `demo`, `music`, `gfx` | 50 MiB (repo hygiene) | the whole prod folder |
+| `demo`, `music`, `gfx` | 20 MiB (repo hygiene) | the whole prod folder |
 
-Budgets live in `scripts/categories.json`.
+Budgets live in `scripts/categories.json`. Everything in git stays in the history forever and every
+clone downloads it, so keep audio and video lean (e.g. a 128–192 kbps MP3 or a tracker module).
+Need more room? Ask in an issue before you open the PR.
 
 ## Rules of the house
 
@@ -42,19 +44,22 @@ Budgets live in `scripts/categories.json`.
 - Flashing content must carry a warning (and ideally a reduced mode).
 - Follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## DCO (Developer Certificate of Origin)
+## Your right to release (and the optional DCO sign-off)
 
-Every commit must be signed off, certifying the [DCO 1.1](https://developercertificate.org/):
-you wrote the contribution, or otherwise have the right to submit it under the license of the
-folder it goes into.
+By opening a PR or a submission you confirm that you made the contribution, or otherwise have
+the right to release it under the license of the folder it goes into. The release-terms checkbox
+in the PR template and the submission form is that confirmation.
+
+A sign-off under the [DCO 1.1](https://developercertificate.org/) is **recommended, not
+required** (CI does not check it):
 
 ```sh
 git commit -s -m "prod: add 2027-my-first-intro"
 ```
 
-This adds `Signed-off-by: <handle> <email>` to the commit. A handle is fine; use the address
-GitHub knows (a `noreply` address works). If an AI agent made the commit, the human who
-directed it signs off.
+This adds `Signed-off-by: <handle> <email>`. Use your handle and your GitHub `noreply` address
+(Settings → Emails), so no real name or private email lands in the history. If an AI agent made
+the commit, the human who directed it signs off.
 
 ## Engines, site and tooling
 

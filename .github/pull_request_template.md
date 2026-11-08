@@ -9,7 +9,7 @@
 - [ ] Provenance declared honestly (`human` / `ai` / `hybrid`, with `models` for ai/hybrid)
 - [ ] Handles only — no legal names of anyone, in files or on screen
 - [ ] I have the right to release all assets (music, samples, fonts, AI output) under the declared license
-- [ ] Commits are signed off (`git commit -s`, DCO)
+- [ ] Optional: commits are signed off (`git commit -s`, DCO, with a `noreply` address)
 
 ## Drift
 
