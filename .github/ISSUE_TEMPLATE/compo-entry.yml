@@ -28,7 +28,7 @@ body:
     attributes: { label: AI models and tools used, description: "Required for ai/hybrid." }
   - type: textarea
     id: notes
-    attributes: { label: Notes for the compo organisers (runtime, hardware, special instructions) }
+    attributes: { label: "Notes for the compo organisers (runtime, hardware, special instructions)" }
   - type: checkboxes
     id: terms
     attributes:

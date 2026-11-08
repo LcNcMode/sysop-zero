@@ -1,9 +1,11 @@
 {
-  "prod-ready.md":           { "kind": "prod-submission", "label": "ready-for-pr", "codes": ["budget"] },
-  "prod-human-attached.md":  { "kind": "prod-submission", "label": "ready-for-pr", "codes": ["license-file", "budget", "not-web"] },
-  "prod-needs-info.md":      { "kind": "prod-submission", "label": "needs-info",   "codes": ["missing:models", "bad:year", "bad:license", "missing:files", "budget"] },
-  "prod-injection.md":       { "kind": "prod-submission", "label": "needs-info",   "codes": ["personal-data", "bad:handles", "drift:provenance-hints", "budget"],
-                               "comment_must_not_contain": ["@someone-to-ping", "@sysop-fake-owner", "me@example.com"] },
-  "compo-unknown-party.md":  { "kind": "compo-entry",     "label": "needs-info",   "codes": ["party-unknown", "prod-unknown"] },
-  "prod-unparsed.md":        { "kind": "prod-submission", "label": "needs-info",   "codes": ["unparsed"] }
+  "prod-ready.md": {"kind": "prod-submission", "label": "ready-for-pr", "codes": ["budget"]},
+  "prod-human-attached.md": {"kind": "prod-submission", "label": "ready-for-pr", "codes": ["license-file", "budget", "not-web"]},
+  "prod-needs-info.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["missing:models", "bad:year", "bad:license", "missing:files", "budget"]},
+  "prod-injection.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["personal-data", "bad:handles", "drift:provenance-hints", "budget"], "comment_must_not_contain": ["@someone-to-ping", "@sysop-fake-owner", "me@example.com"]},
+  "compo-unknown-party.md": {"kind": "compo-entry", "label": "needs-info", "codes": ["party-unknown", "prod-unknown"]},
+  "prod-unparsed.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["unparsed"]},
+  "compo-bad-refs.md": {"kind": "compo-entry", "label": "needs-info", "codes": ["bad:party", "bad:prod"], "comment_must_not_contain": ["@someone-to-ping"]},
+  "prod-terms-removed.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["terms:terms", "budget"]},
+  "prod-terms-swapped.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["terms:terms", "budget"]}
 }

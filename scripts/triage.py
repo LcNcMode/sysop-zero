@@ -41,6 +41,10 @@ EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 URL = re.compile(r"https?://\S+")
 SPDX = re.compile(r"^[A-Za-z0-9.+-]+$")
 SLUG = re.compile(r"[^a-z0-9]+")
+PARTY_SLUG = re.compile(r"\d{4}-[a-z0-9][a-z0-9-]*")
+PROD_PATH = re.compile(r"prods/\d{4}-[a-z0-9][a-z0-9-]*")
+ISSUE_REF = re.compile(r"#\d+")
+ISSUE_URL = re.compile(r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(issues|pull)/\d+/?")
 
 
 # --- parsing ---------------------------------------------------------------------------
@@ -56,6 +60,8 @@ def form_fields(kind: str) -> dict[str, dict]:
         out[attrs["label"].strip()] = {
             "id": item.get("id"), "type": item["type"],
             "options": attrs.get("options", []),
+            "required_boxes": [o["label"].strip() for o in attrs.get("options", [])
+                               if isinstance(o, dict) and o.get("required")],
             "required": bool(item.get("validations", {}).get("required")),
         }
     return out
@@ -80,9 +86,8 @@ def parse_body(body: str, kind: str) -> dict[str, str]:
     return {k: ("" if v == NO_RESPONSE else v) for k, v in values.items()}
 
 
-def checked_boxes(value: str) -> tuple[int, int]:
-    boxes = re.findall(r"^- \[([ xX])\]", value or "", re.M)
-    return sum(1 for b in boxes if b in "xX"), len(boxes)
+def checked_labels(value: str) -> set[str]:
+    return {m.strip() for m in re.findall(r"^- \[[xX]\]\s+(.+?)\s*$", value or "", re.M)}
 
 
 def lines(value: str) -> list[str]:
@@ -119,10 +124,13 @@ def check_common(v: dict, f: Findings, fields: dict):
         if meta["required"] and meta["type"] != "checkboxes" and not v.get(meta["id"]):
             f.block(f"missing:{meta['id']}", f"**{label}** is empty. Fill it in and save the issue.")
     for label, meta in fields.items():
-        if meta["type"] == "checkboxes" and meta["id"] in v:
-            done, total = checked_boxes(v[meta["id"]])
-            if total and done < total:
-                f.block(f"terms:{meta['id']}", f"**{label}**: tick every box (they're all required).")
+        # Required boxes are checked against the form itself, so deleting the section or
+        # swapping in a different box can't skip them.
+        if meta["type"] == "checkboxes" and meta["required_boxes"]:
+            ticked = checked_labels(v.get(meta["id"], ""))
+            if not all(req in ticked for req in meta["required_boxes"]):
+                f.block(f"terms:{meta['id']}", f"**{label}**: every box in this section is required. If you "
+                        "removed or changed it while editing, open a new issue with the form.")
     prov = v.get("provenance", "")
     if prov and prov not in enum_prov():
         f.block("bad:provenance", f"**Provenance** must be one of `{'`, `'.join(enum_prov())}`.")
@@ -175,18 +183,19 @@ def check_prod(v: dict, f: Findings) -> dict | None:
                f"that names it (e.g. a line `SPDX-License-Identifier: {lic}`).")
     link = v.get("link", "")
     if link and PLACEHOLDER.match(link):
-        f.block("missing:files", "**Where are the files?** still says it's coming. Attach a `.zip` to the issue "
-                "(drag it into a comment) or paste a link to a fork branch, release or archive.")
+        f.block("missing:files", "**Where are the files?** still says it's coming. Edit the issue and put them in "
+                "that field: drag a `.zip` into it while editing, or paste a link to a fork branch, release or "
+                "archive. (A zip in a comment isn't picked up — the check only reads the issue itself.)")
     elif link and not URL.search(link) and "/" not in link:
-        f.block("bad:files", "**Where are the files?** needs a link or an attached `.zip` so a maintainer can "
-                "fetch them.")
+        f.block("bad:files", "**Where are the files?** needs a link, or a `.zip` dragged into that field while "
+                "editing the issue, so a maintainer can fetch them.")
     cat = v.get("category")
     if cat in BUDGETS:
         b = BUDGETS[cat]
         what = "the entry file" if b["measure"] == "entry" else "the whole prod folder"
         f.note("budget", f"Size budget for `{cat}`: {human(b['limit_bytes'])} ({b['limit_bytes']} bytes), measured on {what}. CI checks it on the PR.")
     party = v.get("party", "").strip()
-    if party and re.fullmatch(r"\d{4}-[a-z0-9-]+", party) and not (ROOT / "parties" / f"{party}.yaml").is_file():
+    if party and PARTY_SLUG.fullmatch(party) and not (ROOT / "parties" / f"{party}.yaml").is_file():
         f.note("party-unknown", f"No `parties/{party}.yaml` yet. Fine for a free-text party name; for a Sysop Zero "
                "compo, check the slug.")
     if v.get("platform") and v["platform"] != "web":
@@ -207,7 +216,9 @@ def check_prod(v: dict, f: Findings) -> dict | None:
     errs = sorted(Draft202012Validator(SCHEMA).iter_errors(draft), key=lambda e: list(e.path))
     for e in errs:
         loc = "/".join(str(x) for x in e.path) or "(root)"
-        f.block("schema", f"Draft `prod.yaml` fails the schema at `{loc}`: {e.message}")
+        loc = re.sub(r"[^A-Za-z0-9_/()-]", "", loc)  # paths are schema keys/indexes; strip anything else
+        f.block("schema", f"The draft `prod.yaml` doesn't pass the schema at `{loc}`. Check that field "
+                "against docs/CONTRIBUTING.md; a maintainer can help.")
     return None if errs else draft
 
 
@@ -215,13 +226,21 @@ def check_compo(v: dict, f: Findings):
     fields = form_fields("compo-entry")
     check_common(v, f, fields)
     party = v.get("party", "").strip()
-    if party and not (ROOT / "parties" / f"{party}.yaml").is_file():
-        f.block("party-unknown", f"No party `{party}` in `parties/`. Use the slug of an announced party "
+    if party and not PARTY_SLUG.fullmatch(party):
+        f.block("bad:party", "**Party** must be a party slug from `parties/`, like `2027-sysop-zero-party` "
+                "(lowercase, digits and dashes).")
+    elif party and not (ROOT / "parties" / f"{party}.yaml").is_file():
+        f.block("party-unknown", "That party isn't in `parties/` yet. Use the slug of an announced party "
                 "(the file name without `.yaml`).")
     prod = v.get("prod", "").strip().rstrip("/")
-    if prod.startswith("prods/") and not (ROOT / prod / "prod.yaml").is_file():
-        f.block("prod-unknown", "**Prod** points at a folder that isn't in the repo yet. Link the submission "
-                "issue or PR instead, or wait until it's merged.")
+    if prod:
+        if PROD_PATH.fullmatch(prod):
+            if not (ROOT / prod / "prod.yaml").is_file():
+                f.block("prod-unknown", "**Prod** points at a folder that isn't in the repo yet. Link the "
+                        "submission issue or PR instead, or wait until it's merged.")
+        elif not (ISSUE_REF.fullmatch(prod) or ISSUE_URL.fullmatch(prod)):
+            f.block("bad:prod", "**Prod** must be a repo path like `prods/2027-my-intro/`, or a link to your "
+                    "submission issue or PR (`#12` or its full URL).")
     compo = v.get("compo")
     if compo and compo not in enum("category"):
         f.block("bad:compo", f"**Compo** must be one of `{'`, `'.join(enum('category'))}`.")
