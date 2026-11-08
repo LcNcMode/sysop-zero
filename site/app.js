@@ -1,6 +1,6 @@
 "use strict";
 // Gallery: reads prods.json (built from every prods/*/prod.yaml by scripts/prodcheck.py)
-// and runs web prods in a sandboxed iframe. All paths are relative, so the site works
+// and runs web prods in a sandboxed iframe (player.js). All paths are relative, so the site works
 // at a GitHub Pages project path or on a custom domain (site/config.json).
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -54,18 +54,13 @@ function card(p) {
 function play(slug) {
   const p = PRODS.find((x) => x.slug === slug);
   if (!p || !p.runnable) return;
-  const base = `prods/${encodeURIComponent(p.slug)}/`;
-  const url = base + p.entry.split("/").map(encodeURIComponent).join("/");
+  const { base } = prodUrl(p);
   $("#p-title").textContent = `${p.title} — ${p.handles.join(", ")}`;
-  $("#p-open").href = url;
+  // "open full window" goes to the sandboxed player page, never to the prod's own URL.
+  $("#p-open").href = "play.html#/" + encodeURIComponent(p.slug);
   $("#p-nfo").href = base + "nfo.txt";
   $("#p-nfo").hidden = !p.has_nfo;
-  const f = $("#p-frame");
-  // No allow-same-origin: prods share the gallery's origin, so that flag would let a prod script the
-  // gallery and lift its own sandbox. Prods run in an opaque origin; asset fetches rely on
-  // CORS, which GitHub Pages sends (Access-Control-Allow-Origin: *).
-  f.setAttribute("sandbox", "allow-scripts allow-pointer-lock");
-  f.src = url;
+  loadIntoFrame($("#p-frame"), p);
   $("#player").showModal();
   if (location.hash !== "#/" + slug) history.replaceState(null, "", "#/" + slug);
 }

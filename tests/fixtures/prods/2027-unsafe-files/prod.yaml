@@ -1,0 +1,26 @@
+# prod.yaml: your release card. You own this file; CI only compares it with what it
+# observes and reports differences as drift. Delete these comments when you're done.
+# Schema: scripts/schema/prod.schema.json · Provenance: docs/PROVENANCE.md
+
+title: "My First Prod"     # must match the <title> in index.html (web prods)
+group: MyGroup             # your group, or your handle for a solo prod
+handles:                   # scene handles of everyone who made it. Handles only.
+  - MyHandle
+platform: web              # web | amiga | dos | windows | linux | macos | c64 | atari-st | zx-spectrum | other
+category: demo             # demo | intro-4k | intro-64k | music | gfx
+year: 2027                 # must match the folder prefix: prods/2027-<slug>/
+# released: 2027-01-01     # optional: real release date, if `year` is a style year
+entry: index.html          # the file that runs (web) or is measured (intros)
+license: CC-BY-NC-SA-4.0   # the default; anything else needs a LICENSE file in the folder
+# party: 2027-some-party   # optional: a party slug from parties/
+
+provenance:
+  type: human              # human | ai | hybrid. Be honest, it's the one rule.
+  # models:                # required for ai and hybrid: tool, and what it did
+  #   - Tool name — code
+  #   - Tool name — music generation
+  notes: >
+    Who did what. For ai or hybrid: direction, prompts, hand edits, and which
+    parts are untouched output.
+
+tags: []                   # e.g. [oldschool, plasma, tracker]

@@ -133,6 +133,19 @@ jobs:
       - run: pip install -r scripts/requirements.txt
       - name: Prods pass with the PR's own scripts
         run: python3 scripts/prodcheck.py --site-out _site
+      - name: Every published prod page starts with the sandbox guard
+        # Position matters, not just presence: the guard must be the first thing the parser runs.
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+          ok = re.compile(rb"^(\xef\xbb\xbf)?([ \t\r\n]*<!doctype[ \t\r\n]+html[ \t\r\n]*>)?<script>/\* sysop-zero: run only inside the gallery sandbox \*/", re.I)
+          pages = [p for p in pathlib.Path("_site/prods").rglob("*") if p.is_file() and p.suffix.lower() in (".html", ".htm")]
+          bad = [p for p in pages if not ok.match(p.read_bytes())]
+          for p in bad:
+              print(f"::error file={p}::the sandbox guard is not the first thing on the page")
+          print(f"{len(pages)} published page(s) checked")
+          sys.exit(1 if bad or not pages else 0)
+          PY
       - name: Drift detector fires on the broken fixture
         if: always()
         run: python3 scripts/prodcheck.py --prods tests/fixtures/prods --expect-findings

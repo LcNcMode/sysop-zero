@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sysop Zero</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="A demoscene board for the AI era. Watch human, AI and hybrid prods in your browser, each with honest provenance.">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -20,9 +22,10 @@
 <main id="grid" aria-live="polite"><p class="dim">loading prods…</p></main>
 <dialog id="player">
   <div class="bar"><span id="p-title"></span><span><a id="p-open" target="_blank" rel="noopener">open full window</a> · <a id="p-nfo" target="_blank" rel="noopener">nfo</a> · <button id="p-close">close [esc]</button></span></div>
-  <iframe id="p-frame" title="prod" allow="autoplay; fullscreen" allowfullscreen></iframe>
+  <iframe id="p-frame" title="prod" sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer" allow="autoplay; fullscreen" allowfullscreen></iframe>
 </dialog>
 <footer><span id="generated"></span> · prods are CC BY-NC-SA 4.0 unless stated · run by Sysop Zero</footer>
+<script src="player.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
