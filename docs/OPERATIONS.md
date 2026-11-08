@@ -56,14 +56,18 @@ Supply chain: every action is pinned to a full commit SHA (version in a trailing
 upstream changelog before merging, especially for `anthropics/claude-code-action` and
 `actions/create-github-app-token`, which handle secrets.
 
-Sysop Zero tool scope: it never executes repo code (no `python3 scripts/...` in its allowlist).
-Being able to edit a script *and* run it is arbitrary code execution with the App token and the
-API key in reach. CI runs the scripts with a read-only token; Sysop reads the results.
+Sysop Zero tool scope: it never executes anything. `Bash` is denied entirely, and commits go
+through the GitHub API (`use_commit_signing: "true"`) instead of the git CLI. Being able to edit
+a script *and* run it is arbitrary code execution with the App token and the API key in reach,
+and even "read-only" git is not read-only (`git log --output=<file>` writes any file). CI runs the
+scripts with a read-only token; Sysop reads the results. It loads settings from the user scope
+only (`--setting-sources user`), may not write agent-config files (`.claude/`, `CLAUDE.md`,
+`AGENTS.md`, `.mcp.json`, …) and may not delete files.
 
 **Residual risk, accepted:** the `assist` job needs `contents: write` to push `sysop/*` branches,
 which in principle also allows merging an already-approved, green PR through the API. The
-ruleset still requires a human approval, the workflow denies `gh pr merge`, and SYSOP.md forbids
-it. If this is ever observed, drop the job to `contents: read` (Sysop then proposes patches in
+rulesets still require a human approval and green CI, the agent has no shell (so no `gh pr merge`),
+and SYSOP.md forbids it. If this is ever observed, drop the job to `contents: read` (Sysop then proposes patches in
 comments instead of branches).
 
 ## Custom domain

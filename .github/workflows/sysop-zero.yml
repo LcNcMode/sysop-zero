@@ -91,13 +91,21 @@ jobs:
           github_token: ${{ steps.app.outputs.token }}
           trigger_phrase: "@sysop-zero"
           branch_prefix: "sysop/"
-          # Tool scope: Edit/Write are allowed, but nothing that executes repo code. Being able to
-          # both edit a script and run it is arbitrary code execution with the App token and the API
-          # key, and on a fork PR the checkout is attacker-controlled. CI (prod-check.yml) runs the
-          # scripts with a read-only token instead. Edits to .git/ (hooks, config), .github/,
-          # LICENSE files and docs/MIGRATION.md are denied, matching SYSOP.md.
+          # Commits go through the GitHub API (MCP file-ops tools), not the git CLI. Without this the
+          # action itself allows `git add/commit/push/rm`, and git reads .git/config and hooks.
+          use_commit_signing: "true"
+          # Tool scope (see .github/SYSOP.md "Enforcement"):
+          #  - No Bash at all. Being able to edit a script and run it is arbitrary code execution
+          #    with the App token and the API key; CI (prod-check.yml) runs scripts read-only instead.
+          #    "Read-only" git was not read-only either: `git log --output=<file>` writes any file.
+          #  - --setting-sources user: never load settings, hooks or CLAUDE.md from the checkout.
+          #    (On PRs the action also restores .claude/, CLAUDE.md and .mcp.json from the base branch.)
+          #  - No deletions (the API delete tool ignores Edit/Write denies); a human deletes.
+          #  - Edit AND Write are denied on .git/, .github/, licenses, MIGRATION.md and every file that
+          #    steers an agent (.claude/, CLAUDE.md, AGENTS.md, .mcp.json, .claude.json, .gitmodules, .husky/).
           claude_args: |
             --append-system-prompt "You are Sysop Zero. Follow .github/SYSOP.md exactly. Never merge, never push to main, never edit .github/workflows/ or prod.yaml declared fields without the author's explicit request in the thread."
-            --allowedTools "Read(./**),Glob,Grep,Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*)"
-            --disallowedTools "Bash(gh pr merge:*),Bash(git push --force:*),Bash(git push -f:*),WebFetch,WebSearch,Read(//proc/**),Read(//sys/**),Read(//dev/**),Read(//etc/**),Read(//home/runner/work/_temp/**),Edit(./.git/**),Edit(./.github/**),Edit(./LICENSE*),Edit(./**/LICENSE*),Edit(./docs/MIGRATION.md)"
+            --setting-sources user
+            --allowedTools "Read(./**),Glob,Grep,Edit,Write"
+            --disallowedTools "Bash,mcp__github_file_ops__delete_files,WebFetch,WebSearch,Read(//proc/**),Read(//sys/**),Read(//dev/**),Read(//etc/**),Read(//home/runner/work/_temp/**),Edit(./.git/**),Write(./.git/**),Edit(./.github/**),Write(./.github/**),Edit(./LICENSE*),Write(./LICENSE*),Edit(./**/LICENSE*),Write(./**/LICENSE*),Edit(./docs/MIGRATION.md),Write(./docs/MIGRATION.md),Edit(./.claude/**),Write(./.claude/**),Edit(./**/.claude/**),Write(./**/.claude/**),Edit(./CLAUDE.md),Write(./CLAUDE.md),Edit(./**/CLAUDE.md),Write(./**/CLAUDE.md),Edit(./CLAUDE.local.md),Write(./CLAUDE.local.md),Edit(./AGENTS.md),Write(./AGENTS.md),Edit(./**/AGENTS.md),Write(./**/AGENTS.md),Edit(./.mcp.json),Write(./.mcp.json),Edit(./.claude.json),Write(./.claude.json),Edit(./.gitmodules),Write(./.gitmodules),Edit(./.husky/**),Write(./.husky/**)"
             --max-turns 30
