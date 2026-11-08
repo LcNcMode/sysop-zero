@@ -6,8 +6,11 @@
   group ....... Xanadu
   credits ..... Venture  - concept, direction, design
                 Claude   - code (x86 assembler)
-  platform .... MS-DOS, 386+, VGA (real Mode 13h, 320x200, 256 colours)
-  category .... intro-64k (CDROP.COM is about 6 KB)
+  platform .... MS-DOS, 386+, VGA (real Mode 13h, 320x200, 256 colours),
+                Sound Blaster 2.0 or later (optional)
+  music ....... "Crystalline Drop" - ProTracker edition (Suno v6, from
+                Venture's prompts), first 224 beats
+  category .... demo (CDROP.COM is about 7 KB, MUSIC.RAW 1.7 MB)
   released .... 2026-11-08, styled as 1993
   license ..... CC BY-NC-SA 4.0
 
@@ -20,12 +23,15 @@
   cloud), and the message to the next generation.
 
   Everything is timed on part 1's beat grid (171.60 BPM) through a 1000 Hz
-  timer interrupt. v0.1 is silent: music comes in a later version.
+  timer interrupt. The music is 8-bit PCM at 22 kHz, streamed from disk to
+  the Sound Blaster through an auto-init DMA ring. No card? It runs silent.
 
   RUN
   ---
   DOSBox:   mount c <this folder>   c:   CDROP
   Real PC:  CDROP.COM on a 386/486 with VGA. ESC quits.
+  Sound:    BLASTER=A220 I7 D1 is read from the environment (IRQ 3/5/7,
+            DMA 0-3). Keep MUSIC.RAW next to CDROP.COM.
   Test:     CDROP <ms>  renders the frame at <ms> into SHOT.RAW and exits.
 
   WARNINGS

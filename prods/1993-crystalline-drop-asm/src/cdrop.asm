@@ -1,5 +1,5 @@
 ; ===========================================================================
-;  CRYSTALLINE DROP - a 1993 demo - asm edition v0.1
+;  CRYSTALLINE DROP - a 1993 demo - asm edition v0.2
 ;  Venture of Xanadu, code with Claude
 ;
 ;  DOS .COM, x86 real mode (386+), VGA Mode 13h 320x200x256.
@@ -9,7 +9,8 @@
 ;                          (768 bytes palette + 64000 bytes pixels) and exit
 ;
 ;  Timing: PIT channel 0 reprogrammed to ~1000 Hz, beat grid 171.60 BPM
-;  (same grid as part 1). Everything is a pure function of time, so test
+;  (same grid as part 1). Music: MUSIC.RAW streamed to a Sound Blaster
+;  (src/sb.inc), started on the same instant as the timer. Everything is a pure function of time, so test
 ;  frames match realtime frames exactly.
 ; ===========================================================================
 
@@ -62,10 +63,15 @@ start:
         cmp byte [shotmode], 0
         jne .loop
 
-        ; realtime: mode 13h + timer
+        ; realtime: sound blaster (optional), mode 13h, timer, music
+        call sb_init
         mov ax, 13h
         int 10h
         call timer_install
+        call sb_start
+        cli
+        mov dword [ticks], 0    ; t=0 is the first sample of the music
+        sti
 
 .loop:
         call get_time           ; -> [ms], [beat]
@@ -102,6 +108,8 @@ start:
         rep movsd
         pop ds
 
+        call sb_service         ; refill the DMA ring
+
         mov ah, 1               ; key?
         int 16h
         jz .loop
@@ -112,11 +120,18 @@ start:
 .quit:
         cmp byte [shotmode], 0
         jne .exit
+        mov bl, [sbon]
+        push bx
+        call sb_stop
         call timer_remove
         mov ax, 3
         int 10h
+        pop bx
         mov dx, msg_bye
-        mov ah, 9
+        test bl, bl
+        jnz .msg
+        mov dx, msg_silent
+.msg:   mov ah, 9
         int 21h
 .exit:
         mov ax, 4C00h
@@ -1375,14 +1390,30 @@ s_scroll        db "    REAL MODE, REAL MODE 13H, REAL 386 ASSEMBLER ... "
                 db "FUTURE CREW, SPACEBALLS, SANITY, KEFRENS ... "
                 db "CODE BY CLAUDE, DIRECTION BY VENTURE ...      ", 0
 shotname        db "SHOT.RAW", 0
-msg_bye         db "CRYSTALLINE DROP - a 1993 demo - asm edition v0.1", 13, 10
+msg_bye         db "CRYSTALLINE DROP - a 1993 demo - asm edition v0.2", 13, 10
                 db "Venture of Xanadu, code with Claude. See you in 2027!", 13, 10, "$"
+msg_silent      db "CRYSTALLINE DROP - asm edition v0.2 (ran silent: no Sound Blaster", 13, 10
+                db "found via BLASTER / A220 I7 D1, or MUSIC.RAW missing)", 13, 10, "$"
+
+%include "sb.inc"
 
 %include "tables.inc"
 
 ; ---------------------------------------------------------------------------
 section .bss
 ticks       resd 1
+sbon        resb 1
+sbbase      resw 1
+sbirq       resb 1
+sbdma       resb 1
+sbpend      resb 1
+sbnext      resb 1
+meof        resb 1
+oldmask     resb 1
+mfile       resw 1
+oldsb       resw 2
+dmaphys     resd 1
+dmaseg      resw 1
 chainacc    resw 1
 old8        resw 2
 shotmode    resb 1
