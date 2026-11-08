@@ -38,6 +38,18 @@
     "year":     { "type": "integer", "minimum": 1970, "maximum": 2100 },
     "released": { "type": "string", "format": "date" },
     "entry":    { "type": "string", "minLength": 1, "pattern": "^[^/\\\\.][^\\\\]*$", "description": "Path, relative to the prod folder, of the file that runs (web) or the binary that is measured (intros). Default: index.html." },
+    "download": { "type": "string", "minLength": 1, "pattern": "^[^/\\\\.][^\\\\]*$", "description": "Optional. Path, relative to the prod folder, of a file the gallery offers as a download (e.g. a zip for a platform the browser can't run)." },
+    "links":    {
+      "type": "array", "maxItems": 5, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["label", "url"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "url":   { "type": "string", "maxLength": 300, "pattern": "^https://[^\\s\"'<>`]+$" }
+        }
+      },
+      "description": "Optional. External links shown on the gallery card, e.g. a browser-emulator page or an archive entry. https only."
+    },
     "tags":     { "type": "array", "items": { "type": "string" } }
   }
 }

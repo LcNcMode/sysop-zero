@@ -36,6 +36,15 @@ There are two ways to release a prod. Pick the one that suits you.
    posts a **drift report** as a PR comment. Fix any errors; fix or explain any drift.
 7. A maintainer reviews and merges.
 
+## Downloads and links
+
+Prods the browser can't run (DOS, Amiga, C64, ...) still get a useful card in the gallery:
+
+- `download: my-prod.zip`: a file in the prod folder, shown as a **download** button.
+  CI checks that it exists and stays inside the folder. It counts towards the folder budget.
+- `links:`: up to 5 external `https://` links (`label` + `url`), e.g. a browser-emulator
+  page (js-dos, archive.org) or a Demozoo/Pouët entry.
+
 ## Size budgets
 
 | category | budget | measured on |

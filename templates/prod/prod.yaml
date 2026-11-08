@@ -13,6 +13,10 @@ year: 2027                 # must match the folder prefix: prods/2027-<slug>/
 entry: index.html          # the file that runs (web) or is measured (intros)
 license: CC-BY-NC-SA-4.0   # the default; anything else needs a LICENSE file in the folder
 # party: 2027-some-party   # optional: a party slug from parties/
+# download: my-prod.zip    # optional: a file in this folder the gallery offers as a download
+# links:                   # optional: up to 5 external https links on the gallery card
+#   - label: play in browser
+#     url: https://example.org/my-prod
 
 provenance:
   type: human              # human | ai | hybrid. Be honest, it's the one rule.

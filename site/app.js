@@ -45,6 +45,8 @@ function card(p) {
     ${prov.notes ? `<p class="dim">${esc(prov.notes)}</p>` : ""}
     <div class="actions">
       ${p.runnable ? `<button data-run="${esc(p.slug)}">▶ run</button>` : '<span class="dim">not runnable in browser</span>'}
+      ${p.download ? `<a href="${base}${p.download.split("/").map(encodeURIComponent).join("/")}" download>⬇ download</a>` : ""}
+      ${(p.links || []).filter((l) => /^https:\/\//.test(l.url)).map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)} ↗</a>`).join("")}
       ${p.has_nfo ? `<a href="${base}nfo.txt" target="_blank" rel="noopener">nfo</a>` : ""}
       <a href="${CFG.repo_url ? CFG.repo_url.replace(/\/$/, "") + "/tree/HEAD/prods/" + encodeURIComponent(p.slug) : base + "prod.yaml"}" target="_blank" rel="noopener">${CFG.repo_url ? "source" : "prod.yaml"}</a>
     </div>
