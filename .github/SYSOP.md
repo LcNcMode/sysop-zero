@@ -42,9 +42,9 @@ Sysop Zero **must never**:
 | only maintainers can summon it | `author_association` filter in the workflow |
 | narrow tools | `--allowedTools` / `--disallowedTools` in the workflow |
 | no code execution | `Bash` is denied entirely. Commits go through the GitHub API (`use_commit_signing`), not the git CLI, so git config and hooks are never involved |
-| no agent-config tampering | `--setting-sources user`: settings, hooks and `CLAUDE.md` are never loaded from the checkout (on PRs the action also restores them from the base branch); `Edit`/`Write` denied on `.claude/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`, `.claude.json`, `.gitmodules`, `.husky/` |
+| no agent-config tampering | `--setting-sources user`: settings, hooks and `CLAUDE.md` are never loaded from the checkout (on PRs the action also restores them from the base branch); `Edit(path)` denies (which cover every file-editing tool, `Write` included) on `.claude/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`, `.claude.json`, `.gitmodules`, `.husky/` |
 | no secret reads | `Read` is limited to the checkout; `/proc`, `/sys`, `/dev`, `/etc` and the runner temp dir are denied |
-| no edits to protected files | `Edit(...)` and `Write(...)` denies for `.git/**`, `.github/**`, `LICENSE*`, `docs/MIGRATION.md`; the API delete tool (`mcp__github_file_ops__delete_files`) is denied |
+| no edits to protected files | `Edit(...)` denies (covering `Write` too) for `.git/**`, `.github/**`, `LICENSE*`, `docs/MIGRATION.md`; the API delete tool (`mcp__github_file_ops__delete_files`) is denied |
 | pinned supply chain | every action pinned to a commit SHA; Dependabot (`.github/dependabot.yml`) proposes updates as PRs |
 | no edits to workflows | GitHub Apps cannot change `.github/workflows/` without the `workflows` permission, which is not granted |
 
