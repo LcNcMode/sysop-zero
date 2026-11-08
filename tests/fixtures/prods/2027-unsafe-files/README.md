@@ -6,6 +6,7 @@ Self-test fixture: files that must never be published. Every file except `index.
 | `logo.svg` | `<script>` |
 | `prefixed.svg` | `<x:script>` behind a namespace prefix |
 | `utf16.svg` | UTF-16, hides `<script>` from byte matching |
+| `utf7.svg` | declares UTF-7 (`encoding = "utf-7"`, spaces around `=`) |
 | `entity-link.svg` | `javascript:` link spelled with a character reference |
 | `xslt-pi.svg` | `<?xml-stylesheet?>` pointing at an XSLT transform |
 | `transform.svg` | an XSLT stylesheet disguised as SVG (root is not `<svg>`) |

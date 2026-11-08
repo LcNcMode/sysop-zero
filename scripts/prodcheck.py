@@ -99,8 +99,9 @@ def svg_problem(raw: bytes) -> str | None:
         return "SVG larger than 2 MiB"
     if not _is_utf8(raw):
         return "SVG must be UTF-8"
-    head = raw[:200].decode("utf-8", "replace").lower()
-    if "encoding=" in head and not re.search(r"encoding=[\"']utf-?8[\"']", head):
+    head = raw[:300].decode("utf-8", "replace").lower()
+    enc = re.search(r"encoding[ \t\r\n]*=[ \t\r\n]*[\"']([^\"']*)[\"']", head)
+    if enc and enc.group(1) not in ("utf-8", "utf8"):
         return "SVG must declare UTF-8 (or no encoding)"
     if b"<!doctype" in raw.lower() or b"<!entity" in raw.lower():
         return "SVG with a DOCTYPE or entities"
@@ -111,8 +112,8 @@ def svg_problem(raw: bytes) -> str | None:
         return "SVG with a processing instruction (e.g. xml-stylesheet)"
     try:
         root = ET.fromstring(raw)
-    except ET.ParseError as e:
-        return f"SVG is not well-formed XML ({e})"
+    except (ET.ParseError, ValueError, LookupError) as e:  # unsupported encodings raise the latter two
+        return f"SVG is not well-formed UTF-8 XML ({e})"
     if root.tag != "{http://www.w3.org/2000/svg}svg":
         return "a file named .svg whose root is not an SVG <svg> element"
     for el in root.iter():
