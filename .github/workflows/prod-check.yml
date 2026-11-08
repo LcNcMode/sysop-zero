@@ -31,6 +31,9 @@ jobs:
       - name: Self-test — drift detector must fire on the broken fixture
         if: always()
         run: python3 scripts/prodcheck.py --prods tests/fixtures/prods --title "Self-test (deliberately broken fixture, expected to fail)" --report selftest-report.md --expect-findings
+      - name: Self-test — triage gives the expected answer on every fixture issue
+        if: always()
+        run: python3 scripts/triage.py --self-test
       - name: CODEOWNERS in sync with prod.yaml
         if: always()
         run: python3 scripts/gen_codeowners.py --check

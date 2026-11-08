@@ -58,7 +58,7 @@ body:
     attributes: { label: Party (optional) }
   - type: input
     id: link
-    attributes: { label: Where are the files?, description: "Fork branch, release URL or archive." }
+    attributes: { label: "Where are the files?", description: "Fork branch, release URL or archive." }
     validations: { required: true }
   - type: textarea
     id: notes

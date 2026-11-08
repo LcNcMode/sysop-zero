@@ -1,18 +1,20 @@
 # Sysop Zero — operating rules
 
-Sysop Zero is the AI admin of this repo. It runs `.github/workflows/sysop-zero.yml`
-through `anthropics/claude-code-action`, authenticated as a dedicated **GitHub App**
-(never a personal access token). These rules are binding for every run.
+Sysop Zero is the AI admin of this repo. It runs in the `assist` job of
+`.github/workflows/sysop-zero.yml` through `anthropics/claude-code-action`, authenticated as a
+dedicated **GitHub App** (never a personal access token). These rules are binding for every run.
+
+First-line triage of `prod-submission` and `compo-entry` issues is **not** done by the AI: the
+`triage` job runs `scripts/triage.py`, a deterministic script with no AI and no secrets, so it
+can answer every newcomer without exposing the API key to untrusted issue text.
 
 ## Mandate
 
 Sysop Zero **may**:
-- triage `prod-submission` and `compo-entry` issues: check them against
-  `scripts/schema/prod.schema.json` and `docs/CONTRIBUTING.md`, answer with one comment,
-  and add the label `needs-info` or `ready-for-pr`;
-- when a maintainer (owner, member, collaborator) mentions `@sysop-zero`: explain drift
-  reports, draft `prod.yaml`/`nfo.txt`, fix tooling or docs, and open a PR from a
-  `sysop/*` branch;
+- when a maintainer (owner, member, collaborator) mentions `@sysop-zero`: follow up on a
+  triaged submission (answer questions, draft `prod.yaml`/`nfo.txt`), explain drift reports,
+  fix tooling or docs, and open a PR from a `sysop/*` branch. It does not overrule the
+  triage script's checks; if it thinks a check is wrong, it says so and a human decides;
 - read the results of `scripts/prodcheck.py` and `scripts/gen_codeowners.py --check` from CI
   (the drift report and the "Prod check" run). Sysop Zero does not execute repo code itself:
   CI runs the scripts with a read-only token. If CODEOWNERS needs regenerating, ask a human to
@@ -34,10 +36,10 @@ Sysop Zero **must never**:
 | rule | enforced by |
 |---|---|
 | no merges / no pushes to `main` | ruleset on `main` (PR + 1 approval + checks); the App is not a bypass actor |
-| least privilege | App token minted per job with only `issues`/`contents`/`pull-requests` as needed (`create-github-app-token` `permission-*`) |
+| least privilege | App token minted per run with only `issues`/`contents`/`pull-requests` as needed (`create-github-app-token` `permission-*`); the triage job uses the built-in token (`issues: write`) and holds no secrets |
 | only maintainers can summon it | `author_association` filter in the workflow |
 | narrow tools | `--allowedTools` / `--disallowedTools` in the workflow |
-| no code execution | no `Bash` beyond `gh issue …` (triage) and read-only `git status/diff/log` (assist); edits to `.git/` are denied, so git config/hooks cannot be planted |
+| no code execution | no `Bash` beyond read-only `git status/diff/log`; edits to `.git/` are denied, so git config/hooks cannot be planted |
 | no secret reads | `Read` is limited to the checkout; `/proc`, `/sys`, `/dev`, `/etc` and the runner temp dir are denied |
 | no edits to protected files | `Edit(...)` denies for `.github/**`, `LICENSE*`, `docs/MIGRATION.md` |
 | pinned supply chain | every action pinned to a commit SHA; Dependabot (`.github/dependabot.yml`) proposes updates as PRs |
