@@ -7,6 +7,8 @@ Self-test fixture: files that must never be published. Every file except `index.
 | `prefixed.svg` | `<x:script>` behind a namespace prefix |
 | `utf16.svg` | UTF-16, hides `<script>` from byte matching |
 | `entity-link.svg` | `javascript:` link spelled with a character reference |
+| `xslt-pi.svg` | `<?xml-stylesheet?>` pointing at an XSLT transform |
+| `transform.svg` | an XSLT stylesheet disguised as SVG (root is not `<svg>`) |
 | `page.xhtml` | XHTML runs script and can't carry the guard |
 | `utf16.html` | a UTF-16 byte-order mark would garble the guard |
 | `doctype-trick.html` | a quoted `>` in the doctype would swallow the guard |

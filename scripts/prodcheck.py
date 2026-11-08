@@ -104,10 +104,17 @@ def svg_problem(raw: bytes) -> str | None:
         return "SVG must declare UTF-8 (or no encoding)"
     if b"<!doctype" in raw.lower() or b"<!entity" in raw.lower():
         return "SVG with a DOCTYPE or entities"
+    body = re.sub(rb"^(\xef\xbb\xbf)?[ \t\r\n]*<\?xml[ \t\r\n][^?]*\?>", b"", raw, count=1)
+    if b"<?" in body:
+        # ElementTree drops processing instructions, so check the bytes: <?xml-stylesheet?> can
+        # run XSLT that generates script.
+        return "SVG with a processing instruction (e.g. xml-stylesheet)"
     try:
         root = ET.fromstring(raw)
     except ET.ParseError as e:
         return f"SVG is not well-formed XML ({e})"
+    if root.tag != "{http://www.w3.org/2000/svg}svg":
+        return "a file named .svg whose root is not an SVG <svg> element"
     for el in root.iter():
         tag = _local(el.tag) if isinstance(el.tag, str) else ""
         if tag in SVG_BAD_ELEMENTS:
