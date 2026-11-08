@@ -36,8 +36,19 @@ JSON
 run "5. Pages: build from GitHub Actions (creates Pages, or switches an existing site to Actions)" \
   bash -c "gh api -X POST 'repos/$REPO/pages' -f build_type=workflow 2>/dev/null || gh api -X PUT 'repos/$REPO/pages' -f build_type=workflow" </dev/null
 
-run "6. Ruleset on the default branch (admins may bypass via PR only; the Sysop Zero App may not)" \
-  gh api -X POST "repos/$REPO/rulesets" --input - <<'JSON'
+# Rulesets are upserted by name (PUT if it exists, POST if not), so re-running --apply never
+# creates duplicates. Two rulesets, because a bypass actor bypasses EVERY rule in a ruleset:
+#   main        — review rules; repository admins may bypass via PR (sole-maintainer merges)
+#   main-checks — green CI, no deletion, no force-push; NOBODY may bypass, admins included.
+# Escape hatch if CI itself breaks: Settings → Rules → main-checks → Disable, merge the fix,
+# re-enable. That is a deliberate, logged act, not something that happens by accident.
+upsert_ruleset='set -euo pipefail
+ids=$(gh api "repos/$0/rulesets" --jq ".[] | select(.name == \"$1\") | .id")  # a failed lookup aborts here
+if [ "$(printf "%s" "$ids" | grep -c .)" -gt 1 ]; then echo "more than one ruleset named $1 ($ids): remove the duplicates by hand, then re-run" >&2; exit 1; fi
+if [ -n "$ids" ]; then gh api -X PUT "repos/$0/rulesets/$ids" --input -; else gh api -X POST "repos/$0/rulesets" --input -; fi'
+
+run "6a. Ruleset 'main': review rules (admins may bypass via PR only; the Sysop Zero App may not)" \
+  bash -c "$upsert_ruleset" "$REPO" main <<'JSON'
 {
   "name": "main",
   "target": "branch",
@@ -45,15 +56,28 @@ run "6. Ruleset on the default branch (admins may bypass via PR only; the Sysop 
   "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
   "bypass_actors": [ { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request" } ],
   "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" },
     { "type": "required_linear_history" },
     { "type": "pull_request", "parameters": {
         "required_approving_review_count": 1,
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": false,
         "require_last_push_approval": true,
-        "required_review_thread_resolution": true } },
+        "required_review_thread_resolution": true } }
+  ]
+}
+JSON
+
+run "6b. Ruleset 'main-checks': required CI, no deletion, no force-push — no bypass for anyone" \
+  bash -c "$upsert_ruleset" "$REPO" main-checks <<'JSON'
+{
+  "name": "main-checks",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "bypass_actors": [],
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
     { "type": "required_status_checks", "parameters": {
         "strict_required_status_checks_policy": false,
         "required_status_checks": [ { "context": "check" } ] } }
