@@ -101,11 +101,13 @@ jobs:
           #  - --setting-sources user: never load settings, hooks or CLAUDE.md from the checkout.
           #    (On PRs the action also restores .claude/, CLAUDE.md and .mcp.json from the base branch.)
           #  - No deletions (the API delete tool ignores Edit/Write denies); a human deletes.
-          #  - Edit AND Write are denied on .git/, .github/, licenses, MIGRATION.md and every file that
-          #    steers an agent (.claude/, CLAUDE.md, AGENTS.md, .mcp.json, .claude.json, .gitmodules, .husky/).
+          #  - Edit(path) denies on .git/, .github/, licenses, MIGRATION.md and every file that steers an
+          #    agent (.claude/, CLAUDE.md, AGENTS.md, .mcp.json, .claude.json, .gitmodules, .husky/).
+          #    Edit(path) rules cover ALL file-editing tools, Write included; the CLI ignores
+          #    Write(path) rules and warns about them, so we don't list them.
           claude_args: |
             --append-system-prompt "You are Sysop Zero. Follow .github/SYSOP.md exactly. Never merge, never push to main, never edit .github/workflows/ or prod.yaml declared fields without the author's explicit request in the thread."
             --setting-sources user
             --allowedTools "Read(./**),Glob,Grep,Edit,Write"
-            --disallowedTools "Bash,mcp__github_file_ops__delete_files,WebFetch,WebSearch,Read(//proc/**),Read(//sys/**),Read(//dev/**),Read(//etc/**),Read(//home/runner/work/_temp/**),Edit(./.git/**),Write(./.git/**),Edit(./.github/**),Write(./.github/**),Edit(./LICENSE*),Write(./LICENSE*),Edit(./**/LICENSE*),Write(./**/LICENSE*),Edit(./docs/MIGRATION.md),Write(./docs/MIGRATION.md),Edit(./.claude/**),Write(./.claude/**),Edit(./**/.claude/**),Write(./**/.claude/**),Edit(./CLAUDE.md),Write(./CLAUDE.md),Edit(./**/CLAUDE.md),Write(./**/CLAUDE.md),Edit(./CLAUDE.local.md),Write(./CLAUDE.local.md),Edit(./AGENTS.md),Write(./AGENTS.md),Edit(./**/AGENTS.md),Write(./**/AGENTS.md),Edit(./.mcp.json),Write(./.mcp.json),Edit(./.claude.json),Write(./.claude.json),Edit(./.gitmodules),Write(./.gitmodules),Edit(./.husky/**),Write(./.husky/**)"
+            --disallowedTools "Bash,mcp__github_file_ops__delete_files,WebFetch,WebSearch,Read(//proc/**),Read(//sys/**),Read(//dev/**),Read(//etc/**),Read(//home/runner/work/_temp/**),Edit(./.git/**),Edit(./.github/**),Edit(./LICENSE*),Edit(./**/LICENSE*),Edit(./docs/MIGRATION.md),Edit(./.claude/**),Edit(./**/.claude/**),Edit(./CLAUDE.md),Edit(./**/CLAUDE.md),Edit(./CLAUDE.local.md),Edit(./AGENTS.md),Edit(./**/AGENTS.md),Edit(./.mcp.json),Edit(./.claude.json),Edit(./.gitmodules),Edit(./.husky/**)"
             --max-turns 30
