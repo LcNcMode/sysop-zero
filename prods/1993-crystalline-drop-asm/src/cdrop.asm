@@ -40,10 +40,20 @@ start:
         mov cx, bss_end - bss_start
         xor al, al
         rep stosb
-        ; back buffer = 64 KiB segment after ours
+        ; back buffer = 64 KiB segment after ours. PSP:2 is the first
+        ; paragraph past our DOS allocation: make sure the buffer fits.
         mov ax, cs
         add ax, 1000h
         mov [bufseg], ax
+        add ax, 1000h
+        cmp ax, [2]
+        jbe .memok
+        mov dx, msg_nomem
+        mov ah, 9
+        int 21h
+        mov ax, 4C01h
+        int 21h
+.memok:
 
         ; copy the 8x8 ROM font (int 10h / 1130h, bh=3) into fontbuf
         push es
@@ -1400,8 +1410,9 @@ SCROLL_SPEED    equ (SCROLL_LEN * 16 + 320 + 45) / 46
 shotname        db "SHOT.RAW", 0
 msg_bye         db "CRYSTALLINE DROP - a 1993 demo - asm edition v0.2", 13, 10
                 db "Venture of Xanadu, code with Claude. See you in 2027!", 13, 10, "$"
+msg_nomem       db "CRYSTALLINE DROP needs about 200 KB of free conventional memory.", 13, 10, "$"
 msg_silent      db "CRYSTALLINE DROP - asm edition v0.2 (ran silent: no Sound Blaster", 13, 10
-                db "found via BLASTER / A220 I7 D1, or MUSIC.RAW missing)", 13, 10, "$"
+                db "found via BLASTER / A220 I7 D1, MUSIC.RAW missing, or low memory)", 13, 10, "$"
 
 %include "sb.inc"
 

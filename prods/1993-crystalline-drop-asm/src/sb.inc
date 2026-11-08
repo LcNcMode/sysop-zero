@@ -8,8 +8,9 @@
 ;  read (no DOS calls inside interrupts).
 ;
 ;  Settings from BLASTER (A, I, D), defaults A220 I7 D1. IRQ 3/5/7 and
-;  8-bit DMA 0..3 are supported; anything else, a missing card or a missing
-;  MUSIC.RAW means the demo runs silent.
+;  8-bit DMA 0..3 are supported; anything else, a missing card, a missing
+;  MUSIC.RAW or too little conventional memory for the ring means the demo
+;  runs silent.
 ; ===========================================================================
 
 SB_TC       equ 211             ; 1000000 / (256 - 211) = 22222 Hz
@@ -53,13 +54,7 @@ sb_init:
         je .found
 .next:  loop .wr
         jmp .fail
-.found: ; music file
-        mov ax, 3D00h
-        mov dx, musicname
-        int 21h
-        jc .fail
-        mov [mfile], ax
-        ; DMA ring: physical address that does not cross a 64 KiB page
+.found: ; DMA ring: physical address that does not cross a 64 KiB page
         mov ax, cs
         add ax, 2000h
         movzx eax, ax
@@ -74,6 +69,16 @@ sb_init:
 .pok:   mov [dmaphys], eax
         shr eax, 4
         mov [dmaseg], ax
+        ; the ring must lie inside our DOS allocation (PSP:2), else run silent
+        add ax, DMABUF / 16
+        cmp ax, [2]
+        ja .fail
+        ; music file
+        mov ax, 3D00h
+        mov dx, musicname
+        int 21h
+        jc .fail
+        mov [mfile], ax
         mov byte [meof], 0
         xor bl, bl
         call sb_fill
