@@ -59,7 +59,7 @@ All must pass. Never commit build output or caches (`_site/`, `__pycache__/`).
      no one else's `prod.yaml` changes.
 
   Anything else waits for the maintainer. Claude says in the PR that it used the mandate, and
-  never uses it to get around a red check or an open
+  never uses it to get around a red check or an open finding
 - **Protected paths** change only on the maintainer's explicit request, and are called out
   separately in the PR description: `.github/workflows/`, `.github/SYSOP.md`, `LICENSE*`,
   `docs/MIGRATION.md`, `scripts/setup-repo.sh`, and agent-steering files (`AGENTS.md`,
