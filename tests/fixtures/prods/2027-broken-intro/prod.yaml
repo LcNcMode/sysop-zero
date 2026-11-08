@@ -6,5 +6,6 @@ platform: web
 category: intro-4k
 year: 2025              # drift: folder says 2027
 license: MIT            # drift: not the default and no LICENSE file
+download: missing.zip   # error: file not found
 provenance:
   type: human           # drift: nfo.txt credits an AI tool

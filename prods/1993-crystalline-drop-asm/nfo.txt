@@ -28,6 +28,9 @@
 
   RUN
   ---
+  Easiest:  CDROP_asm_v0.2.zip has everything. Unzip and run CDROP in
+            DOSBox, or load the zip as-is in js-dos (it is a js-dos
+            bundle that autostarts the demo).
   DOSBox:   mount c <this folder>   c:   CDROP
   Real PC:  CDROP.COM on a 386/486 with VGA. ESC quits.
   Sound:    BLASTER=A220 I7 D1 is read from the environment (IRQ 3/5/7,

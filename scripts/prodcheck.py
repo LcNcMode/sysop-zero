@@ -189,6 +189,13 @@ def check_prod(folder: Path) -> dict:
         err(f"entry `{entry_rel}` points outside the prod folder")
         return res
     obs["entry_exists"] = entry.is_file()
+    dl_rel = decl.get("download")
+    if dl_rel is not None:
+        dl = (folder / dl_rel).resolve()
+        if folder.resolve() not in dl.parents:
+            err(f"download `{dl_rel}` points outside the prod folder")
+        elif not dl.is_file():
+            err(f"download: declared `{dl_rel}`, file not found")
     obs["entry_bytes"] = entry.stat().st_size if entry.is_file() else None
     obs["folder_bytes"] = folder_size(folder)
     obs["files"] = sum(1 for f in folder.rglob("*") if f.is_file())
@@ -324,6 +331,7 @@ def build_site(results: list[dict], out: Path) -> None:
             "slug": r["slug"], **{k: d.get(k) for k in ("title", "group", "handles", "platform", "category", "year", "released", "license", "party", "tags")},
             "provenance": d["provenance"], "entry": d.get("entry", "index.html"),
             "runnable": d["platform"] == "web",
+            "download": d.get("download"), "links": d.get("links") or [],
             "has_nfo": r["observed"]["has_nfo"], "bytes": r["observed"]["measured_bytes"], "drift": r["drift"],
         })
     index.sort(key=lambda p: (str(p.get("released") or p["year"])), reverse=True)
