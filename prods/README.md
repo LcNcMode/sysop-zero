@@ -2,6 +2,7 @@
 
 One folder per release: `prods/<year>-<slug>/`, lowercase with dashes
 (e.g. `2027-my-first-intro`). The year must match `year` in `prod.yaml`.
+Start from the template: `cp -r templates/prod prods/<year>-<slug>`.
 
 ## What goes in a folder
 

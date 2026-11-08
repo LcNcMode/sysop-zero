@@ -1,0 +1,32 @@
+ ___________________________________________________________________________
+|                                                                           |
+|                         M Y   F I R S T   P R O D                         |
+|___________________________________________________________________________|
+
+  group ....... MyGroup
+  credits ..... MyHandle  - code, graphics, music
+  platform .... web browser
+  category .... demo
+  license ..... CC BY-NC-SA 4.0
+
+  ABOUT
+  -----
+  What is it? What did you want to show? A few lines is plenty.
+
+  CONTROLS
+  --------
+  Click to start (sound on). Press F for fullscreen.
+
+  WARNINGS
+  --------
+  None. (If it flashes or strobes, say so here, and ideally offer a
+  reduced mode.)
+
+  TOOLS AND ASSETS
+  ----------------
+  Editors, trackers and other tools you used. Any third-party asset with its
+  license (its license text goes in the folder too).
+
+  GREETINGS
+  ---------
+  Everyone who inspired you. Greetings are mandatory.

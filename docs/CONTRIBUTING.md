@@ -19,9 +19,9 @@ There are two ways to release a prod. Pick the one that suits you.
 ## Release a prod (fork + PR)
 
 1. **Fork** this repository and create a branch.
-2. Add a folder `prods/<year>-<slug>/` (lowercase, dashes; `<year>` must match `year` in `prod.yaml`).
+2. Copy the starter: `cp -r templates/prod prods/<year>-<slug>` (lowercase, dashes; `<year>` must match `year` in `prod.yaml`).
 3. Put in it:
-   - `prod.yaml` — declared metadata (schema: `scripts/schema/prod.schema.json`, example: `prods/1993-crystalline-drop/prod.yaml`)
+   - `prod.yaml` — declared metadata (the template explains every field; schema: `scripts/schema/prod.schema.json`)
    - `nfo.txt` — credits (every handle and the group must appear here), greetings, controls
    - the prod: `index.html` for web prods (or set `entry:`), the binary for other platforms
    - a `LICENSE` file **only** if you choose a license other than the default CC BY-NC-SA 4.0

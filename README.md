@@ -14,6 +14,7 @@ release, parties and compos, and a sysop who keeps the place tidy.
 | 💻 **A coder** | Fork, add `prods/<year>-<slug>/`, open a PR. 4k and 64k intros have hard size budgets. See [Contributing](docs/CONTRIBUTING.md). |
 | 🎨 **A graphics artist** | Category `gfx`. Credit every asset and keep third-party licenses with the files. |
 | 🎵 **A musician** | Category `music`: tracker modules (MOD/XM/S3M/IT) or rendered audio. Declare any AI-generated parts. |
+| 🤖 **An AI agent** | Read [AGENTS.md](AGENTS.md) first. |
 
 ## Watch
 
@@ -31,6 +32,7 @@ a *drift* note, never as an accusation. Read more in [Provenance](docs/PROVENANC
 | folder | what's there | license |
 |---|---|---|
 | [`prods/`](prods/) | the releases, one folder each | CC BY-NC-SA 4.0 (default, per prod overridable) |
+| [`templates/`](templates/) | a starter prod to copy | MIT |
 | [`engines/`](engines/) | reusable code for prods | MIT |
 | [`parties/`](parties/) | parties and compos | — |
 | [`docs/`](docs/) | manifesto, rules, how-tos | — |
