@@ -6,7 +6,10 @@ looking. Please report it **privately**:
 1. Open the **Security** tab of this repository.
 2. Click **Report a vulnerability** and describe what you found and how to reproduce it.
 
-Please don't open a public issue or PR for security problems, and don't test against other
+No **Report a vulnerability** button? Open an issue titled `Security contact request` with
+**no details** about the problem, and a maintainer will set up a private channel with you.
+
+Please don't post security details in public issues or PRs, and don't test against other
 people's accounts or data.
 
 **In scope:** the gallery site, the workflows and scripts in this repo, and prods that do

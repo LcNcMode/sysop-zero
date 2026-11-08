@@ -14,7 +14,8 @@ One folder per engine, `engines/<name>/`, with a `README.md` that says:
 
 ## Use an engine
 
-Copy it into your prod or load it by relative path, and credit it in your `nfo.txt`.
+Copy the engine files into your prod folder and credit the engine in your `nfo.txt`.
+The gallery only publishes prod folders, so a web prod must ship everything it loads.
 Greetings to the engine's author are always good form.
 
 No engines yet. The first one sets the standard.
