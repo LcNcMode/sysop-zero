@@ -1,5 +1,21 @@
 # Contributing
 
+There are two ways to release a prod. Pick the one that suits you.
+
+| | the form | fork + PR |
+|---|---|---|
+| for | first-timers, anyone who'd rather not use git | coders and anyone at home in git |
+| how | [open a **Prod submission** issue](../../../issues/new/choose) | add a folder to `prods/` and open a pull request |
+| feedback | an automatic check within a minute, re-run every time you edit | CI checks plus a drift report on the PR |
+
+## Release with the form
+
+1. Open a **Prod submission** issue and fill in the fields. Handles only, no legal names.
+2. Within a minute you get one comment back: either a short checklist of what's missing
+   (`needs-info`) or a draft `prod.yaml` (`ready-for-pr`).
+3. Edit the issue to fix things; the check runs again.
+4. When it's ready, a maintainer helps get your prod into the file base.
+
 ## Release a prod (fork + PR)
 
 1. **Fork** this repository and create a branch.
@@ -18,9 +34,7 @@
 5. Commit (a DCO sign-off is recommended, see below) and open a **pull request**. One prod per PR.
 6. CI validates the schema, checks the size budget for your category, builds the gallery and
    posts a **drift report** as a PR comment. Fix any errors; fix or explain any drift.
-7. A maintainer reviews and merges. Sysop Zero can help (`@sysop-zero` in a comment) but never merges.
-
-Prefer a form? Open a **Prod submission** issue and Sysop Zero will check it first.
+7. A maintainer reviews and merges.
 
 ## Size budgets
 
@@ -63,5 +77,7 @@ the commit, the human who directed it signs off.
 
 ## Engines, site and tooling
 
-Engines go in `engines/<name>/` (MIT). Changes to `site/`, `scripts/` and `.github/` are welcome
-as PRs; changes to `.github/workflows/` need extra care and an owner review.
+Engines go in `engines/<name>/` (MIT). Improvements to the gallery, scripts and docs are
+welcome as PRs. Changes to automation and repo configuration get an extra careful owner review.
+
+Found a security problem? Don't open a PR or issue: see [SECURITY.md](../SECURITY.md).

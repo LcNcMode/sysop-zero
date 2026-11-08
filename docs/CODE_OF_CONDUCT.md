@@ -20,7 +20,8 @@ The scene has always been competitive. It has also always been a family. Keep bo
 ## Enforcement
 
 Maintainers may edit or remove content, close issues and PRs, disqualify compo entries and
-block accounts. Report problems privately to the maintainers through GitHub's
-"Report content" feature or a private security advisory on this repository.
+block accounts. Report problems to the maintainers through GitHub's **Report content**
+option (the `…` menu on any issue, comment or PR). For security problems, see
+[SECURITY.md](../SECURITY.md).
 
 Based on the spirit of the [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).

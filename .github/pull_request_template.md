@@ -13,5 +13,5 @@
 
 ## Drift
 
-Sysop Zero posts a drift report on this PR (declared `prod.yaml` vs. what CI observed).
-If it reports drift, fix the prod or explain why the declaration is right.
+CI posts a drift report on this PR: your declared `prod.yaml` next to what it observed.
+If it shows drift, fix the prod or explain here why the declaration is right.
