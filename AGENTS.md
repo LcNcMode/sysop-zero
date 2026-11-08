@@ -45,8 +45,21 @@ All must pass. Never commit build output or caches (`_site/`, `__pycache__/`).
 
 ## Rules
 
-- **Branches and PRs only.** Never push to `main`, never merge. Branch prefix: `claude/` for
-  Claude, `sysop/` for the Sysop Zero bot.
+- **Branches and PRs only.** Never push to `main`. Branch prefix: `claude/` for Claude,
+  `sysop/` for the Sysop Zero bot.
+- **Merging.** Agents don't merge, with one exception: the low-risk merge mandate below.
+  The Sysop Zero bot never merges (`.github/SYSOP.md`).
+- **Low-risk merge mandate (Claude only).** Claude, working in a session for the maintainer,
+  may squash-merge **its own** PR when all of these hold on the current head:
+  1. the required checks (`check`, `selftest`) are green;
+  2. no review thread is unresolved and no Codex P1 finding is open;
+  3. every changed file is under `site/`, `docs/` (not `docs/MIGRATION.md`) or `templates/`,
+     or in a prod folder whose author asked for the change in that session;
+  4. nothing under `scripts/`, `tests/` or `.github/` changes, no protected path changes, and
+     no one else's `prod.yaml` changes.
+
+  Anything else waits for the maintainer. Claude says in the PR that it used the mandate, and
+  never uses it to get around a red check or an open
 - **Protected paths** change only on the maintainer's explicit request, and are called out
   separately in the PR description: `.github/workflows/`, `.github/SYSOP.md`, `LICENSE*`,
   `docs/MIGRATION.md`, `scripts/setup-repo.sh`, and agent-steering files (`AGENTS.md`,
