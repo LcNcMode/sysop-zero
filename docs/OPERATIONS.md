@@ -7,8 +7,8 @@ How the repo is set up and run, for maintainers. Secrets are listed by **name an
 | name | kind | used by | purpose |
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | secret | `sysop-zero.yml` (assist job only) | API key for Sysop Zero (claude-code-action). Use a dedicated key with a spend limit. |
-| `SYSOP_APP_PRIVATE_KEY` | secret | `sysop-zero.yml` (assist job only) | Private key (PEM) of the Sysop Zero GitHub App; used to mint short-lived installation tokens. |
-| `SYSOP_APP_ID` | variable | `sysop-zero.yml` (assist job only) | App ID of the Sysop Zero GitHub App (not secret). |
+| `SYSOP_APP_PRIVATE_KEY` | secret | `sysop-zero.yml` (`assist` and `intake` jobs) | Private key (PEM) of the Sysop Zero GitHub App; used to mint short-lived installation tokens. |
+| `SYSOP_APP_ID` | variable | `sysop-zero.yml` (`assist` and `intake` jobs) | App ID of the Sysop Zero GitHub App (not secret). |
 
 No other secrets exist. `prod-check.yml`, `drift-comment.yml`, `pages.yml` and the `triage` job
 of `sysop-zero.yml` only use the built-in `GITHUB_TOKEN` with per-job permissions. **Never** add a personal access token.
@@ -26,8 +26,9 @@ Create under the owning account: Settings → Developer settings → GitHub Apps
   Rotate the key yearly or on any suspicion; delete old keys in the App settings.
 - Do **not** add the App to the ruleset bypass list.
 
-The assist job narrows the App token further with `permission-*` inputs. The triage job
-does not use the App at all.
+The assist and intake jobs narrow the App token further with `permission-*` inputs. The intake
+job mints its token only after the zip has been unpacked, and uses it only to push its
+`sysop/intake-*` branch and open the PR. The triage job does not use the App at all.
 
 ## Repo settings (applied by `scripts/setup-repo.sh`)
 
@@ -46,10 +47,11 @@ does not use the App at all.
 | workflow | trigger | token | does |
 |---|---|---|---|
 | `prod-check.yml` → `check` | PR, push to main | read-only | the verdict on a PR's data: schema, size budget, gallery build, drift report, CODEOWNERS sync, portability. On PRs it runs `scripts/` and `tests/` **from the base branch**, so a PR cannot change the rules it is judged by. Flags PRs that touch `scripts/`, `tests/` or `.github/`. |
-| `prod-check.yml` → `selftest` | PR, push to main | read-only | the PR's own scripts: prods, detector self-test, triage self-test, CODEOWNERS sync, portability |
+| `prod-check.yml` → `selftest` | PR, push to main | read-only | the PR's own scripts: prods, detector self-test, triage and intake self-tests, CODEOWNERS sync, portability |
 | `drift-comment.yml` | after Prod check | `pull-requests: write` | posts/updates the drift report comment (artifact treated as data; checks the head SHA) |
 | `pages.yml` | push to main | `pages: write`, `id-token: write` | builds and deploys the gallery |
 | `sysop-zero.yml` → `triage` | `prod-submission` / `compo-entry` issue opened, edited or reopened | `GITHUB_TOKEN`: `issues: write` | runs `scripts/triage.py` (no AI): one updated comment + `needs-info` or `ready-for-pr` |
+| `sysop-zero.yml` → `intake` | after `triage` says `ready-for-pr` on a prod submission | `GITHUB_TOKEN`: `issues: write`; App token (contents, pull requests) for the push only | runs `scripts/intake.py` (no AI) on the attached `.zip`, pushes `sysop/intake-<issue>` and opens or updates the PR; one updated comment on the issue |
 | `sysop-zero.yml` → `assist` | maintainer `@sysop-zero` comments | App token | the AI admin, per `.github/SYSOP.md` |
 
 Trusted checks, and their limit: `check` judges a PR with the base branch's `scripts/` and

@@ -1,5 +1,5 @@
 {
-  "prod-ready.md": {"kind": "prod-submission", "label": "ready-for-pr", "codes": ["budget"]},
+  "prod-ready.md": {"kind": "prod-submission", "label": "ready-for-pr", "codes": ["intake:manual", "budget"]},
   "prod-human-attached.md": {"kind": "prod-submission", "label": "ready-for-pr", "codes": ["license-file", "budget", "not-web"]},
   "prod-needs-info.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["missing:models", "missing:notes", "bad:year", "bad:license", "missing:files", "budget"]},
   "prod-injection.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["personal-data", "bad:handles", "drift:provenance-hints", "budget"], "comment_must_not_contain": ["@someone-to-ping", "@sysop-fake-owner", "me@example.com"]},

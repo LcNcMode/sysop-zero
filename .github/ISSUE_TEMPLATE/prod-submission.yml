@@ -60,9 +60,9 @@ body:
   - type: input
     id: party
     attributes: { label: Party (optional) }
-  - type: input
+  - type: textarea
     id: link
-    attributes: { label: "Where are the files?", description: "Fork branch, release URL or archive." }
+    attributes: { label: "Where are the files?", description: "Drag a .zip of your prod in here, and Sysop Zero opens the pull request for you. Or paste a link to a fork branch or release (a maintainer fetches it)." }
     validations: { required: true }
   - type: textarea
     id: notes
