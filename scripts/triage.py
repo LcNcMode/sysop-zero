@@ -139,10 +139,13 @@ def check_common(v: dict, f: Findings, fields: dict):
         f.block("missing:models", "**AI models and tools used** is required for `ai` and `hybrid`. One per line, "
                 "with what each did, e.g. `Claude — code`, `Suno — music`. See docs/PROVENANCE.md.")
     if prov == "human" and models:
-        f.note("drift:provenance-models", "Provenance says `human`, but AI models are listed. If AI did creative "
-               "work, `hybrid` is the honest pick (see docs/PROVENANCE.md). If they were just autocomplete, say so in the notes.")
+        f.block("provenance:human-with-models", "**Provenance** says `human`, but **AI models and tools used** "
+                "lists tools. AI is welcome here, it just has to be declared: if AI did any creative work "
+                "(code, visuals, music), pick `hybrid` (or `ai`) and say who did what in the notes. If the tools "
+                "were only autocomplete, keep `human`, empty the tools field and mention it in the notes. "
+                "See docs/PROVENANCE.md.")
     free_text = " ".join(v.get(k, "") for k in ("notes", "models"))
-    if prov == "human" and AI_HINTS.search(free_text):
+    if prov == "human" and not models and AI_HINTS.search(free_text):  # with models, the block above says it
         f.note("drift:provenance-hints", "Provenance says `human`, but the text mentions AI tools. Double-check the "
                "declaration — CI runs the same check on the nfo later.")
     if any(EMAIL.search(v.get(k, "")) for k in v if k not in ("link",)):
@@ -181,6 +184,10 @@ def check_prod(v: dict, f: Findings) -> dict | None:
     elif lic and lic != DEFAULT_LICENSE:
         f.note("license-file", f"`{lic}` is not the default license, so the prod folder needs a `LICENSE` file "
                f"that names it (e.g. a line `SPDX-License-Identifier: {lic}`).")
+    if not v.get("notes", "").strip() or PLACEHOLDER.match(v.get("notes", "")):
+        f.block("missing:notes", "**Notes / nfo** is empty. Add a short nfo: credits per handle (who did "
+                "what), and your greetings. It becomes the prod's `nfo.txt`, and CI checks that the group and "
+                "every handle are named in it.")
     link = v.get("link", "")
     if link and PLACEHOLDER.match(link):
         f.block("missing:files", "**Where are the files?** still says it's coming. Edit the issue and put them in "
