@@ -29,15 +29,19 @@ import re
 import stat
 import sys
 import tempfile
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+import zlib
 from pathlib import Path, PurePosixPath
 
 import yaml
+from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
+from prodcheck import SCHEMA  # noqa: E402
 from triage import ATTACHMENT, fence, parse_body, slugify, triage  # noqa: E402
 
 ALLOWED_HOSTS = re.compile(r"^(github\.com|[a-z0-9-]+\.githubusercontent\.com|"
@@ -77,8 +81,13 @@ def download(url: str) -> bytes:
     check_host(url)
     opener = urllib.request.build_opener(_GitHubOnly)
     req = urllib.request.Request(url, headers={"User-Agent": "sysop-zero-intake"})
-    with opener.open(req, timeout=60) as r:
-        data = r.read(MAX_DOWNLOAD + 1)
+    try:
+        with opener.open(req, timeout=60) as r:
+            data = r.read(MAX_DOWNLOAD + 1)
+    except urllib.error.HTTPError as e:
+        raise Refused(f"the attachment could not be downloaded (HTTP {e.code})")
+    except (urllib.error.URLError, TimeoutError, OSError):
+        raise Refused("the attachment could not be downloaded right now; edit the issue to try again")
     if len(data) > MAX_DOWNLOAD:
         raise Refused(f"the zip is larger than {MAX_DOWNLOAD // (1024 * 1024)} MiB")
     return data
@@ -125,7 +134,7 @@ def safe_members(zf: zipfile.ZipFile) -> list[tuple[zipfile.ZipInfo, str]]:
 def unpack(data: bytes, dest: Path) -> list[str]:
     try:
         zf = zipfile.ZipFile(io.BytesIO(data))
-    except zipfile.BadZipFile:
+    except (zipfile.BadZipFile, zlib.error, EOFError, ValueError):
         raise Refused("the attachment is not a valid zip")
     written = []
     with zf:
@@ -134,13 +143,53 @@ def unpack(data: bytes, dest: Path) -> list[str]:
             if dest.resolve() not in out.parents:
                 raise Refused(f"`{rel}` points outside the folder")
             out.parent.mkdir(parents=True, exist_ok=True)
-            with zf.open(info) as src:
-                blob = src.read(MAX_TOTAL + 1)
+            try:
+                with zf.open(info) as src:
+                    blob = src.read(MAX_TOTAL + 1)
+            except (zipfile.BadZipFile, zlib.error, EOFError, NotImplementedError, RuntimeError):
+                raise Refused(f"`{rel}` is damaged inside the zip (re-create the zip and try again)")
             if len(blob) != info.file_size:
                 raise Refused(f"`{rel}` does not match its declared size")
             out.write_bytes(blob)
             written.append(rel)
     return sorted(written)
+
+
+NOT_ENTRY = re.compile(r"(^|/)(nfo\.txt|file_id\.diz|prod\.yaml|license[^/]*|readme[^/]*|[^/]*\.(md|txt|diz|"
+                       r"nfo|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|html?|css|js|json))$", re.I)
+AUDIO = re.compile(r"\.(mp3|ogg|flac|wav|opus|mod|xm|s3m|it)$", re.I)
+
+
+def find_entry(platform: str, category: str, files: list[str]) -> str:
+    """The file that runs (or plays). Web: index.html, or the only HTML file. Music: the only audio
+    file or module. Otherwise: the only candidate binary."""
+    if platform == "web":
+        if "index.html" in files:
+            return "index.html"
+        pages = [f for f in files if f.lower().endswith((".html", ".htm"))]
+        if len(pages) == 1:
+            return pages[0]
+        raise Refused("web prods need an `index.html` at the top of the zip (or exactly one HTML file)")
+    if category == "music":
+        cands = [f for f in files if AUDIO.search(f)]
+    else:
+        cands = [f for f in files if not NOT_ENTRY.search(f) and not AUDIO.search(f)]
+    if len(cands) == 1:
+        return cands[0]
+    raise Refused("couldn't tell which file is the prod. Add a `prod.yaml` to the zip with "
+                  "`entry: <file>` (see templates/prod/prod.yaml)")
+
+
+def validate(folder: Path) -> None:
+    """The final prod.yaml must pass the schema: it also feeds CODEOWNERS, so no surprises allowed."""
+    try:
+        decl = yaml.safe_load((folder / "prod.yaml").read_text(encoding="utf-8"))
+    except (yaml.YAMLError, UnicodeDecodeError):
+        raise Refused("`prod.yaml` in the zip is not valid YAML")
+    errs = list(Draft202012Validator(SCHEMA).iter_errors(decl)) if isinstance(decl, dict) else [None]
+    if errs:
+        raise Refused("`prod.yaml` doesn't pass the schema (scripts/schema/prod.schema.json); fix it or "
+                      "leave it out of the zip and the form's answers are used")
 
 
 # --- build ------------------------------------------------------------------------------
@@ -173,6 +222,9 @@ def build(body: str, issue: int, data: bytes, out: Path) -> dict:
             decl["provenance"]["models"] = models
         if v.get("party", "").strip():
             decl["party"] = v["party"].strip()
+        entry = find_entry(v["platform"], v["category"], files)
+        if entry != "index.html":
+            decl["entry"] = entry
         header = (f"# Declared by the creator in submission issue #{issue}. Human-owned: CI compares it\n"
                   "# with what it observes; nobody else edits it (see docs/PROVENANCE.md).\n")
         (folder / "prod.yaml").write_text(header + yaml.safe_dump(decl, sort_keys=False, allow_unicode=True),
@@ -184,6 +236,7 @@ def build(body: str, issue: int, data: bytes, out: Path) -> dict:
                 f"  category .... {v['category']}\n  platform .... {v['platform']}\n\n")
         (folder / "nfo.txt").write_text(head + v.get("notes", "").strip() + "\n", encoding="utf-8")
         generated.append("nfo.txt")
+    validate(folder)
     title = f"prod: {clean_title(v['title'])} by {clean_title(v['group'])}"
     listing = "\n".join(f"{p}  ({(folder / p).stat().st_size} bytes)" for p in files)
     pr_body = "\n".join([
@@ -223,6 +276,9 @@ def run(body: str, issue: int, out: Path, zip_path: Path | None) -> dict:
         return build(body, issue, data, out)
     except Refused as e:
         return {"status": "error", "reason": str(e)}
+    except Exception as e:  # never leave the submitter without an answer
+        print(f"intake: unexpected {type(e).__name__}: {e}", file=sys.stderr)
+        return {"status": "error", "reason": "something unexpected went wrong; a maintainer will take a look"}
 
 
 MARK = "<!-- sysop-zero:intake -->"
@@ -269,14 +325,21 @@ def self_test() -> int:
         ("external link ignored", lambda: attachment_url("https://example.com/x.zip") is None),
         ("non-GitHub redirect refused", lambda: _refuses(lambda: check_host("https://evil.example/x.zip"))),
         ("plain http refused", lambda: _refuses(lambda: check_host("http://github.com/x.zip"))),
-        ("good zip, top folder stripped", lambda: _good(body, _zip({"copper/index.html": page,
-                                                                    "copper/data/a.bin": b"x"}))),
+        ("good zip, top folder stripped", lambda: _good(body, _zip({"copper/copper.mod": b"M.K." * 64,
+                                                                    "copper/dist/cover.png": b"x"}))),
+        ("music entry: the only module", lambda: find_entry("other", "music", ["a.mod", "b.png"]) == "a.mod"),
         ("path traversal refused", lambda: _err(body, _zip({"../evil.html": page}))),
         ("absolute path refused", lambda: _err(body, _zip({"/etc/evil": page}))),
         ("symlink refused", lambda: _err(body, _zip({"index.html": page}, symlink="link"))),
         ("zip bomb refused", lambda: _err(body, _zip({"index.html": page}, ratio_bomb=True))),
         ("git metadata refused", lambda: _err(body, _zip({"index.html": page, ".gitattributes": b"* filter=x"}))),
         ("not a zip refused", lambda: _err(body, b"PK nope")),
+        ("damaged member refused", lambda: _err(body, _corrupt(_zip({"index.html": page * 50})))),
+        ("bad prod.yaml refused", lambda: _err(body, _zip({"index.html": page,
+                                                         "prod.yaml": b"title: x\nhandles: [\"a\\n/ @evil\"]\n"}))),
+        ("binary entry found", lambda: find_entry("dos", "demo", ["DEMO.COM", "nfo.txt", "music.xm", "readme.html"]) == "DEMO.COM"),
+        ("ambiguous entry refused", lambda: _refuses(lambda: find_entry("dos", "demo", ["A.EXE", "B.EXE"]))),
+        ("web entry: only HTML file", lambda: find_entry("web", "demo", ["demo.html", "a.png"]) == "demo.html"),
         ("refusal comment is fenced", lambda: "```" in issue_comment({"status": "error", "reason": "`x` @y"})
          and issue_comment({"status": "skip", "reason": ""}) is None),
         ("needs-info skipped", lambda: _run((ROOT / "tests/fixtures/issues/prod-needs-info.md")
@@ -292,6 +355,14 @@ def self_test() -> int:
         failed += not ok
     print(f"intake self-test: {len(cases) - failed}/{len(cases)} passed")
     return 1 if failed else 0
+
+
+def _corrupt(data: bytes) -> bytes:
+    """Flip bytes inside the first member's compressed data; the central directory stays valid."""
+    b = bytearray(data)
+    for i in range(60, 90):
+        b[i] ^= 0xFF
+    return bytes(b)
 
 
 def _refuses(fn) -> bool:
@@ -320,8 +391,9 @@ def _good(body: str, data: bytes) -> bool:
         r = run(body, 99, Path(t) / "out", z)
         folder = Path(t) / "out" / "prods" / r.get("slug", "-")
         decl = yaml.safe_load((folder / "prod.yaml").read_text()) if r["status"] == "ready" else {}
-        return (r["status"] == "ready" and r["files"] == ["data/a.bin", "index.html"]
+        return (r["status"] == "ready" and r["files"] == ["copper.mod", "dist/cover.png"]
                 and r["generated"] == ["prod.yaml", "nfo.txt"] and decl.get("title") == "Copper Bars Forever"
+                and decl.get("entry") == "copper.mod"
                 and r["branch"] == "sysop/intake-99" and "@" not in r["title"])
 
 

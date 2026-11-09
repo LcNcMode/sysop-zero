@@ -134,7 +134,10 @@ jobs:
           git config user.email "${bot_id}+${APP_SLUG}[bot]@users.noreply.github.com"
           git switch -c "$BRANCH"
           cp -r "$out/prods/$SLUG" "prods/$SLUG"
-          git add -- "prods/$SLUG"
+          python3 scripts/gen_codeowners.py   # every prod gets a CODEOWNERS line; CI checks the sync
+          # -f: the prod's files are exactly what the zip held, even names the root .gitignore skips (dist/, …)
+          git add -f -- "prods/$SLUG"
+          git add -- .github/CODEOWNERS
           git commit -q -m "prod: $SLUG (intake of #$ISSUE)"
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           echo "::add-mask::$auth"
