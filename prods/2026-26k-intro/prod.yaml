@@ -1,4 +1,4 @@
-# Declared by the creator in submission issue #30, updated in #37. Human-owned: CI compares it
+# Declared by the creator in submission issue #30, updated in #40. Human-owned: CI compares it
 # with what it observes; nobody else edits it (see docs/PROVENANCE.md).
 title: 26k Intro
 group: Xanadu
@@ -11,4 +11,6 @@ license: CC-BY-NC-SA-4.0
 provenance:
   type: hybrid
   models:
-  - hybrid, Claude Code och ChatGPT.
+  - Claude Code — code, shader, softsynth, music, build
+  - ChatGPT — logo image
+  - mini - story
