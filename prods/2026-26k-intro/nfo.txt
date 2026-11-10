@@ -1,0 +1,12 @@
+XANADU - a 26k intro by MINI of Xanadu (2026)
+WebGL2 intro, one HTML file, 26 624 bytes max. Click to start, sound on.
+
+Credits
+  MINI   - idea, story, direction, texts, logo direction, testing
+  Claude Code (Anthropic) - code: shader, softsynth, music, build (directed by MINI)
+  ChatGPT (OpenAI) - logo image (from MINI's prompts)
+
+Paramount -> Aros D -> Xanadu... let's start again.
+Amiga 500 roots, inspired by Spaceballs "State of the Art".
+
+Greetings to Venture - see you at the next party!
