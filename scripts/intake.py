@@ -289,7 +289,7 @@ def issue_comment(result: dict) -> str | None:
     if result["status"] == "ready":
         return "\n".join([MARK, "### 📦 Sysop Zero — intake", "",
                           f"Got your zip. A pull request with `prods/{result['slug']}/` is open, and CI is "
-                          "checking it now. A maintainer reviews and merges it. Edit this issue and the PR "
+                          "checking it now. Sysop Zero reviews and merges it, or passes it to a maintainer. Edit this issue and the PR "
                           "updates too.", "", "— Sysop Zero"]) + "\n"
     if result["status"] == "error":
         return "\n".join([MARK, "### 📦 Sysop Zero — intake", "",
