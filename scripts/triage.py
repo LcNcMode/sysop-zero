@@ -143,6 +143,12 @@ def check_common(v: dict, f: Findings, fields: dict):
     if prov in ("ai", "hybrid") and not models:
         f.block("missing:models", "**AI models and tools used** is required for `ai` and `hybrid`. One per line, "
                 "with what each did, e.g. `Claude — code`, `Suno — music`. See docs/PROVENANCE.md.")
+    lumped = [m for m in models if models_line_lumped(m)]
+    if lumped:
+        f.block("bad:models", "**AI models and tools used**: one tool per line, with what it did, e.g. "
+                "`Claude Code — code` and `ChatGPT — logo` on two lines. This line looks like several tools "
+                "(or the provenance type) in one: `" + lumped[0][:60].replace("`", "'") + "`. Edit the issue "
+                "and split it; the lines go into `prod.yaml` exactly as written.")
     if prov == "human" and models:
         f.block("provenance:human-with-models", "**Provenance** says `human`, but **AI models and tools used** "
                 "lists tools. AI is welcome here, it just has to be declared: if AI did any creative work "
@@ -156,6 +162,18 @@ def check_common(v: dict, f: Findings, fields: dict):
     if any(EMAIL.search(v.get(k, "")) for k in v if k not in ("link",)):
         f.block("personal-data", "Looks like an email address is in the form. **Handles only**: remove it "
                 "(edit the issue). Private contact details never go in the repo.")
+
+
+TOOL_JOIN = re.compile(r",|;|\s(?:&|\+|and|och|und|et|y|e)\s", re.I)
+ROLE_SPLIT = re.compile(r"\s[—–-]\s|:")
+
+
+def models_line_lumped(line: str) -> bool:
+    """One models line naming several tools, or starting with the provenance type ("hybrid, ...").
+    Only the tool part (before ' — ' or ':') counts, so 'ChatGPT — logo, story' is fine."""
+    tool = ROLE_SPLIT.split(line, 1)[0].strip()
+    m = re.match(r"(\w+)\s*(?:[,;:.]|$)", tool)
+    return bool(m and m.group(1).lower() in enum_prov()) or bool(TOOL_JOIN.search(tool))
 
 
 def enum_prov():

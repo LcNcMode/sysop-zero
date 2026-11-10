@@ -11,5 +11,6 @@
   "prod-human-with-models.md": {"kind": "prod-submission", "label": "needs-info", "codes": ["provenance:human-with-models", "missing:notes", "budget"]},
   "update-ready.md": {"kind": "prod-update", "label": "ready-for-pr", "codes": [], "author": "mini-gh", "association": "NONE", "submitters": {"30": "mini-gh"}},
   "update-stranger.md": {"kind": "prod-update", "label": "needs-info", "codes": ["not-allowed"], "author": "someone-else", "association": "NONE", "submitters": {"30": "mini-gh"}},
-  "update-bad.md": {"kind": "prod-update", "label": "needs-info", "codes": ["missing:changes", "prod-unknown", "missing:zip", "provenance:human-with-models"], "author": "boss", "association": "OWNER"}
+  "update-bad.md": {"kind": "prod-update", "label": "needs-info", "codes": ["missing:changes", "prod-unknown", "missing:zip", "provenance:human-with-models"], "author": "boss", "association": "OWNER"},
+  "update-models-lumped.md": {"kind": "prod-update", "label": "needs-info", "codes": ["bad:models"], "author": "mini-gh", "association": "NONE", "submitters": {"30": "mini-gh"}}
 }
