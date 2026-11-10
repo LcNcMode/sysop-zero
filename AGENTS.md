@@ -18,7 +18,7 @@ in `prod.yaml`, and CI reports differences between declared and observed facts a
 | `engines/` | shared code for prods (MIT) |
 | `parties/` | parties and compos |
 | `site/` | the gallery |
-| `scripts/` | `prodcheck.py` (checks + site build), `triage.py` (issue-form check), schema, budgets |
+| `scripts/` | `prodcheck.py` (checks + site build), `triage.py` (issue-form check), `intake.py` (zip → PR), schema, budgets |
 | `tests/fixtures/` | fixtures for the self-tests |
 | `docs/` | contributor and maintainer docs; index in `docs/README.md` |
 
@@ -37,6 +37,7 @@ pip install -r scripts/requirements.txt
 python3 scripts/prodcheck.py
 python3 scripts/prodcheck.py --prods tests/fixtures/prods --expect-findings
 python3 scripts/triage.py --self-test
+python3 scripts/intake.py --self-test
 python3 scripts/gen_codeowners.py --check
 scripts/check_portability.sh <owner>
 ```

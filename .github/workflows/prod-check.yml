@@ -152,6 +152,9 @@ jobs:
       - name: Triage gives the expected answer on every fixture issue
         if: always()
         run: python3 scripts/triage.py --self-test
+      - name: Intake refuses unsafe zips and builds good ones
+        if: always()
+        run: python3 scripts/intake.py --self-test
       - name: CODEOWNERS in sync with prod.yaml
         if: always()
         run: python3 scripts/gen_codeowners.py --check

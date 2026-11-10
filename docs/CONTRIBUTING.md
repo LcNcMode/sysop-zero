@@ -11,10 +11,15 @@ There are two ways to release a prod. Pick the one that suits you.
 ## Release with the form
 
 1. Open a **Prod submission** issue and fill in the fields. Handles only, no legal names.
-2. Within a minute you get one comment back: either a short checklist of what's missing
-   (`needs-info`) or a draft `prod.yaml` (`ready-for-pr`).
-3. Edit the issue to fix things; the check runs again.
-4. When it's ready, a maintainer helps get your prod into the file base.
+2. Drag a **`.zip`** of your prod into **Where are the files?**. Put the files at the top of
+   the zip, or in one folder; an `nfo.txt` and `prod.yaml` of your own are welcome but optional.
+3. Within a minute you get a comment back: either a short checklist of what's missing
+   (`needs-info`), or, when everything is in place, a pull request with your prod.
+4. Edit the issue to fix things; the check runs again and the pull request updates.
+5. A maintainer reviews the pull request and merges it. Your prod is released.
+
+The zip is checked before anything else happens: no symlinks, no paths outside the folder,
+no git files, at most 20 MiB unpacked and 500 files. Nothing in it is run.
 
 ## Release a prod (fork + PR)
 

@@ -1,6 +1,9 @@
 # Sysop Zero. Rules: .github/SYSOP.md.
 #  - triage: deterministic (scripts/triage.py, no AI, no secrets). Runs for every submission,
 #    including first-time sceners without write access. Built-in GITHUB_TOKEN, issues: write.
+#  - intake: deterministic (scripts/intake.py, no AI). When triage says ready-for-pr and a .zip is
+#    attached, it unpacks the zip without a token, then mints a short-lived App token only to push
+#    a sysop/intake-<issue> branch and open or update the PR. A maintainer reviews and merges.
 #  - assist: the AI admin, only when a maintainer mentions @sysop-zero. Auth: a dedicated
 #    GitHub App (never a personal PAT), token minted per run with the permissions below. The
 #    App is NOT a bypass actor on the main rulesets, so it can open PRs but never merge.
@@ -30,6 +33,8 @@ jobs:
     permissions:
       contents: read
       issues: write
+    outputs:
+      label: ${{ steps.check.outputs.label }}
     steps:
       # issues events always run the default branch, so this is trusted code, not the submitter's.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -40,7 +45,10 @@ jobs:
           python-version: "3.12"
       - run: pip install -r scripts/requirements.txt
       - name: Check the form
-        run: python3 scripts/triage.py --event "$GITHUB_EVENT_PATH" --comment-out triage-comment.md --label-out triage-label.txt
+        id: check
+        run: |
+          python3 scripts/triage.py --event "$GITHUB_EVENT_PATH" --comment-out triage-comment.md --label-out triage-label.txt
+          echo "label=$(tr -d '[:space:]' < triage-label.txt)" >> "$GITHUB_OUTPUT"
       - name: Post comment and label
         env:
           GH_TOKEN: ${{ github.token }}
@@ -64,6 +72,103 @@ jobs:
           fi
           gh issue edit "$ISSUE" --add-label "$label"
           gh issue edit "$ISSUE" --remove-label "$other" 2> /dev/null || true
+
+  intake:
+    # A ready submission with an attached .zip becomes a PR, so the maintainer only reviews and
+    # merges. The zip is untrusted data: it is unpacked by a script with strict rules and never run.
+    needs: triage
+    if: >-
+      needs.triage.outputs.label == 'ready-for-pr' &&
+      contains(github.event.issue.labels.*.name, 'prod-submission')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write                       # the built-in token posts the intake comment
+    steps:
+      # issues events always run the default branch, so this is trusted code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: pip install -r scripts/requirements.txt
+      - name: Fetch and unpack the attached zip (no token)
+        id: intake
+        run: |
+          python3 scripts/intake.py --event "$GITHUB_EVENT_PATH" --out "$RUNNER_TEMP/intake"
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, re
+          r = json.load(open(os.path.join(os.environ["RUNNER_TEMP"], "intake", "result.json")))
+          ok = r["status"] == "ready" and re.fullmatch(r"\d{4}-[a-z0-9-]+", r.get("slug", "")) \
+               and re.fullmatch(r"sysop/intake-\d+", r.get("branch", ""))
+          print(f"status={'ready' if ok else r['status']}")
+          if ok:
+              print(f"slug={r['slug']}")
+              print(f"branch={r['branch']}")
+          PY
+      - name: Mint a short-lived App token (contents + pull requests only)
+        if: steps.intake.outputs.status == 'ready'
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.SYSOP_APP_ID }}
+          private-key: ${{ secrets.SYSOP_APP_PRIVATE_KEY }}
+          permission-contents: write        # push the sysop/intake-* branch; main is ruleset-protected
+          permission-pull-requests: write
+      - name: Push the branch and open or update the PR
+        if: steps.intake.outputs.status == 'ready'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          APP_SLUG: ${{ steps.app.outputs.app-slug }}
+          SLUG: ${{ steps.intake.outputs.slug }}
+          BRANCH: ${{ steps.intake.outputs.branch }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          out="$RUNNER_TEMP/intake"
+          title="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["title"])' "$out/result.json")"
+          bot_id="$(gh api "users/${APP_SLUG}%5Bbot%5D" --jq .id)"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${bot_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          cp -r "$out/prods/$SLUG" "prods/$SLUG"
+          python3 scripts/gen_codeowners.py   # every prod gets a CODEOWNERS line; CI checks the sync
+          # -f: the prod's files are exactly what the zip held, even names the root .gitignore skips (dist/, …)
+          git add -f -- "prods/$SLUG"
+          git add -- .github/CODEOWNERS
+          git commit -q -m "prod: $SLUG (intake of #$ISSUE)"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::$auth"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+            push --force "https://github.com/$GH_REPO.git" "HEAD:refs/heads/$BRANCH"
+          pr="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "$title" --body-file "$out/pr-body.md"
+          else
+            gh pr create --base main --head "$BRANCH" --title "$title" --body-file "$out/pr-body.md"
+          fi
+      - name: Tell the submitter (one comment, updated in place)
+        # "PR is open" only after the push and PR steps succeeded; a refusal is always reported.
+        if: >-
+          always() && (steps.intake.outputs.status == 'error' ||
+          (steps.intake.outputs.status == 'ready' && success()))
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          file="$RUNNER_TEMP/intake/issue-comment.md"
+          [ -s "$file" ] || exit 0
+          ids="$(gh api "repos/$GH_REPO/issues/$ISSUE/comments" --paginate \
+                 --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- sysop-zero:intake -->"))) | .id')"
+          id="${ids%%$'\n'*}"
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GH_REPO/issues/comments/$id" -F body=@"$file" > /dev/null
+          else
+            gh issue comment "$ISSUE" --body-file "$file"
+          fi
 
   assist:
     # On-demand help: someone with write access mentions @sysop-zero on an issue or PR.

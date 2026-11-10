@@ -44,6 +44,7 @@ SLUG = re.compile(r"[^a-z0-9]+")
 PARTY_SLUG = re.compile(r"\d{4}-[a-z0-9][a-z0-9-]*")
 PROD_PATH = re.compile(r"prods/\d{4}-[a-z0-9][a-z0-9-]*")
 ISSUE_REF = re.compile(r"#\d+")
+ATTACHMENT = re.compile(r"https://github\.com/user-attachments/files/\d+/[A-Za-z0-9._-]+\.zip")
 ISSUE_URL = re.compile(r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/(issues|pull)/\d+/?")
 
 
@@ -196,6 +197,9 @@ def check_prod(v: dict, f: Findings) -> dict | None:
     elif link and not URL.search(link) and "/" not in link:
         f.block("bad:files", "**Where are the files?** needs a link, or a `.zip` dragged into that field while "
                 "editing the issue, so a maintainer can fetch them.")
+    if link and not ATTACHMENT.search(link) and not f.blocking:
+        f.note("intake:manual", "Tip: drag a `.zip` of the prod into **Where are the files?** (edit the issue) "
+               "and Sysop Zero opens the pull request for you. Other links need a maintainer to fetch them.")
     cat = v.get("category")
     if cat in BUDGETS:
         b = BUDGETS[cat]
