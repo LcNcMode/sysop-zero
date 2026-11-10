@@ -1,0 +1,15 @@
+# Declared by the creator in submission issue #30. Human-owned: CI compares it
+# with what it observes; nobody else edits it (see docs/PROVENANCE.md).
+title: 26k Intro
+group: Xanadu
+handles:
+- mini
+platform: web
+category: intro-64k
+year: 2026
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+  - Claude Code
+  - ChatGPT
