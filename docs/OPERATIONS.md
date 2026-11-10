@@ -50,8 +50,8 @@ job mints its token only after the zip has been unpacked, and uses it only to pu
 | `prod-check.yml` → `selftest` | PR, push to main | read-only | the PR's own scripts: prods, detector self-test, triage and intake self-tests, CODEOWNERS sync, portability |
 | `drift-comment.yml` | after Prod check | `pull-requests: write` | posts/updates the drift report comment (artifact treated as data; checks the head SHA) |
 | `pages.yml` | push to main | `pages: write`, `id-token: write` | builds and deploys the gallery |
-| `sysop-zero.yml` → `triage` | `prod-submission` / `compo-entry` issue opened, edited or reopened | `GITHUB_TOKEN`: `issues: write` | runs `scripts/triage.py` (no AI): one updated comment + `needs-info` or `ready-for-pr` |
-| `sysop-zero.yml` → `intake` | after `triage` says `ready-for-pr` on a prod submission | `GITHUB_TOKEN`: `issues: write`; App token (contents, pull requests) for the push only | runs `scripts/intake.py` (no AI) on the attached `.zip`, pushes `sysop/intake-<issue>` and opens or updates the PR; one updated comment on the issue |
+| `sysop-zero.yml` → `triage` | `prod-submission` / `prod-update` / `compo-entry` issue opened, edited or reopened | `GITHUB_TOKEN`: `issues: write` | runs `scripts/triage.py` (no AI): one updated comment + `needs-info` or `ready-for-pr` |
+| `sysop-zero.yml` → `intake` | after `triage` says `ready-for-pr` on a prod submission or update | `GITHUB_TOKEN`: `issues: write`; App token (contents, pull requests) for the push only | runs `scripts/intake.py` (no AI) on the attached `.zip`, pushes `sysop/intake-<issue>` (new prod) or `sysop/update-<issue>` (replaces a released prod's folder) and opens or updates the PR; one updated comment on the issue |
 | `sysop-zero.yml` → `assist` | maintainer `@sysop-zero` comments | App token | the AI admin, per `.github/SYSOP.md` |
 
 Trusted checks, and their limit: `check` judges a PR with the base branch's `scripts/` and

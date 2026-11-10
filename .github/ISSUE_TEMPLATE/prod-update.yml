@@ -1,0 +1,46 @@
+name: Prod update
+description: Update a prod that's already on Sysop Zero (a fix, a final version, a new nfo).
+title: "[update] <prod folder> — <what changed>"
+labels: [prod-update]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Update your prod.** Only the creator who submitted it (or a listed maintainer) can update a prod.
+        Drag a `.zip` with the **whole new version** into the files field: it replaces the folder.
+        Sysop Zero checks it within a minute and opens a pull request. **Handles only.**
+  - type: input
+    id: prod
+    attributes: { label: Prod, description: "The prod's folder name, e.g. 2026-26k-intro (see prods/ in the repo)." }
+    validations: { required: true }
+  - type: textarea
+    id: changes
+    attributes: { label: "What changed?", description: "A line or two for the changelog, e.g. 'Starts on touch screens now'." }
+    validations: { required: true }
+  - type: textarea
+    id: link
+    attributes: { label: New files, description: "Drag a .zip of the whole new version in here. Your own nfo.txt and prod.yaml in the zip are used if present; otherwise the current ones are kept." }
+    validations: { required: true }
+  - type: dropdown
+    id: provenance
+    attributes:
+      label: Provenance
+      description: "Who made this version? Declare it again, honestly (see docs/PROVENANCE.md). AI is welcome, just say so."
+      options: [human, ai, hybrid]
+    validations: { required: true }
+  - type: textarea
+    id: models
+    attributes:
+      label: AI models and tools used
+      description: "One per line, with what each did (e.g. 'Model X — code'). Required for ai/hybrid."
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Release terms
+      options:
+        - label: I have the right to release everything in this version under the prod's license (including music, samples, fonts and AI output under the tools' terms).
+          required: true
+        - label: I declared AI use honestly.
+          required: true
+        - label: I follow the Code of Conduct.
+          required: true

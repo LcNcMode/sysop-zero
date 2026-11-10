@@ -21,6 +21,18 @@ There are two ways to release a prod. Pick the one that suits you.
 The zip is checked before anything else happens: no symlinks, no paths outside the folder,
 no git files, at most 20 MiB unpacked and 500 files. Nothing in it is run.
 
+## Update a released prod
+
+Fixed a bug, made a final version, wrote a better nfo? Open a **Prod update** issue:
+
+1. Name the prod's folder (e.g. `2026-26k-intro`) and say in a line what changed.
+2. Drag a `.zip` with the **whole new version** into **New files**. It replaces the folder; your
+   current `nfo.txt` and `prod.yaml` are kept unless the zip has new ones.
+3. Declare provenance again for this version.
+
+Only the account that submitted the prod, a login listed under `maintainers` in its `prod.yaml`, or
+a repo maintainer can update it. The check and the pull request work just like a new submission.
+
 ## Release a prod (fork + PR)
 
 1. **Fork** this repository and create a branch.
