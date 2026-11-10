@@ -13,7 +13,7 @@
 #
 # Limit: on pull_request, GitHub runs the workflow file from the PR itself, so a PR that
 # edits this file can change what runs. The drift report flags every PR that touches
-# .github/, scripts/ or tests/; review those as code changes, never as prod releases.
+# .github/, scripts/, tests/ or an agent-steering file; review those as code changes, never as prod releases.
 name: Prod check
 on:
   pull_request:
@@ -47,11 +47,16 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           : > tooling-changes.txt
-          for p in scripts tests .github; do
-            diff -rq ".trusted/$p" "$p" 2>/dev/null | sed -E \
-              -e 's#^Files \.trusted/(.*) and .* differ$#changed: \1#' \
-              -e 's#^Only in \.trusted/([^:]*): (.*)$#removed: \1/\2#' \
-              -e 's#^Only in ([^:]*): (.*)$#added:   \1/\2#' >> tooling-changes.txt || true
+          # Checking code, automation and the files that steer agents (AGENTS.md sets their merge rules).
+          for p in scripts tests .github .claude AGENTS.md CLAUDE.md .mcp.json; do
+            if [ -e ".trusted/$p" ] && [ -e "$p" ]; then
+              diff -rq ".trusted/$p" "$p" 2>/dev/null | sed -E \
+                -e 's#^Files \.trusted/(.*) and .* differ$#changed: \1#' \
+                -e 's#^Only in \.trusted/([^:]*): (.*)$#removed: \1/\2#' \
+                -e 's#^Only in ([^:]*): (.*)$#added:   \1/\2#' >> tooling-changes.txt || true
+            elif [ -e "$p" ]; then echo "added:   $p" >> tooling-changes.txt
+            elif [ -e ".trusted/$p" ]; then echo "removed: $p" >> tooling-changes.txt
+            fi
           done
           rm -rf scripts tests
           cp -r .trusted/scripts .trusted/tests .
@@ -87,7 +92,7 @@ jobs:
             echo
             if [ -s tooling-changes.txt ]; then
               echo "> [!WARNING]"
-              echo "> This PR changes checking code or automation (\`scripts/\`, \`tests/\` or \`.github/\`)."
+              echo "> This PR changes checking code, automation or agent rules (\`scripts/\`, \`tests/\`, \`.github/\`, \`AGENTS.md\`, \`CLAUDE.md\`, \`.claude/\`, \`.mcp.json\`)."
               echo "> The verdict below used the base branch's checks; the \`selftest\` job runs the PR's own."
               echo "> Review it as a code change, not as a prod release."
               echo
