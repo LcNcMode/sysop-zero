@@ -92,6 +92,6 @@ run "6b. Ruleset 'main-checks': required CI, no deletion, no force-push — no b
 JSON
 
 run "7. Labels used by issue forms and Sysop Zero" \
-  bash -c "for l in prod-submission:7fffff compo-entry:cc88ff needs-info:ffcc66 ready-for-pr:99ff99; do gh label create \"\${l%%:*}\" --color \"\${l##*:}\" --repo '$REPO' --force; done" </dev/null
+  bash -c "for l in prod-submission:7fffff prod-update:66ccff compo-entry:cc88ff needs-info:ffcc66 ready-for-pr:99ff99; do gh label create \"\${l%%:*}\" --color \"\${l##*:}\" --repo '$REPO' --force; done" </dev/null
 
 (( APPLY )) || echo "# dry run only — re-run with --apply to change $REPO"

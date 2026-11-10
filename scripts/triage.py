@@ -32,7 +32,11 @@ from prodcheck import AI_HINTS, BUDGETS, DEFAULT_LICENSE, SCHEMA, human  # noqa:
 FORMS = {
     "prod-submission": ROOT / ".github/ISSUE_TEMPLATE/prod-submission.yml",
     "compo-entry": ROOT / ".github/ISSUE_TEMPLATE/compo-entry.yml",
+    "prod-update": ROOT / ".github/ISSUE_TEMPLATE/prod-update.yml",
 }
+MAINTAINER_ROLES = ("OWNER", "MEMBER", "COLLABORATOR")
+PROD_SLUG = re.compile(r"\d{4}-[a-z0-9][a-z0-9-]*")
+SUBMITTED_IN = re.compile(r"submission issue #(\d+)")
 MARK = "<!-- sysop-zero:triage -->"
 LABELS = ("needs-info", "ready-for-pr")
 NO_RESPONSE = "_No response_"
@@ -233,6 +237,58 @@ def check_prod(v: dict, f: Findings) -> dict | None:
     return None if errs else draft
 
 
+def prod_slug(value: str) -> str | None:
+    """'2026-26k-intro', 'prods/2026-26k-intro/' or a link ending in it -> '2026-26k-intro'."""
+    v = (value or "").strip().rstrip("/").split("/")[-1]
+    return v if PROD_SLUG.fullmatch(v) and (ROOT / "prods" / v / "prod.yaml").is_file() else None
+
+
+def allowed_updaters(slug: str, lookup) -> tuple[set[str], bool]:
+    """GitHub logins that may update a prod: its `maintainers`, plus whoever opened the submission
+    issue named in the prod.yaml header. Returns (logins, complete) — complete is False when the
+    original submitter couldn't be looked up."""
+    text = (ROOT / "prods" / slug / "prod.yaml").read_text(encoding="utf-8")
+    decl = yaml.safe_load(text) or {}
+    logins = {m.lower() for m in decl.get("maintainers") or []}
+    m = SUBMITTED_IN.search(text.split("\n\n")[0])
+    complete = True
+    if m:
+        who = lookup(int(m.group(1))) if lookup else None
+        if who:
+            logins.add(who.lower())
+        else:
+            complete = False
+    return logins, complete
+
+
+def check_update(v: dict, f: Findings, author: str | None, association: str | None, lookup) -> str | None:
+    fields = form_fields("prod-update")
+    check_common(v, f, fields)
+    slug = None
+    if v.get("prod"):
+        slug = prod_slug(v["prod"])
+        if not slug:
+            f.block("prod-unknown", "**Prod** must be the folder name of a released prod, like `2026-26k-intro` "
+                    "(look it up under `prods/` in the repo, or in the gallery link).")
+    if v.get("changes") and PLACEHOLDER.match(v["changes"]):
+        f.block("missing:changes", "**What changed?** still says TBD. A line for the changelog is enough, "
+                "e.g. 'Starts on touch screens now'.")
+    link = v.get("link", "")
+    if link and not ATTACHMENT.search(link):
+        f.block("missing:zip", "**New files** needs a `.zip` of the whole new version: edit the issue and drag "
+                "the zip into that field. Links to other sites can't be picked up.")
+    if slug and author is not None and (association or "").upper() not in MAINTAINER_ROLES:
+        logins, complete = allowed_updaters(slug, lookup)
+        if author.lower() not in logins:
+            msg = ("Only the creator who submitted this prod, or one of its listed maintainers, can update it. "
+                   "If that's you, open the update from the same GitHub account; otherwise ask them, or a "
+                   "maintainer, to do it.")
+            if not complete:
+                msg = "I couldn't confirm that you submitted this prod. A maintainer will check it by hand."
+            f.block("not-allowed", msg)
+    return slug
+
+
 def check_compo(v: dict, f: Findings):
     fields = form_fields("compo-entry")
     check_common(v, f, fields)
@@ -270,9 +326,9 @@ def slugify(title: str) -> str:
     return SLUG.sub("-", title.lower()).strip("-")[:40].strip("-") or "my-prod"
 
 
-def render(kind: str, f: Findings, draft: dict | None) -> tuple[str, str]:
+def render(kind: str, f: Findings, draft: dict | None, slug: str | None = None) -> tuple[str, str]:
     label = "needs-info" if f.blocking else "ready-for-pr"
-    what = "prod" if kind == "prod-submission" else "compo entry"
+    what = {"prod-submission": "prod", "prod-update": "prod update"}.get(kind, "compo entry")
     out = [MARK, f"### 📡 Sysop Zero — {what} check", ""]
     if f.blocking:
         out += ["Thanks for the upload! A few things before this can go in:", ""]
@@ -280,6 +336,8 @@ def render(kind: str, f: Findings, draft: dict | None) -> tuple[str, str]:
         out += ["", "Edit the issue (**⋯ → Edit**) and I'll check it again automatically."]
     else:
         out += ["Looks good — everything the form needs is there. ✅", ""]
+        if kind == "prod-update" and slug:
+            out += [f"Sysop Zero opens a pull request that replaces `prods/{slug}/` with your zip."]
         if draft:
             folder = f"prods/{draft['year']}-{slugify(draft['title'])}/"
             out += [f"Draft `{folder}prod.yaml` for the maintainer (the PR will use this):", "",
@@ -294,8 +352,11 @@ def render(kind: str, f: Findings, draft: dict | None) -> tuple[str, str]:
     return "\n".join(out) + "\n", label
 
 
-def triage(kind: str, body: str) -> tuple[str, str, Findings]:
+def triage(kind: str, body: str, author: str | None = None, association: str | None = None,
+           lookup=None) -> tuple[str, str, Findings]:
+    """author=None skips the who-may-update check (intake relies on the triage job having run it)."""
     f = Findings()
+    slug = None
     values = parse_body(body, kind)
     if not values:
         f.block("unparsed", "I couldn't read the form fields. Please open a new issue with the form "
@@ -303,10 +364,13 @@ def triage(kind: str, body: str) -> tuple[str, str, Findings]:
         draft = None
     elif kind == "prod-submission":
         draft = check_prod(values, f)
+    elif kind == "prod-update":
+        slug = check_update(values, f, author, association, lookup)
+        draft = None
     else:
         check_compo(values, f)
         draft = None
-    comment, label = render(kind, f, draft)
+    comment, label = render(kind, f, draft, slug)
     assert label in LABELS
     return comment, label, f
 
@@ -318,7 +382,9 @@ def self_test() -> int:
     expected = json.loads((base / "expected.json").read_text(encoding="utf-8"))
     failed = 0
     for name, exp in sorted(expected.items()):
-        comment, label, f = triage(exp["kind"], (base / name).read_text(encoding="utf-8"))
+        stub = {int(k): v for k, v in exp.get("submitters", {}).items()}
+        comment, label, f = triage(exp["kind"], (base / name).read_text(encoding="utf-8"),
+                                   exp.get("author"), exp.get("association"), stub.get)
         problems = []
         if label != exp["label"]:
             problems.append(f"label {label} != {exp['label']}")
@@ -333,6 +399,23 @@ def self_test() -> int:
         failed += bool(problems)
     print(f"triage self-test: {len(expected) - failed}/{len(expected)} passed")
     return 1 if failed else 0
+
+
+def github_issue_author(number: int) -> str | None:
+    """Login of whoever opened issue <number> in this repo (REST, built-in token). None if unknown."""
+    import os
+    import urllib.request
+    repo, token = os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if not repo or not token:
+        return None
+    req = urllib.request.Request(f"https://api.github.com/repos/{repo}/issues/{number}",
+                                 headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
+                                          "User-Agent": "sysop-zero-triage"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return (json.loads(r.read()).get("user") or {}).get("login")
+    except Exception:
+        return None
 
 
 def main() -> int:
@@ -351,9 +434,10 @@ def main() -> int:
     labels = {lbl.get("name") for lbl in issue.get("labels", [])}
     kind = next((k for k in FORMS if k in labels), None)
     if not kind:
-        print("not a prod-submission / compo-entry issue; nothing to do", file=sys.stderr)
+        print("not a prod-submission / prod-update / compo-entry issue; nothing to do", file=sys.stderr)
         return 2
-    comment, label, f = triage(kind, issue.get("body") or "")
+    comment, label, f = triage(kind, issue.get("body") or "", (issue.get("user") or {}).get("login", ""),
+                               issue.get("author_association", ""), github_issue_author)
     Path(a.comment_out).write_text(comment, encoding="utf-8")
     Path(a.label_out).write_text(label + "\n", encoding="utf-8")
     print(f"{kind}: {label} · findings: {', '.join(f.codes) or 'none'}")

@@ -18,7 +18,7 @@ in `prod.yaml`, and CI reports differences between declared and observed facts a
 | `engines/` | shared code for prods (MIT) |
 | `parties/` | parties and compos |
 | `site/` | the gallery |
-| `scripts/` | `prodcheck.py` (checks + site build), `triage.py` (issue-form check), `intake.py` (zip → PR), schema, budgets |
+| `scripts/` | `prodcheck.py` (checks + site build), `triage.py` (issue-form check), `intake.py` (zip → PR, new prods and updates), schema, budgets |
 | `tests/fixtures/` | fixtures for the self-tests |
 | `docs/` | contributor and maintainer docs; index in `docs/README.md` |
 
@@ -78,6 +78,12 @@ All must pass. Never commit build output or caches (`_site/`, `__pycache__/`).
      size-coded intro and the unpacked logic is clear), nothing against the Code of Conduct, no
      personal data, and no sign that the declared provenance is wrong;
   6. the submission issue is not `needs-info`, and its author is the one who opened it.
+
+  The same mandate covers **update PRs** (head `sysop/update-<issue>`, from a *Prod update* form),
+  with point 3 read as: the diff only changes files inside **one existing** `prods/<year>-<slug>/`
+  folder (plus its CODEOWNERS line), the `title`, `year` and `handles` in `prod.yaml` are unchanged,
+  and the update issue was opened by the prod's original submitter, a listed `maintainers` login or
+  a repo maintainer (triage checks this; Claude confirms it against the issue author).
 
   If any point fails or Claude is unsure, it does not merge: it leaves one short review comment
   saying what a maintainer should look at, and tells the maintainer. When it merges, it posts a

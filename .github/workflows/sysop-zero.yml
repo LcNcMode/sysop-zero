@@ -2,8 +2,10 @@
 #  - triage: deterministic (scripts/triage.py, no AI, no secrets). Runs for every submission,
 #    including first-time sceners without write access. Built-in GITHUB_TOKEN, issues: write.
 #  - intake: deterministic (scripts/intake.py, no AI). When triage says ready-for-pr and a .zip is
-#    attached, it unpacks the zip without a token, then mints a short-lived App token only to push
-#    a sysop/intake-<issue> branch and open or update the PR. A maintainer reviews and merges.
+#    attached (new prod or an update of a released one), it unpacks the zip without a token, then
+#    mints a short-lived App token only to push a sysop/intake-<issue> or sysop/update-<issue> branch
+#    and open or update the PR. Triage has already checked that an update comes from the prod's
+#    creator, a listed maintainer, or a repo maintainer.
 #  - assist: the AI admin, only when a maintainer mentions @sysop-zero. Auth: a dedicated
 #    GitHub App (never a personal PAT), token minted per run with the permissions below. The
 #    App is NOT a bypass actor on the main rulesets, so it can open PRs but never merge.
@@ -27,6 +29,7 @@ jobs:
     if: >-
       github.event_name == 'issues' &&
       (contains(github.event.issue.labels.*.name, 'prod-submission') ||
+       contains(github.event.issue.labels.*.name, 'prod-update') ||
        contains(github.event.issue.labels.*.name, 'compo-entry'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -46,6 +49,8 @@ jobs:
       - run: pip install -r scripts/requirements.txt
       - name: Check the form
         id: check
+        env:
+          GH_TOKEN: ${{ github.token }}   # read-only use: looks up who opened a prod's submission issue
         run: |
           python3 scripts/triage.py --event "$GITHUB_EVENT_PATH" --comment-out triage-comment.md --label-out triage-label.txt
           echo "label=$(tr -d '[:space:]' < triage-label.txt)" >> "$GITHUB_OUTPUT"
@@ -79,7 +84,8 @@ jobs:
     needs: triage
     if: >-
       needs.triage.outputs.label == 'ready-for-pr' &&
-      contains(github.event.issue.labels.*.name, 'prod-submission')
+      (contains(github.event.issue.labels.*.name, 'prod-submission') ||
+       contains(github.event.issue.labels.*.name, 'prod-update'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -102,7 +108,7 @@ jobs:
           import json, os, re
           r = json.load(open(os.path.join(os.environ["RUNNER_TEMP"], "intake", "result.json")))
           ok = r["status"] == "ready" and re.fullmatch(r"\d{4}-[a-z0-9-]+", r.get("slug", "")) \
-               and re.fullmatch(r"sysop/intake-\d+", r.get("branch", ""))
+               and re.fullmatch(r"sysop/(intake|update)-\d+", r.get("branch", ""))
           print(f"status={'ready' if ok else r['status']}")
           if ok:
               print(f"slug={r['slug']}")
@@ -133,12 +139,13 @@ jobs:
           git config user.name "${APP_SLUG}[bot]"
           git config user.email "${bot_id}+${APP_SLUG}[bot]@users.noreply.github.com"
           git switch -c "$BRANCH"
+          rm -rf -- "prods/$SLUG"            # an update replaces the folder; a new prod has none yet
           cp -r "$out/prods/$SLUG" "prods/$SLUG"
           python3 scripts/gen_codeowners.py   # every prod gets a CODEOWNERS line; CI checks the sync
           # -f: the prod's files are exactly what the zip held, even names the root .gitignore skips (dist/, …)
-          git add -f -- "prods/$SLUG"
+          git add -A -f -- "prods/$SLUG"
           git add -- .github/CODEOWNERS
-          git commit -q -m "prod: $SLUG (intake of #$ISSUE)"
+          git commit -q -m "prod: $SLUG (from #$ISSUE)"
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           echo "::add-mask::$auth"
           git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
