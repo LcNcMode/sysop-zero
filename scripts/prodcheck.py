@@ -231,7 +231,7 @@ def check_prod(folder: Path) -> dict:
     if measured is not None and measured > budget["limit_bytes"]:
         err(f"size: {decl['category']} budget is {human(budget['limit_bytes'])} ({budget['measure']}), observed {human(measured)} ({measured} bytes)")
 
-    if decl["platform"] == "web" and html_title is not None and html_title != decl["title"]:
+    if decl["platform"] == "web" and html_title is not None and not same_title(html_title, decl["title"]):
         drift(f"title: declared “{decl['title']}”, entry <title> is “{html_title}”")
     if decl["platform"] == "web" and obs["entry_exists"] and html_title is None and entry.suffix.lower() in (".html", ".htm"):
         drift("title: entry HTML has no <title>")
@@ -260,6 +260,12 @@ def check_prod(folder: Path) -> dict:
         if decl["group"].lower() not in nfo.lower():
             drift(f"group: `{decl['group']}` is declared but not named in nfo.txt")
     return res
+
+
+def same_title(a: str, b: str) -> bool:
+    """Titles match if they differ only in letter case or whitespace (XANADU - DANCE == Xanadu - Dance)."""
+    norm = lambda t: " ".join(t.split()).casefold()
+    return norm(a) == norm(b)
 
 
 def render_report(results: list[dict], title: str) -> str:

@@ -38,7 +38,7 @@ Declared data is **human-owned**: CI and Sysop Zero never edit it.
 | year | `year` | the `YYYY-` prefix of the folder |
 | size | `category` budget | size of the entry file (intros) or folder (others) |
 | entry | `entry` / `platform` | file exists; web prods are HTML |
-| title | `title` | the entry's HTML `<title>` (web prods) |
+| title | `title` | the entry's HTML `<title>` (web prods; letter case and spacing are ignored) |
 | license | `license` | a `LICENSE` file when it is not the default, and that it names the license |
 | provenance | `type: human` | AI tools mentioned in `nfo.txt` or the prod's `*.md` files; `models` listed |
 | credits | `handles`, `group` | named in `nfo.txt` |
