@@ -1,4 +1,4 @@
-# Declared by the creator in submission issue #42. Human-owned: CI compares it
+# Declared by the creator in submission issue #42, updated in #45. Human-owned: CI compares it
 # with what it observes; nobody else edits it (see docs/PROVENANCE.md).
 title: Xanadu - Dance
 group: Xanadu
@@ -14,3 +14,5 @@ provenance:
   - Claude - code
   - Suno - music
   - ChatGPT - logo
+  - Dreamina / Seedream / Seedance - images and video
+  - Mixamo - motion capture for the dot dancers
