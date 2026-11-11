@@ -1,0 +1,16 @@
+# Declared by the creator in submission issue #42. Human-owned: CI compares it
+# with what it observes; nobody else edits it (see docs/PROVENANCE.md).
+title: Xanadu - Dance
+group: Xanadu
+handles:
+- mini
+platform: web
+category: demo
+year: 2026
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+  - Claude - code
+  - Suno - music
+  - ChatGPT - logo

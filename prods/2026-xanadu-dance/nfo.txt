@@ -1,0 +1,28 @@
+XANADU - DANCE - a browser demo by MINI of Xanadu (2026)
+WebGL2 demo, about 3 minutes, one 8.9 MB HTML file. Click to start,
+sound on.
+
+Running it
+  Just open index.html in a browser: the music, video and pictures
+  are all packed inside it, no web server needed.
+  Tested in desktop Chrome.
+
+Credits
+  MINI   - idea, story, direction, texts, logo, testing
+  Claude Code (Anthropic) - code: WebGL2 shaders, effects, sync to
+           the music, tools (directed by MINI)
+  Suno   - music and vocals "Xanadu Returns" (from MINI's prompts)
+  Dreamina / Seedream / Seedance (ByteDance) - the woman, her head
+           turn, her dance clips and the graffiti (MINI's prompts)
+  ChatGPT (OpenAI) - logo image (from MINI's prompts)
+  Mixamo (Adobe) - motion capture for the dot dancers
+
+Parts
+  intro pan - glenz vectors - dance - rotozoom - graffiti tunnel
+  with karaoke - interference rings - starfield and lightspeed -
+  burning logo and scroller
+
+Paramount -> Aros D -> Xanadu... and we are back.
+Amiga 500 roots, Explicit II never died.
+
+Greetings to Venture and every scener who never stopped dreaming.
