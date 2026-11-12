@@ -1,0 +1,20 @@
+DECRUNCH - a demo by MINI of Xanadu (2026)
+WebGL2 demo: index.html + song.m4a. Click to start, sound on. 3:42.
+
+1987. An Amiga 500 boots under DEFCON 2. The decruncher counts down,
+the Guru meditates: EARTH FAILURE. The bombs fall, we leave.
+Every classic effect starts as "A500 * 512K * 1987" on the CRT and gets
+decrunched to 2026. Next stop: the Moon, where we build Xanadu.
+
+Credits
+  MINI   - idea, story, direction, texts, logo direction, testing
+  Claude Code (Anthropic) - code: shader, effects, boot sounds, build (directed by MINI)
+  Suno   - music "Xanadu Wednesday" (from MINI's prompts)
+  ChatGPT (OpenAI) - the two logo images (from MINI's prompts)
+
+Parts: CRT boot, decrunch stripes, Guru, burning Earth, neon tunnel,
+3D floppy, glenz vectors, spectrum analyser, starfield + lightspeed,
+voxel moon, the domes of Xanadu.
+
+Paramount -> Aros D -> Xanadu... let's start again.
+Greetings to Venture - see you at the next party!
