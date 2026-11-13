@@ -94,6 +94,7 @@ it's due, and a recipe others can learn from.
 - **Provenance is mandatory and honest** — see [PROVENANCE.md](PROVENANCE.md).
 - **Handles only.** No legal names, emails or photos of people, in files or on screen, unless it is your own and you really want it there.
 - **Only release what you may release.** Samples, music, fonts and AI output must be yours or licensed for this. Third-party assets keep their own license and must be noted (e.g. `fonts/OFL.txt`).
+- **Credit fonts by their copyright holder** as the font's license names it (e.g. "Cinzel by The Cinzel Project Authors, SIL Open Font License 1.1"), not by a designer's legal name. You keep the attribution the license asks for and stay handles-only.
 - **No malware, no tracking, no network calls home** in web prods beyond loading their own assets and public fonts.
 - Web prods run in a sandboxed iframe with an opaque origin: no cookies, `localStorage` or access to the gallery page. Load your own assets with relative URLs (GitHub Pages serves them with CORS headers).
   When the gallery is built, every HTML file in your prod gets a one-line guard at the top, so it only
