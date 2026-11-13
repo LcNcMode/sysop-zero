@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#060809"><title>EVENT HORIZON</title><meta name="description" content="A 3:21 WebGL2 demo through eight worlds, with four animated guides."><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23060809'/%3E%3Cellipse cx='32' cy='32' rx='25' ry='9' stroke='%23dbff7a' stroke-width='4' fill='none' transform='rotate(-35 32 32)'/%3E%3C/svg%3E">
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#060809;color:#f6f6ed;font-family:Arial,Helvetica,sans-serif;overflow:hidden;height:100%;width:100%}button{font:inherit;cursor:pointer}#screen{width:100%;height:100%;display:block;position:fixed;inset:0}body:after{content:"";position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 180px #0005}.top{position:fixed;top:max(28px,env(safe-area-inset-top));left:34px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:5}.brand{font-size:11px;letter-spacing:3px;display:flex;gap:12px;align-items:center}.icon{display:block;width:26px;height:13px;border:1px solid #dcff85;border-radius:50%;transform:rotate(-35deg)}.tools{display:flex;gap:10px}.tool{border:1px solid #ffffff35;color:#fff;background:#0b101560;border-radius:30px;padding:10px 14px;font-size:10px;letter-spacing:1px;backdrop-filter:blur(12px)}.tool:hover{border-color:#dcff85;color:#dcff85}.landing{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 6vw 110px;z-index:3;background:linear-gradient(0deg,#020609d9,transparent 70%);transition:opacity .4s,visibility .4s;pointer-events:none}.landing>*{pointer-events:auto}.eyebrow{font-family:monospace;font-size:11px;letter-spacing:3px;color:#d9ff87;margin-bottom:20px}.landing h1{font-weight:500;letter-spacing:-.07em;font-size:clamp(58px,9.5vw,152px);line-height:.82;margin:0 0 25px;max-width:1000px}.landing h1 span{display:block;color:#fff9}.intro{font-size:14px;color:#cbd2d2;line-height:1.6;margin:0 0 26px;max-width:370px}.play{background:#deff8c;color:#121810;border:0;border-radius:50px;padding:18px 24px;display:flex;align-items:center;gap:34px;width:max-content;font-size:13px;font-weight:600;transition:transform .2s,background .2s}.play:hover{background:white;transform:translateY(-3px)}.play span{font-size:18px}.bottom{position:fixed;bottom:max(26px,env(safe-area-inset-bottom));left:34px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:5;color:#a4b0b3;font:10px monospace;letter-spacing:1.5px}.chapters{display:flex;gap:23px}.chapters span{transition:color .3s}.chapters .active{color:#e0ff94}.dot{width:5px;height:5px;border-radius:100%;display:inline-block;background:#deff8c;margin-right:8px;box-shadow:0 0 12px #deff8c}.progress{position:fixed;bottom:0;left:0;height:2px;width:100%;background:#ffffff17;z-index:6}.progress i{display:block;height:100%;width:0;background:#e0ff91;box-shadow:0 0 15px #deff8c}.playing .landing{opacity:0;visibility:hidden}.playing .brand{opacity:.5}.playing .tools{opacity:.4}.playing .tools:hover{opacity:1}.caption{position:fixed;inset:0;z-index:2;pointer-events:none;display:grid;place-content:center;text-align:center;opacity:0;transition:opacity .7s}.caption .kicker{font:10px monospace;letter-spacing:6px;color:#e0ff91}.caption h2{font-weight:400;font-size:clamp(40px,8vw,110px);letter-spacing:-.06em;margin:15px 0 25px}.caption .play{margin:auto;pointer-events:auto}.finished .landing{opacity:0;visibility:hidden}.finished .caption{opacity:1;background:#02050980}.error{position:fixed;inset:0;z-index:20;background:#060809;display:none;place-content:center;padding:35px;line-height:1.7}.small{font:10px monospace;color:#8e9c9e;letter-spacing:1px;margin-top:15px}.badge{position:fixed;top:100px;right:36px;font:10px monospace;writing-mode:vertical-rl;letter-spacing:3px;opacity:.5;z-index:2}@media(max-width:600px){.top{left:20px;right:20px;top:max(22px,env(safe-area-inset-top))}.brand{letter-spacing:2px;font-size:9px;gap:9px}.tool{padding:9px 11px;font-size:9px}.landing{padding:0 25px 120px}.landing h1{font-size:clamp(55px,15vw,90px)}.eyebrow{font-size:9px;letter-spacing:2px}.intro{font-size:13px;max-width:270px}.bottom{left:20px;right:20px;font-size:8px;letter-spacing:.5px;gap:15px}.chapters{gap:10px}.badge{right:20px;top:95px;font-size:8px}.bottom .engine{display:none}}
+
+.actions{display:flex;gap:12px;flex-wrap:wrap}.secondary{color:#deff8c;border:1px solid #deff8c55;background:#070c1290;backdrop-filter:blur(10px)}.secondary:hover{color:#0b1107}.secondary span{font-size:12px}.chapters{gap:18px}.chapters button{font:inherit;letter-spacing:inherit;color:inherit;border:0;background:transparent;padding:7px 0;white-space:nowrap}.chapters button:hover{color:white}.chapters .active{color:#e0ff94}#clock{white-space:nowrap}@media(max-width:1100px){.chapters{gap:18px}.chapters button span{display:none}.chapters .active span{display:inline}}@media(max-width:600px){.chapters{gap:10px}.bottom{font-size:8px}.chapters .active span{display:none}.landing{padding-bottom:110px}.actions{gap:10px}.play{padding:16px 19px;gap:20px;font-size:11px}.small{font-size:9px}.bottom{left:20px;right:20px}}
+
+.chapters{gap:14px}.chapters button span{display:none}.chapters .active span{display:inline}@media(max-width:700px){.chapters{gap:11px;max-width:calc(100vw - 125px);overflow-x:auto;scrollbar-width:none}.chapters .active span{display:none}.secondary{font-size:10px}.secondary span{font-size:11px}}.world-label{position:fixed;left:35px;top:105px;z-index:4;pointer-events:none;opacity:0;transition:opacity .2s}.world-label b{font-size:clamp(17px,2.2vw,30px);font-weight:500;letter-spacing:-.5px;display:block}.world-label small{font:9px monospace;letter-spacing:2px;color:#deff8c;display:block;margin-bottom:8px}.playing .world-label.visible{opacity:1}@media(max-width:600px){.world-label{left:20px;top:87px}.world-label b{font-size:17px}.world-label small{font-size:8px}}
+
+.speech{position:fixed;z-index:5;left:50%;bottom:84px;transform:translate(-50%,12px);max-width:min(620px,86vw);padding:13px 21px;border:1px solid #ffffff26;border-radius:14px;background:#101c2ab8;backdrop-filter:blur(15px);font-size:clamp(13px,1.6vw,19px);line-height:1.4;text-align:center;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}.speech.visible{opacity:1;transform:translate(-50%,0)}.nextbadge{position:fixed;right:30px;top:105px;font:10px monospace;letter-spacing:1.8px;color:#deff8c;z-index:4;opacity:0;transition:opacity .3s;pointer-events:none}.nextbadge.visible{opacity:1}#seek{position:fixed;bottom:0;left:0;width:100%;height:16px;margin:0;z-index:7;opacity:.01;cursor:ew-resize}#seek:focus-visible{opacity:1;accent-color:#deff8c}.tools #pause{display:none}.playing .tools #pause{display:block}.world-label{max-width:50vw}.world-label b{font-size:clamp(16px,2vw,26px)}.world-label small{font-size:8px;line-height:1.5}.playing .tools{opacity:.7}.paused .tools{opacity:1}.actions .play{font-size:12px;gap:20px}.landing .intro{max-width:380px}@media(max-width:600px){.top{left:15px;right:15px}.tools{gap:5px}.tool{padding:8px 9px;font-size:8px}.brand{font-size:8px;letter-spacing:1.2px;gap:6px}.world-label{top:86px;max-width:63vw}.world-label small{font-size:7px;letter-spacing:1.2px}.nextbadge{top:138px;right:20px;font-size:8px;letter-spacing:1px}.speech{bottom:80px;max-width:90vw;width:max-content;padding:10px 14px;font-size:13px}.actions .play{font-size:10px;padding:15px 17px;gap:13px}}
+
+.sequence{position:fixed;inset:0;display:grid;place-content:center;text-align:center;z-index:2;pointer-events:none;opacity:0;padding:24px}
+.sequence strong{font-size:clamp(38px,9vw,122px);font-weight:500;letter-spacing:-.065em;line-height:.95;text-shadow:0 8px 50px #000;max-width:13ch}
+.sequence p{font:10px monospace;letter-spacing:.24em;color:#dcff85;margin:18px 0 0;text-shadow:0 2px 12px #000}
+@media(max-width:600px){.sequence p{font-size:8px;letter-spacing:.15em}}
+.xanadu-mark{position:relative;display:block;width:clamp(42px,8vw,86px);aspect-ratio:1;margin:0 auto 18px;filter:drop-shadow(0 0 16px #b6fbab44)}
+.xanadu-mark::before,.xanadu-mark::after{content:"";position:absolute;inset:0;background:linear-gradient(145deg,#f2ffd8,#b3ef91 42%,#538daa);clip-path:polygon(0 6%,26% 6%,100% 94%,74% 94%)}
+.xanadu-mark::after{background:linear-gradient(35deg,#74b1bc,#d9ff96);clip-path:polygon(74% 6%,100% 6%,26% 94%,0 94%)}
+.sequence .xanadu-wordmark{font:900 clamp(42px,11vw,118px)/.85 Arial,Helvetica,sans-serif;letter-spacing:.09em;text-indent:.09em;color:#eaffcc}
+.credits dl{display:grid;gap:13px;margin:0}
+.credits dt{font:10px/1.35 monospace;letter-spacing:.12em;text-transform:uppercase;color:#dcff85}
+.credits dd{margin:3px 0 0;color:#f6f6ed;font-size:clamp(20px,4vw,36px);font-weight:500;line-height:1}
+.credits .lead dd{font-size:clamp(34px,6vw,66px);letter-spacing:-.04em}
+.credits #replay{display:none;margin:18px auto 0;pointer-events:auto;padding:10px 19px}
+.finished .credits #replay{display:flex}
+@media(max-height:430px){.xanadu-mark{width:38px;margin-bottom:9px}.credits dl{gap:8px}.credits .lead dd{font-size:29px}.credits dd{font-size:19px}.credits #replay{margin-top:10px}}
+</style></head>
+<body>
+<audio id="soundtrack" src="Mod-master.mp3" preload="metadata" aria-hidden="true"></audio>
+<canvas id="screen" aria-label="Animated WebGL2 journey through eight worlds with four guides"></canvas>
+<header class="top"><div class="brand"><i class="icon"></i> EVENT HORIZON</div><div class="tools"><button class="tool" id="pause">PAUSE</button><button class="tool" id="sound" aria-pressed="true">SOUND ON</button><button class="tool" id="full" aria-label="Full screen">⛶</button></div></header>
+<div class="world-label" id="worldlabel"><small id="worldnumber"></small><b id="worldname"></b></div><div class="badge">A JOURNEY IN EIGHT WORLDS</div><div id="nextbadge" class="nextbadge"></div><div id="speech" class="speech"></div>
+<main class="landing"><div class="eyebrow">AN EXPERIMENT IN IMPOSSIBLE SPACE</div><h1>EVENT<span>HORIZON.</span></h1><p class="intro">Eight worlds. Four guides.</p><div class="actions"><button class="play" id="start">PLAY DEMO <span>↗</span></button><button class="play secondary" id="new">PREVIEW A TRANSITION <span>↗</span></button></div><div class="small">3:21 · 8 WORLDS</div></main>
+<div class="sequence" id="xanadu" aria-hidden="true">
+  <i class="xanadu-mark" aria-hidden="true"></i>
+  <strong class="xanadu-wordmark">XANADU</strong>
+  <p>PRESENTS</p>
+</div>
+<div class="sequence" id="sequence" aria-hidden="true">
+  <strong>EVENT HORIZON</strong>
+  <p>EIGHT WORLDS · FOUR GUIDES</p>
+</div>
+<section class="sequence credits" id="credits" aria-label="Credits" aria-hidden="true">
+  <dl>
+    <div class="lead"><dt>Ideation, prompting, testing &amp; reprompting</dt><dd>Venture</dd></div>
+    <div><dt>Code &amp; graphics</dt><dd>ChatGPT</dd></div>
+    <div><dt>Music · Mod-master</dt><dd>Suno</dd></div>
+  </dl>
+  <button class="play" id="replay">REPLAY <span aria-hidden="true">↺</span></button>
+</section>
+<footer class="bottom"><nav class="chapters" aria-label="Select a world"><button data-world="0" aria-label="Play MATTER">01<span> / MATTER</span></button><button data-world="1" aria-label="Play FOLD with character introduction">02<span> / FOLD</span></button><button data-world="2" aria-label="Play INFINITY with character introduction">03<span> / INFINITY</span></button><button data-world="3" aria-label="Play RELEASE with character introduction">04<span> / RELEASE</span></button><button data-world="4" aria-label="Play SCAN with character introduction">05<span> / SCAN</span></button><button data-world="5" aria-label="Play VOXEL TIDE with character introduction">06<span> / VOXEL TIDE</span></button><button data-world="6" aria-label="Play DATAMOSH with character introduction">07<span> / DATAMOSH</span></button><button data-world="7" aria-label="Play PHOTON SEA with character introduction">08<span> / PHOTON SEA</span></button></nav><div id="clock">00:00 / 03:21</div></footer><div class="progress"><i id="bar"></i></div><input type="range" id="seek" aria-label="Seek through the demo" min="0" max="201" step="0.1" value="0"><div class="error" id="error"></div>
+<script id="vertex" type="x-shader/x-vertex">#version 300 es
+precision highp float;
+in vec2 aPos;out vec2 vUv;
+void main(){vUv=aPos*.5+.5;gl_Position=vec4(aPos,0.,1.);}
+</script>
+<script id="scene" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+in vec2 vUv;out vec4 fragColor;uniform vec2 uRes;uniform float uTime;uniform vec2 uMouse;uniform sampler2D uPrev;uniform sampler2D uCapture;uniform float uDelta;uniform int uScene;uniform float uLocal;
+#define PI 3.14159265359
+mat2 rot(float a){float s=sin(a),c=cos(a);return mat2(c,-s,s,c);}
+float hash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
+vec3 pal(float x){return .52+.48*cos(6.28318*(x+vec3(0.,.32,.66)));}
+float torus(vec3 p,vec2 r){return length(vec2(length(p.xy)-r.x,p.z))-r.y;}
+vec2 field(vec3 p,int scene,float t){
+ if(scene==0){
+  vec3 q=p;q.xz=rot(t*.32)*q.xz;q.yz=rot(t*.38)*q.yz;
+  float sphere=length(q)-1.42;
+  vec3 k=q*3.15;float gy=dot(sin(k),cos(k.yzx));
+  float d=max(sphere,(abs(gy)-.31)/6.4);
+  vec3 r=p;r.xz=rot(-t*.43+.5)*r.xz;r.yz=rot(.65+t*.25)*r.yz;
+  float rings=torus(r,vec2(1.98,.026));r.xz=rot(1.15)*r.xz;r.yz=rot(.8)*r.yz;rings=min(rings,torus(r,vec2(2.18,.019)));
+  if(rings<d)return vec2(rings,2.);return vec2(d,1.);
+ }
+ if(scene==1){
+  vec3 q=p; q.xy-=vec2(sin(q.z*.19)*.55,cos(q.z*.16)*.42);q.xy=rot(q.z*.12+t*.35)*q.xy;
+  float z=mod(q.z+1.1,2.2)-1.1;float a=atan(q.y,q.x);float rad=2.8+.16*cos(a*6.);
+  float ribs=length(vec2(length(q.xy)-rad,z))-.085;
+  float walls=abs(length(q.xy)-3.13)-.045;
+  float rails=length(vec2(sin(a*6.)*length(q.xy)/6.,length(q.xy)-2.9))-.028;
+  float neon=length(vec2(length(q.xy)-rad,z+.16))-.018;
+  float d=min(ribs,min(walls,rails));if(neon<d)return vec2(neon,2.);return vec2(d,3.);
+ }
+ vec3 q=p;q.xz=rot(t*.12)*q.xz;float sc=1.;
+ for(int i=0;i<5;i++){q=abs(q)-vec3(1.05,.78,.95);q.xy=rot(.66+t*.045)*q.xy;q.yz=rot(.82)*q.yz;q=q*1.72;sc*=1.72;}
+ float d=(dot(abs(q),vec3(1.))-1.7)*.57735/sc;
+ return vec2(d,4.);
+}
+vec3 normalAt(vec3 p,int s,float t){vec2 e=vec2(.002,0.);return normalize(vec3(field(p+e.xyy,s,t).x-field(p-e.xyy,s,t).x,field(p+e.yxy,s,t).x-field(p-e.yxy,s,t).x,field(p+e.yyx,s,t).x-field(p-e.yyx,s,t).x));}
+vec3 environment(vec3 r,float t){float a=atan(r.z,r.x);float stripes=pow(max(0.,sin(a*4.+r.y*5.+t*.1)),18.);vec3 c=mix(vec3(.025,.055,.09),vec3(.25,.38,.43),smoothstep(-.2,.8,r.y));c+=stripes*vec3(1.3,1.5,1.65);float warm=pow(max(0.,dot(r,normalize(vec3(-1.,.5,1.)))),20.);c+=warm*vec3(2.5,.38,.09);c+=pow(max(0.,dot(r,normalize(vec3(1.,.2,-1.)))),35.)*vec3(.3,1.8,2.5);return c;}
+vec3 stars(vec3 rd,float t){vec3 c=vec3(0.);for(int i=0;i<3;i++){float scale=110.+float(i)*65.;vec3 g=floor(rd*scale);vec3 f=fract(rd*scale)-.5;float h=hash(g+float(i)*41.);float star=exp(-dot(f,f)*(220.+h*200.))*step(.986,h);c+=star*(.7+float(i)*.3)*mix(vec3(.45,.72,1.),vec3(1.,.7,.35),h);}return c;}
+mat3 camera(vec3 ro,vec3 ta,float roll){vec3 w=normalize(ta-ro),u=normalize(cross(w,vec3(sin(roll),cos(roll),0.)));return mat3(u,cross(u,w),w);}
+vec3 supernova(vec2 uv,float t){
+ float tau=t-7.6;float a=atan(uv.y,uv.x);float r=length(uv);float expansion=pow(max(tau,0.),.8);float ring=.07+expansion*.9;
+ vec3 col=vec3(.003,.007,.02);float angle=a+tau*.13;
+ for(int i=0;i<3;i++){float k=float(i);float beams=pow(max(0.,sin(angle*(91.+k*47.)+k*3.+sin(a*7.+tau)*2.)),34.);float radial=pow(max(0.,1.-abs(r-ring*.65)/(ring+1.)),3.);col+=beams*radial*min(1.,tau*3.)*pal(k*.2+a*.04+tau*.05)*(.6+.5*sin(r*9.-tau*7.));}
+ float shell=exp(-abs(r-ring)*55./(1.+tau));float shell2=exp(-abs(r-ring*.88)*90.);
+ col+=(shell+shell2*.4)*mix(vec3(.16,.65,2.),vec3(2.4,.48,.08),clamp(tau*.5,0.,1.))*2.;
+ float core=.018/(r*r+.008+tau*tau*.035);col+=core*vec3(.65,.85,1.3)*(1.-smoothstep(1.2,2.5,tau));
+ col+=pow(max(0.,1.-abs(uv.y)*35.),7.)*.06/(.08+abs(uv.x))*(1.-smoothstep(.1,1.3,tau))*vec3(.5,.8,1.);
+ vec3 rd=normalize(vec3(uv,1.));col+=stars(rd,t)*(1.+tau);
+ float tendrils=pow(max(0.,sin(a*15.+sin(a*7.-tau*2.))),9.);col+=tendrils*exp(-abs(r-ring*.65)*8.)*vec3(.7,.08,.5)*.45;
+ return col;
+}
+
+float ellipsoid(vec3 p,vec3 r){return (length(p/r)-1.)*min(r.x,min(r.y,r.z));}
+float faceField(vec3 p,float t){
+ float slice=floor(p.y*28.);float tear=smoothstep(1.6,2.5,1.5+1.5*sin(t*1.2))*step(.82,hash(vec3(slice,floor(t*13.),7.)));
+ p.x+=tear*sin(slice*34.+t*11.)*.32;
+ float head=ellipsoid(p,vec3(.96,1.4,.78));
+ float sockets=length(vec3(abs(p.x)-.39,p.y-.24,(p.z-.70)*1.25))-.255;
+ head=max(head,-sockets);
+ float nose=ellipsoid(p-vec3(0.,-.11,.77),vec3(.15,.32,.30));head=min(head,nose);
+ float mouth=ellipsoid(p-vec3(0.,-.58,.73),vec3(.34,.041,.18));head=max(head,-mouth);
+ float chin=ellipsoid(p-vec3(0.,-.86,.10),vec3(.61,.48,.68));head=min(head,chin);
+ return head;
+}
+vec3 faceNormal(vec3 p,float t){vec2 e=vec2(.004,0.);return normalize(vec3(faceField(p+e.xyy,t)-faceField(p-e.xyy,t),faceField(p+e.yxy,t)-faceField(p-e.yxy,t),faceField(p+e.yyx,t)-faceField(p-e.yyx,t)));}
+vec3 scanFace(vec2 uv,float t){
+ float a=.65*sin(t*.7-.9);vec3 ro=vec3(sin(a)*4.6,.18,cos(a)*4.6);vec3 rd=camera(ro,vec3(0.),.04*sin(t*2.))*normalize(vec3(uv,1.65));
+ float travel=0.;float halo=0.;bool found=false;
+ for(int i=0;i<90;i++){float d=faceField(ro+rd*travel,t);halo+=.0006/(.015+abs(d));if(d<.0017){found=true;break;}if(travel>9.)break;travel+=max(d*.72,.002);}
+ vec3 col=vec3(.002,.008,.018);vec2 cell=floor((uv+vec2(t*.03,0.))*vec2(65.,36.));vec2 sub=fract(uv*vec2(65.,36.));float data=step(.955,hash(vec3(cell,floor(t*9.))))*step(.45,sub.x)*step(.2,sub.y);col+=data*vec3(.06,.32,.35);
+ if(found){vec3 p=ro+rd*travel;vec3 n=faceNormal(p,t);float fres=pow(1.-max(0.,dot(n,-rd)),2.);float light=max(dot(n,normalize(vec3(-2.,3.,5.))),0.);
+  float lines=pow(.5+.5*cos(p.y*280.),14.);float points=pow(max(0.,sin(p.x*175.)),16.)*lines;
+  float scanY=1.8-mod(t*2.1,3.6);float scan=exp(-abs(p.y-scanY)*27.);
+  float digitized=smoothstep(scanY-.12,scanY+.12,p.y);vec3 surface=vec3(.03,.09,.12)*light+vec3(.08,.65,.9)*(fres*.8+lines*.32+points*1.3);
+  col+=mix(surface*.22,surface,digitized)+scan*vec3(.3,1.1,1.5)*1.6;
+  float eye=exp(-length(vec2(abs(p.x)-.39,p.y-.24))*26.)*smoothstep(.45,.85,p.z);col+=eye*vec3(.7,.45,1.2);
+  col+=vec3(.01,.13,.21)*fres;
+ }
+ col+=halo*vec3(.01,.18,.26);col+=exp(-abs(uv.y-(1.8-mod(t*2.1,3.6))*.28)*200.)*vec3(.02,.12,.17);
+ return col;
+}
+float buildingHeight(vec2 id,float t){float wave=sin(length(id-vec2(t*5.,t*3.))*.36-t*3.);return .18+pow(hash(vec3(id,5.)),2.)*2.9+(wave+1.)*.48;}
+vec3 voxelCity(vec2 uv,float t){
+ vec3 ro=vec3(sin(t*.7)*1.6,4.8+.35*sin(t*.8),-3.+t*3.6);vec3 ta=ro+vec3(.3*sin(t),-1.65,4.);vec3 rd=camera(ro,ta,sin(t*1.5)*.12)*normalize(vec3(uv,1.2));
+ vec3 col=vec3(.018,.009,.035)+pow(max(0.,1.-abs(rd.y+.06)),18.)*vec3(.27,.055,.13);float travel=.01;bool found=false;vec3 p;
+ for(int i=0;i<110;i++){p=ro+rd*travel;vec2 id=floor((p.xz+.275)/.55);float h=buildingHeight(id,t);vec3 q=vec3(mod(p.x+.275,.55)-.275,p.y-h*.5,mod(p.z+.275,.55)-.275);vec3 b=abs(q)-vec3(.225,h*.5,.225);float d=min(max(b.x,max(b.y,b.z)),0.)+length(max(b,0.));if(d<.002){found=true;break;}if(travel>25.)break;vec2 boundary=(sign(rd.xz)*.275-(p.xz-id*.55))/(rd.xz+vec2(.000001));float exitCell=max(.002,min(boundary.x,boundary.y)+.0001);travel+=min(clamp(d*.8,.003,.35),exitCell);}
+ if(found){vec2 id=floor((p.xz+.275)/.55);float h=buildingHeight(id,t);vec2 local=abs(mod(p.xz+.275,.55)-.275);float roof=step(h-.03,p.y);float edge=1.-smoothstep(.203,.225,max(local.x,local.y));float etch=max(1.-edge,pow(.5+.5*cos(p.y*42.),22.)*.3);
+  vec3 hue=mix(vec3(.08,.34,1.),vec3(1.4,.06,.24),.5+.5*sin(id.x*.12+id.y*.17+t));float pulse=pow(.5+.5*sin(length(id)*.3-t*4.),12.);
+  col=vec3(.025,.018,.04)+hue*(.12+etch*.8+roof*.22+pulse*.65);col+=roof*edge*vec3(.9,.65,.16)*.15;col*=.65+.35*roof;col=mix(col,vec3(.025,.008,.05),1.-exp(-travel*.06));
+ }
+ return col;
+}
+vec3 datamosh(vec2 uv,float t){
+ vec2 st=vUv;float dt=clamp(uDelta*60.,.2,2.);float row=floor(st.y*(40.+t*12.));float gate=step(.83,hash(vec3(row,floor(t*11.),8.)));float shear=sin(row*6.3+t*8.)*gate*.028;
+ vec2 p=st-.5;vec2 flow=vec2(sin(p.y*11.+t*2.),cos(p.x*9.-t*2.))*.0018*dt;
+ vec2 back=clamp(st+flow+vec2(shear,0.),vec2(.001),vec2(.999));back=(floor(back*uRes)+.5)/uRes;vec3 old=texture(uPrev,back).rgb;
+ vec3 chroma=vec3(texture(uPrev,back+vec2(.003*gate,0.)).r,old.g,texture(uPrev,back-vec2(.003*gate,0.)).b);
+ float cells=step(.995,hash(vec3(floor(st*vec2(160.,90.)),floor(t*20.))));
+ vec2 tile=floor(st*vec2(22.,14.));float displacement=sin(tile.y*19.+floor(t*12.))*step(.4,hash(vec3(tile,floor(t*9.))))*.17*min(1.,t);vec2 keyUV=st+vec2(displacement+.035*sin(st.y*14.+t*4.),.04*sin(tile.x+t*4.)*t);vec3 key=texture(uCapture,fract(keyUV)).rgb;vec3 col=mix(chroma*.997,key,.13)+cells*vec3(.10,.6,.8)*.27;float x=uv.x+.12*sin(uv.y*7.+t*2.);float contour=pow(max(0.,cos(length(vec2(x,uv.y))*(22.+t*9.)-t*7.)),35.);
+ col+=contour*vec3(.13,.015,.09)*.027*dt;float slit=exp(-abs(uv.y-.3*sin(t*2.))*350.);col+=slit*vec3(.08,.22,.25)*.045;
+ col=mix(col,col.brg,.035*gate);return col;
+}
+void main(){
+ float t=uTime;vec2 uv=(gl_FragCoord.xy-.5*uRes)/uRes.y;
+ int s=uScene;
+ float cut=0.;
+ vec3 col;
+ if(s==4){col=scanFace(uv,t-10.);}
+ else if(s==5){col=voxelCity(uv,t-12.5);}
+ else if(s==6){col=datamosh(uv,t-15.);}
+ else if(s==7){col=vec3(.002,.004,.018)+stars(normalize(vec3(uv,1.)),t)*.3;}
+ else if(s==3){col=supernova(rot(uLocal*.19)*uv,7.6+mod(uLocal,4.)*.9);}
+ else{
+  vec3 ro,ta;float roll=0.;float lens=1.65;
+  if(s==0){float a=t*.55-.45;ro=vec3(4.5*sin(a),1.15+sin(t)*.4,4.5*cos(a));ro.xz=rot(uMouse.x*.10)*ro.xz;ro.y+=uMouse.y*.15;ta=vec3(0.);lens=1.8;roll=.08*sin(t);}
+  else if(s==1){float z=uLocal*(10.+1.8*sin(uLocal*.4));ro=vec3(sin(z*.19)*.55,cos(z*.16)*.42,z);ta=vec3(sin((z+5.)*.19)*.55,cos((z+5.)*.16)*.42,z+5.);roll=uLocal*.24+.15*sin(uLocal*.9);lens=1.15;}
+  else{float a=uLocal*.35;ro=vec3(4.5*sin(a+.5),1.5+sin(a*.7)*1.2,4.5*cos(a+.5))*(.87+.12*cos(uLocal*.5));ta=vec3(0.);roll=a*.5;lens=1.45;}
+  vec3 rd=camera(ro,ta,roll)*normalize(vec3(uv*(1.+cut*.22),lens));
+  float travel=.01;float glow=0.;float nearest=100.;vec2 hit=vec2(0.);
+  for(int i=0;i<100;i++){vec3 p=ro+rd*travel;hit=field(p,s,t);nearest=min(nearest,hit.x);glow+=.0016/(.012+abs(hit.x))*exp(-travel*.075);if(hit.x<.0015||travel>32.)break;travel+=max(hit.x*.72,.001);}
+  col=vec3(.005,.009,.018)+stars(rd,t)*.7;
+  if(travel<32.){
+   vec3 p=ro+rd*travel;vec3 n=normalAt(p,s,t);vec3 ref=reflect(rd,n);float fres=pow(1.-max(dot(n,-rd),0.),3.);float ao=clamp(field(p+n*.09,s,t).x/.09,.15,1.);
+   vec3 env=environment(ref,t);float dif=max(dot(n,normalize(vec3(2.,4.,-3.))),0.);
+   if(s==0){col=env*(.42+fres*.85)*ao;col+=pow(fres,3.)*vec3(.1,.7,1.4);if(hit.y>1.5)col=vec3(.5,1.1,1.4)*2.;col+=vec3(.008,.025,.035)*dif;}
+   else if(s==1){float bands=.5+.5*cos(p.z*.55+t);col=env*.3*ao+dif*vec3(.02,.06,.1);float stripe=pow(max(0.,cos(atan(p.y,p.x)*6.)),24.);col+=stripe*vec3(.1,.55,1.)*.7;if(hit.y==2.)col=pal(p.z*.025+.5)*3.;col=mix(col,vec3(.015,.025,.07),1.-exp(-travel*.035));}
+   else{vec3 hue=pal(length(p)*.15+t*.035);col=(env*.65+hue*fres*2.)*ao;col+=pow(max(dot(n,normalize(vec3(-2.,4.,1.))),0.),14.)*vec3(2.,.8,.35);}
+  }
+  vec3 glowCol=s==0?vec3(.04,.3,.46):s==1?vec3(.08,.22,.6):vec3(.38,.12,.28);
+  col+=glow*glowCol*.11;
+  if(s==1){float center=exp(-length(uv)*9.);col+=center*vec3(.4,.8,1.2);}
+ }
+ col+=cut*.5*vec3(.3,.55,.65);
+ col*=1.-.18*dot(uv,uv);fragColor=vec4(max(col,0.),1.);
+}
+</script>
+<script id="post" type="x-shader/x-fragment">#version 300 es
+precision highp float;in vec2 vUv;out vec4 fragColor;uniform sampler2D uTex;uniform vec2 uRes;uniform float uTime;uniform float uPulse;uniform float uDigital;
+vec3 bright(vec2 uv){vec3 c=texture(uTex,uv).rgb;return max(c-vec3(.8),vec3(0.));}
+void main(){vec2 st=vUv;if(uDigital>.5){float line=floor(st.y*160.);float jitter=step(.96,fract(sin(line*127.1+floor(uTime*14.)*311.7)*43758.5453));st.x+=jitter*.005*sin(uTime*18.); }vec2 p=st-.5;float pulse=uPulse;vec2 shift=p*(.0012+.007*pulse);vec3 c=vec3(texture(uTex,st+shift).r,texture(uTex,st).g,texture(uTex,st-shift).b);vec3 bloom=vec3(0.);for(int i=0;i<12;i++){float a=float(i)*.523599;vec2 d=vec2(cos(a),sin(a));bloom+=bright(vUv+d*.004)+bright(vUv+d*.012)*.5+bright(vUv+d*.028)*.22;}c+=bloom*.065;c=1.-exp(-c*1.2);c=pow(c,vec3(.94));float grain=fract(sin(dot(vUv*uRes,vec2(12.9898,78.233))+uTime*50.)*43758.5453);c+=(grain-.5)*.016;c*=smoothstep(0.,.14,uTime+.05);fragColor=vec4(c,1.);}
+</script>
+
+<script id="particles-vertex" type="x-shader/x-vertex">#version 300 es
+precision highp float;uniform float uTime;uniform vec2 uRes;out vec3 vColor;
+mat2 turn(float a){return mat2(cos(a),-sin(a),sin(a),cos(a));}
+void main(){float t=uTime-17.5;float ix=float(gl_VertexID%288),iz=float(gl_VertexID/288);vec2 grid=(vec2(ix,iz)/vec2(287.,191.)-.5)*vec2(19.,19.);grid=turn(t*.13)*grid;float r=length(grid);
+ float y=sin(r*2.2-t*3.8)*.48+sin(grid.x*.9+t*1.5)*.55+cos(grid.y*.7-t)*.25;
+ float fold=smoothstep(.65,2.35,t);y+=sin(grid.x*.45+t)*grid.x*.20*fold;
+ vec3 p=vec3(grid.x,y,grid.y);float curl=.5+.5*sin(t*.5-1.5708);float angle=grid.x*.35;vec3 tube=vec3(sin(angle)*(3.5+y*.4),cos(angle)*(3.5+y*.4)+.5,grid.y);p=mix(p,tube,curl);float lifting=smoothstep(.6,1.,.5+.5*sin(t*.9));p.y+=lifting*pow(max(0.,1.-r/10.),2.)*sin(ix*31.+iz*73.)*2.;
+ vec3 ro=vec3(sin(t*.5)*1.7,2.8+.35*sin(t*.4),5.5-2.*sin(t*.4)),ta=vec3(0.,.1,-2.);vec3 w=normalize(ta-ro),u=normalize(cross(w,vec3(0.,1.,0.))),v=cross(u,w);vec3 d=p-ro;vec3 q=vec3(dot(d,u),dot(d,v),dot(d,w));vec2 screen=q.xy/max(.01,q.z)*1.55;screen=turn(-.1+t*.12)*screen;screen.x/=uRes.x/uRes.y;gl_Position=vec4(screen,q.z>0.?0.:2.,1.);
+ gl_PointSize=clamp(30./max(.2,q.z)*(uRes.y/650.),2.3,16.);float crest=.5+.5*sin(r*2.2-t*3.8);vColor=mix(vec3(.06,.38,1.2),vec3(.55,1.1,.2),crest)*(.45+.55*max(0.,1.-length(d)/20.));vColor+=pow(crest,14.)*vec3(.4,.3,.3);vColor*=1.7;
+}
+</script>
+<script id="particles-fragment" type="x-shader/x-fragment">#version 300 es
+precision highp float;in vec3 vColor;out vec4 fragColor;
+void main(){float r=length(gl_PointCoord-.5);if(r>.5)discard;float a=exp(-r*r*24.);fragColor=vec4(vColor*a,.65*a);}
+</script>
+<script src="toys.js"></script>
+<script id="portal" type="x-shader/x-fragment">#version 300 es
+ precision highp float;in vec2 vUv;out vec4 color;uniform sampler2D uFX,uHost,uOld;uniform float uPhase,uAspect;
+ float ease(float a,float b,float x){return smoothstep(a,b,x);}
+ void main(){float t=uPhase;float arrival=ease(0.,1.15,t),opening=ease(1.8,4.1,t),flight=ease(6.,8.,t);vec2 center=mix(vec2(uAspect<1.?.67:.73,uAspect<1.?.60:.53),vec2(.5),flight);float radius=mix(.255*opening,sqrt(uAspect*uAspect+1.),flight*flight);vec2 p=(vUv-center)*vec2(uAspect,1.);float dist=length(p)-radius;float aperture=1.-smoothstep(-.003,.003,dist);aperture*=opening;vec2 hostUV=clamp(vUv+vec2(.145*ease(.8,3.8,t)*(1.-flight*.15),0.),vec2(.001),vec2(.999));vec3 host=texture(uHost,hostUV).rgb;vec3 old=texture(uOld,vUv).rgb;vec3 base=mix(old,host,arrival);vec2 portalUV=mix((vUv-center)/max(.002,radius*2.)+.5,vUv,flight);portalUV=clamp(portalUV,vec2(.001),vec2(.999));vec3 fx=texture(uFX,portalUV).rgb;vec3 col=mix(base,fx,aperture);float rim=exp(-abs(dist)*150.)*opening*(1.-flight);float pulse=.8+.2*sin(t*5.);col+=rim*vec3(.35,1.1,.85)*pulse;float halo=exp(-abs(dist)*20.)*opening*(1.-flight);col+=halo*vec3(.02,.08,.12);color=vec4(col,1.);}</script>
+<script id="bookend" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+in vec2 vUv;
+out vec4 fragColor;
+uniform sampler2D uWorld;
+uniform float uLocal,uAspect;
+uniform bool uClosing;
+
+float hash(vec2 p) {
+  return fract(sin(dot(p,vec2(127.1,311.7))) * 43758.5453);
+}
+void main() {
+  float t = uLocal;
+  vec2 p = (vUv - .5) * vec2(uAspect,1.);
+  vec2 cell = (p + vec2(.008,-.004)*t) * 71.;
+  float seed = hash(floor(cell));
+  float stars = step(.96,seed)*exp(-42.*dot(fract(cell)-.5,fract(cell)-.5));
+  float energy = uClosing ? 1.-smoothstep(3.,7.4,t) : smoothstep(.2,4.,t);
+  float radius = uClosing ? mix(.035,.29,energy) : mix(.045,.31,energy);
+  float a = atan(p.y,p.x);
+  float r = length(p);
+  float arc = .3+.7*pow(.5+.5*cos(2.*a-t*.68),4.);
+  float rim = exp(-140.*abs(r-radius))*arc;
+  float halo = exp(-16.*abs(r-radius))*.18;
+  vec3 tint = mix(vec3(.12,.58,.85),vec3(.68,.93,.33),.5+.5*cos(a+t*.28));
+  vec3 color = vec3(.004,.008,.016) + stars*vec3(.42,.59,.72)*(.15+.85*energy);
+  color += tint*(rim+halo)*energy + vec3(.06,.14,.2)*exp(-8.*r)*energy;
+  float reveal = uClosing ? 1.-smoothstep(0.,2.65,t) : smoothstep(6.65,9.,t);
+  color = mix(color,texture(uWorld,vUv).rgb,reveal);
+  if (uClosing) color *= 1.-.9*smoothstep(6.4,8.,t);
+  fragColor = vec4(color,1.);
+}
+</script>
+<script src="show.js"></script>
+</body></html>
