@@ -1,0 +1,25 @@
+TWO FLAMES - a demo by MINI of Xanadu (2026), dedicated to Venture
+WebGL2 demo: index.html + song.m4a. Click to start, sound on. About 3 min 15 s.
+
+A dragon sleeps. Two flames, one gold for the human heart and one blue for the AI fire,
+wake it. A hip-hop reunion song and a demo for Venture, friend since junior high school
+and the Amiga days. Greetings to everyone who ever was part of Xanadu.
+
+Credits
+  MINI      - idea, story, direction, texts, testing
+  Claude Code (Anthropic) - code: the shader, rotozoomer, scroller, build (directed by MINI)
+  Suno      - the song "Mini & Venture" (from MINI's prompts)
+  ChatGPT (OpenAI) - the dragon pictures and the logos (from MINI's prompts)
+  Dreamina (ByteDance) - the graffiti walls (from MINI's prompts)
+  Cinzel by Natanael Gama, SIL Open Font License 1.1, embedded in the page
+
+Parts: the eye, the dragon, graffiti walls lit by two sparks, the door, the rotozoomer
+(one picture, zoomed in 250-650 %), stars, the logo, the final rotozoomer, reborn,
+the ladies and the dragon, the eye closing.
+
+Controls: none. If the picture and the sound drift apart (AirPlay, Bluetooth), press
+"." or "," to shift the picture by 0.1 s.
+
+Dedicated to Venture. From the Amiga days to the AI era.
+Paramount -> Aros D -> Xanadu... let's start again.
+Greetings to Venture - see you at the next party!
