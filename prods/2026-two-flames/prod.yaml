@@ -1,0 +1,21 @@
+# Declared by the creator in submission issue #51. Human-owned (see docs/PROVENANCE.md).
+title: "Two Flames"
+group: Xanadu
+handles:
+  - mini
+platform: web
+category: demo
+year: 2026
+entry: index.html
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+    - Claude - code
+    - Suno - music
+    - ChatGPT - dragon pictures and logos
+    - Dreamina - graffiti walls
+  notes: >
+    Idea, story, direction and texts by mini; the demo is dedicated to Venture. Code by Claude Code, directed by mini. The song is Suno, from mini's prompts. Dragon pictures and logos
+    are ChatGPT output, the graffiti walls Dreamina output, both from mini's prompts, used as made (cropped and animated in the shader).
+tags: [webgl, rotozoom, scroller, hiphop]
