@@ -1,0 +1,15 @@
+Xanadu presents EVENT HORIZON
+2026 | Real-time WebGL2 demo | 3:21
+
+Venture: ideation, prompting, testing & reprompting
+ChatGPT: code & graphics
+Suno: music (Mod-master)
+
+Eight worlds, four guides. English presentation.
+Play Demo starts from the beginning. Space pauses or resumes.
+The chapter bar and timeline jump to a specific point.
+Sound On/Off mutes the track without interrupting playback.
+Contains bright flashes and rapidly changing imagery.
+
+Entry: index.html. Requires WebGL2 and MP3 playback.
+All assets are included. The player makes no external requests.
