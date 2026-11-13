@@ -11,7 +11,7 @@ Credits
   Suno      - the song "Mini & Venture" (from MINI's prompts)
   ChatGPT (OpenAI) - the dragon pictures and the logos (from MINI's prompts)
   Dreamina (ByteDance) - the graffiti walls (from MINI's prompts)
-  Cinzel by Natanael Gama, SIL Open Font License 1.1, embedded in the page
+  Cinzel by The Cinzel Project Authors, SIL Open Font License 1.1, embedded in the page
 
 Parts: the eye, the dragon, graffiti walls lit by two sparks, the door, the rotozoomer
 (one picture, zoomed in 250-650 %), stars, the logo, the final rotozoomer, reborn,
