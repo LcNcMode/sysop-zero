@@ -1,0 +1,59 @@
+/* tokens.css — every colour, size and font the site uses, in one place.
+ *
+ * Rule: other CSS files never contain a raw colour, and sizes are these variables or rem
+ * (1px hairlines and the title shadow are the only px).
+ * To restyle the site (a new theme, bigger text, another font) you change this file only.
+ *
+ * Sizes are in rem, and 1rem itself grows with the screen (see `html` below), so the same
+ * layout reads on a phone at 30 cm, a laptop at 60 cm and a TV at 3 m.
+ */
+
+:root {
+  /* Colours */
+  --bg: #05040f;          /* page background */
+  --bg-raised: #0a0f2a;   /* cards, inputs */
+  --bg-stage: #000;       /* behind a running prod */
+  --fg: #cfe;             /* body text */
+  --fg-strong: #fff;      /* headings */
+  --dim: #6a8;            /* secondary text */
+  --hi: #7ff;             /* links, focus ring, hybrid provenance */
+  --ac: #c8f;             /* credits, ai provenance */
+  --ok: #9f9;             /* human provenance */
+  --warn: #fc6;           /* drift notes, heads-up notice */
+  --line: #1f3560;        /* quiet borders */
+  --line-strong: #2a4a7a; /* borders on controls */
+  --shadow: #204;         /* title drop shadow */
+  --backdrop: #000c;      /* behind the player dialog */
+
+  /* Type */
+  --font: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  --text-s: 0.8rem;
+  --text-m: 1rem;
+  --text-l: 1.15rem;
+  --text-title: clamp(1.75rem, 7vw, 4rem);
+
+  /* Space */
+  --gap-s: 0.35rem;
+  --gap-m: 0.75rem;
+  --gap-l: 1.25rem;
+
+  /* Controls: 2.75rem is 44 px at the smallest text size, the minimum for a thumb. */
+  --tap: 2.75rem;
+  --focus: 0.2rem solid var(--hi);
+
+  /* Layout */
+  --card-min: 17.5rem;
+  --page-max: 75rem;
+
+  /* Text size chosen by the visitor (js/textsize.js sets data-size on <html>). */
+  --scale: 1;
+}
+
+html[data-size="l"] { --scale: 1.25; }
+html[data-size="xl"] { --scale: 1.6; }
+
+/* 1rem = the visitor's own default size on a phone, growing gently with the screen width
+ * (about 18 px at 1440 wide, 21 px at 1920), then multiplied by the chosen text size. */
+html {
+  font-size: calc(clamp(100%, 75% + 0.45vw, 162.5%) * var(--scale));
+}

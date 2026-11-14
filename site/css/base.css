@@ -1,0 +1,79 @@
+/* base.css — defaults for plain elements: page, text, links, buttons, focus, motion.
+ * Nothing here knows about cards or the player. Values come from tokens.css.
+ */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;   /* fallback for old browsers */
+  min-height: 100dvh;  /* the visible height, without mobile browser bars */
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: var(--text-m);
+  line-height: 1.45;
+  /* Keep content clear of phone notches and TV edges. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+a { color: var(--hi); }
+
+/* Every control is at least one thumb high and wide. */
+button,
+select,
+.btn {
+  font: inherit;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: 0 var(--gap-m);
+  background: var(--bg-raised);
+  color: var(--fg);
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+}
+
+/* A link that looks and sizes like a button. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.btn-primary {
+  border-color: var(--hi);
+  color: var(--hi);
+}
+
+/* Keyboard, remote and switch users must always see where they are. */
+:focus-visible {
+  outline: var(--focus);
+  outline-offset: 0.15rem;
+}
+
+.dim { color: var(--dim); }
+
+[hidden] { display: none !important; }
+
+/* Shown only when focused: lets keyboard and remote users jump past the header. */
+.skip {
+  position: absolute;
+  left: -100rem;
+}
+.skip:focus {
+  position: static;
+  align-self: center;
+}
+
+/* The site chrome has no animation today. This keeps it that way for visitors who ask for
+ * less motion, whatever is added later. (It does not reach inside a running prod.) */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -64,7 +64,7 @@ untrusted code, which is the worse trade.)
 
 Gallery sandbox: prods are published on the gallery's origin, which on `<owner>.github.io` is
 shared with every other Pages site of the owner. A prod is therefore only safe inside the
-gallery's sandboxed iframe (`allow-scripts`, never `allow-same-origin`; `site/player.js`).
+gallery's sandboxed iframe (`allow-scripts`, never `allow-same-origin`; `site/js/player.js`).
 `prodcheck.py` enforces that at build time: it refuses symlinks and file types that could run
 script outside the sandbox (`.xhtml`, `.xml`, script-carrying SVG, …), and prepends a guard to
 every published HTML file that stops the page unless it has an opaque origin (`self.origin ===
