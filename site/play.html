@@ -2,16 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Same CSP as index.html. Keep the two identical. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Sysop Zero — player</title>
-<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/player.css">
 </head>
 <body class="full">
-<div class="bar"><span id="p-title">loading…</span><span><a id="p-nfo" target="_blank" rel="noopener" hidden>nfo</a> · <a href="./">back to the gallery</a></span></div>
-<iframe id="p-frame" title="prod" sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer" allow="autoplay; fullscreen" allowfullscreen></iframe>
-<script src="player.js"></script>
-<script src="play.js"></script>
+<div class="bar">
+  <span class="title" id="p-title">loading…</span>
+  <span class="controls">
+    <a class="btn" id="p-nfo" target="_blank" rel="noopener" hidden>nfo</a>
+    <a class="btn btn-primary" href="./">← gallery</a>
+  </span>
+</div>
+<div class="stage">
+  <div class="gate" id="p-gate" hidden></div>
+  <iframe id="p-frame" title="prod" sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer" allow="autoplay; fullscreen" allowfullscreen></iframe>
+</div>
+<noscript><p class="dim">The player needs JavaScript.</p></noscript>
+<script type="module" src="js/play-main.js"></script>
 </body>
 </html>
