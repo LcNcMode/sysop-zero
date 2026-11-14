@@ -135,7 +135,8 @@ Open `http://localhost:8000/` and check:
 4. `play.html#/<slug>` runs the prod; opening a prod's own `index.html` forwards to the
    player.
 5. `submit.html`: empty answers are stopped with a message under the field; filled in, the
-   last step links to the repo's new-issue form with `template=` and one parameter per answer.
+   last step links to the repo's new-issue form with `template=`, `title=` and one parameter
+   per text answer, and lists the dropdown answers to pick again on GitHub.
 6. The browser console shows no CSP errors.
 
 Then run the repo checks listed in `AGENTS.md`. Never commit `_site/`.
