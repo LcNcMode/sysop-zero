@@ -7,6 +7,7 @@
 | [MANIFESTO](MANIFESTO.md) | you want to know what this scene is about |
 | [CONTRIBUTING](CONTRIBUTING.md) | you are about to release a prod |
 | [PROVENANCE](PROVENANCE.md) | you need to declare who (or what) made your prod |
+| [AUDIO](AUDIO.md) | your web prod plays sound and should be heard on phones |
 | [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) | always, really |
 
 ## For maintainers
