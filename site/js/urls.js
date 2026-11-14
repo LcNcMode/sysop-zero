@@ -33,6 +33,3 @@ export function sourceLink(cfg, p) {
     ? { href: `${repo(cfg)}/tree/HEAD/prods/${encodeURIComponent(p.slug)}`, label: "source" }
     : { href: prodBase(p) + "prod.yaml", label: "prod.yaml" };
 }
-
-/** The "submit a prod" form chooser, or null when no repo is known. @param {Config} cfg */
-export const submitUrl = (cfg) => (repo(cfg) ? repo(cfg) + "/issues/new/choose" : null);

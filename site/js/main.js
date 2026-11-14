@@ -11,7 +11,6 @@
 
 import { $, esc } from "./dom.js";
 import { loadConfig, loadProds } from "./data.js";
-import { submitUrl } from "./urls.js";
 import { initFilters, applyFilters } from "./filters.js";
 import { cardHtml } from "./card.js";
 import { initDialog } from "./dialog.js";
@@ -26,8 +25,6 @@ async function main() {
   // Header and footer text from config.
   if (cfg.title) { document.title = cfg.title; $("#site-title").textContent = cfg.title; }
   $("#tagline").textContent = cfg.tagline || "";
-  const submit = submitUrl(cfg);
-  if (submit) { $("#submit-link").href = submit; $("#submit-link").hidden = false; }
   $("#generated").textContent = data.generated ? "updated " + data.generated.slice(0, 10) : "";
 
   // The grid.
