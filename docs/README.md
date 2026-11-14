@@ -15,6 +15,7 @@
 |---|---|
 | [OPERATIONS](OPERATIONS.md) | how the repo is set up and run |
 | [MIGRATION](MIGRATION.md) | moving the repo to an organization |
+| [design/COMPOS_AND_VOTING](design/COMPOS_AND_VOTING.md) | proposal: compos, voting, results and awards (not built) |
 
 ## Glossary
 
