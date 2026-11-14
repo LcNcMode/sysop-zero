@@ -1,0 +1,26 @@
+# Declared by the creator (Venture). Human-owned: CI compares it with what it observes;
+# nobody else edits it (see docs/PROVENANCE.md).
+title: XANADU — VENTURE
+group: Xanadu
+handles:
+  - Venture
+platform: web
+category: demo
+year: 2026
+released: 2026-11-14
+entry: index.html
+download: assets/xanadu-venture.mp4
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+    - GPT-6 Astra — concept development, direction and code
+    - Runway Gen-4.5 — AI-generated film sequences and fictional people
+    - Suno v6 — music generation
+  notes: >
+    Venture did creative direction, prompting, testing, feedback, technology choices and
+    music selection. The film sequences, the fictional people on screen and the music are
+    generated output, selected and supplied by Venture. The GLSL graphics were written by
+    GPT-6 Astra and baked into the MP4. The Xanadu wordmark and English titles were composed
+    for this release. The web player (index.html, app.js, style.css) only plays the MP4.
+tags: [video, ai-film, intro, xanadu]

@@ -1,0 +1,44 @@
+ ___________________________________________________________________________
+|                                                                           |
+|                    X A N A D U   -   V E N T U R E                        |
+|                           FOLLOW THE SPARK                                |
+|___________________________________________________________________________|
+
+  group ....... Xanadu
+  credits ..... Venture  - creative direction, prompting, testing, music selection
+  platform .... web browser (MP4 video + offline player)
+  category .... demo (AI-assisted video demo / intro)
+  license ..... CC BY-NC-SA 4.0
+  released .... 14 November 2026
+
+  ABOUT
+  -----
+  A spark breaks the pattern, crosses a concrete world, and becomes a shared
+  moment. Curiosity, new technology and human warmth.
+  1280x720, 16:9, 24 fps, about 36.4 seconds. H.264 video, AAC stereo audio.
+  Picture, graphics, music and credits are all inside the MP4. Works offline.
+
+  CONTROLS
+  --------
+  Click "Play with sound". Pause / Restart / Fullscreen under the picture.
+  "Download the film" saves the MP4. "Production credits" shows the credits.
+
+  WARNINGS
+  --------
+  None. No flashing or strobing.
+
+  CREDITS AND PRODUCTION DISCLOSURE
+  ---------------------------------
+  Venture         - creative direction, prompting, testing, feedback,
+                    technology choices and music selection
+  GPT-6 Astra     - concept development, direction and code
+  Runway Gen-4.5  - AI-generated film sequences and fictional people
+  Suno v6         - AI-generated music, selected and supplied by Venture
+  Graphics developed in WebGL2 / GLSL ES 3.0 and baked into the video.
+  The Xanadu typography and English titles were composed for this release.
+  The people on screen are AI-generated and fictional.
+
+  GREETINGS
+  ---------
+  mini of Xanadu, and every scener who never stopped dreaming.
+  Zodiak of Cascada.
