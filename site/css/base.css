@@ -35,6 +35,19 @@ select,
   cursor: pointer;
 }
 
+/* Text fields: full width, same height and look as the other controls. */
+input[type="text"],
+textarea {
+  font: inherit;
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--gap-s) var(--gap-m);
+  background: var(--bg-raised);
+  color: var(--fg);
+  border: 1px solid var(--line-strong);
+}
+textarea { resize: vertical; }
+
 /* A link that looks and sizes like a button. */
 .btn {
   display: inline-flex;

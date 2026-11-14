@@ -316,6 +316,31 @@ def guard_html(dst: Path, out: Path, slug: str) -> None:
         f.write_bytes(raw[:cut] + guard + raw[cut:])
 
 
+def submit_spec(cfg: dict) -> dict:
+    """The Prod submission form as data: site/submit.html draws its questions from it, and agents
+    read it (site/llms.txt). Generated from the issue form, so the two can never disagree."""
+    name = "prod-submission.yml"
+    form = yaml.safe_load((ROOT / ".github/ISSUE_TEMPLATE" / name).read_text(encoding="utf-8"))
+    fields = []
+    for item in form.get("body", []):
+        attrs = item.get("attributes", {})
+        if item.get("type") == "markdown" or "label" not in attrs or not item.get("id"):
+            continue
+        fields.append({
+            "id": item["id"], "type": item["type"], "label": attrs["label"],
+            "description": attrs.get("description", ""), "default": attrs.get("value", ""),
+            "required": bool(item.get("validations", {}).get("required")),
+            "options": [o["label"] if isinstance(o, dict) else o for o in attrs.get("options", [])],
+        })
+    repo = (cfg.get("repo_url") or "").rstrip("/")
+    return {
+        "version": 1, "template": name, "title": form.get("title", ""),
+        "new_issue_url": f"{repo}/issues/new" if repo else "",  # + ?template=<template>&<field id>=<value>
+        "fields": fields, "budgets": BUDGETS, "default_license": DEFAULT_LICENSE,
+        "schema": "schema/prod.schema.json",
+    }
+
+
 def build_site(results: list[dict], out: Path) -> None:
     if out.exists():
         shutil.rmtree(out)
@@ -325,6 +350,10 @@ def build_site(results: list[dict], out: Path) -> None:
         # Portability: derive the repo link at build time instead of hardcoding it.
         cfg["repo_url"] = f"{os.environ.get('GITHUB_SERVER_URL', 'https://github.com')}/{os.environ['GITHUB_REPOSITORY']}"
     (out / "config.json").write_text(json.dumps(cfg, indent=2) + "\n")
+    # For the web submission form and for agents: the form and the prod.yaml schema, as data.
+    (out / "submit.json").write_text(json.dumps(submit_spec(cfg), indent=2, ensure_ascii=False) + "\n")
+    (out / "schema").mkdir()
+    shutil.copy(ROOT / "scripts/schema/prod.schema.json", out / "schema/prod.schema.json")
     index = []
     for r in results:
         if r["errors"]:

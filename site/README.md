@@ -12,6 +12,8 @@ change anything here.
 `python3 scripts/prodcheck.py --site-out _site` copies this folder to `_site/`, adds every
 prod under `_site/prods/`, and writes `_site/prods.json` (the file list). GitHub Pages serves
 `_site/`. So `prods.json` and `prods/` do not exist in this folder: they appear in the build.
+The build also writes `_site/submit.json` (the submission form as data, generated from
+`.github/ISSUE_TEMPLATE/prod-submission.yml`) and `_site/schema/prod.schema.json`.
 
 ## Map
 
@@ -19,6 +21,8 @@ prod under `_site/prods/`, and writes `_site/prods.json` (the file list). GitHub
 |---|---|---|
 | `index.html` | the gallery page | you add a control or a page region |
 | `play.html` | the full-window player page | the player page layout changes |
+| `submit.html` | the upload page: guided submission, hands over to GitHub | the upload page layout changes |
+| `llms.txt` | the door for AI agents: how to read the board and submit | the agent contract changes |
 | `config.json` | title, tagline, custom domain | the board's name or address changes |
 | `favicon.svg` | the tab icon (a slashed zero) | the logo changes |
 | `css/tokens.css` | every colour, size and font, as variables | restyling, themes, text sizes |
@@ -37,6 +41,12 @@ prod under `_site/prods/`, and writes `_site/prods.json` (the file list). GitHub
 | `js/stage.js` | "run this prod here": notice first, then iframe | the start sequence changes |
 | `js/gate.js` | the one-time heads-up (flashing, loud) | the notice text or rule changes |
 | `js/player.js` | the sandboxed iframe. **Security-critical.** | almost never. See the rules. |
+| `js/submit-main.js` | upload page entry point; holds the answers and the current step | the upload flow changes |
+| `js/submit-spec.js` | loads `submit.json`; the `Field` type | `submit.json` gets a new key |
+| `js/submit-form.js` | draws the steps and the hand-over step | questions are grouped differently |
+| `js/submit-rules.js` | checks answers. **Mirror of `scripts/triage.py`.** | a triage rule changes |
+| `js/submit-url.js` | builds the prefilled GitHub link | GitHub changes how prefill works |
+| `css/submit.css` | the upload page | the upload page looks different |
 | `js/textsize.js` | the text size button | sizes are added or renamed |
 | `js/storage.js` | remembers small choices on the device | never, usually |
 | `js/dom.js` | `$`, `esc`, `humanBytes` | you need another tiny helper |
@@ -46,6 +56,7 @@ How they depend on each other (an arrow means "imports"):
 ```
 main.js ──► data, urls, filters, card, textsize, router, dialog ──► stage ──► gate ──► storage
 play-main.js ──► data, urls, router, textsize, stage                     └──► player ──► urls
+submit-main.js ──► submit-spec, submit-form ──► submit-rules, submit-url; textsize, storage
 ```
 
 `dom.js` and `storage.js` are leaves: they import nothing.
@@ -87,6 +98,12 @@ play-main.js ──► data, urls, router, textsize, stage                     �
 **Add a filter.** Add a `<select id="f-…">` inside `<nav>` in `index.html` → add one entry
 to `FILTERS` in `js/filters.js`.
 
+**Change a submission question.** Edit `.github/ISSUE_TEMPLATE/prod-submission.yml` (a
+it is the real form, so the maintainer reviews changes to it). GitHub's form, `submit.json` and the upload
+page all follow. If the field needs a check, add it to `scripts/triage.py` first and mirror it
+in `js/submit-rules.js`. To move a question to another step, edit `STEPS` in
+`js/submit-form.js`.
+
 **Add a theme.** In `css/tokens.css`, add a block like `html[data-theme="amber"] { --bg: …;
 --fg: …; }` that overrides colour variables only. Add a button module modelled on
 `js/textsize.js` that sets `data-theme` on `<html>`.
@@ -117,6 +134,8 @@ Open `http://localhost:8000/` and check:
 3. A prod opens, Back (browser button) closes it and you are still on the gallery.
 4. `play.html#/<slug>` runs the prod; opening a prod's own `index.html` forwards to the
    player.
-5. The browser console shows no CSP errors.
+5. `submit.html`: empty answers are stopped with a message under the field; filled in, the
+   last step links to the repo's new-issue form with `template=` and one parameter per answer.
+6. The browser console shows no CSP errors.
 
 Then run the repo checks listed in `AGENTS.md`. Never commit `_site/`.
