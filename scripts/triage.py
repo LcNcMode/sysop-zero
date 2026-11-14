@@ -72,9 +72,17 @@ def form_fields(kind: str) -> dict[str, dict]:
     return out
 
 
+# Labels a form field used to have. Issues opened before a rename still carry the old heading,
+# and must keep parsing when their author edits them. old label -> current label, per form.
+LEGACY_LABELS = {"prod-submission": {"Title": "Prod title"}}
+
+
 def parse_body(body: str, kind: str) -> dict[str, str]:
     """GitHub renders each form field as '### <label>' followed by its value."""
     fields = form_fields(kind)
+    for old, new in LEGACY_LABELS.get(kind, {}).items():
+        if new in fields and old not in fields:
+            fields[old] = fields[new]
     values: dict[str, str] = {}
     current = None
     buf: list[str] = []
@@ -188,6 +196,9 @@ def check_prod(v: dict, f: Findings) -> dict | None:
         if len(h) > 40 or "@" in h:
             f.block("bad:handles", "**Handles**: comma-separated scene handles, max 40 characters each, no `@`.")
             break
+    if any(AI_HINTS.search(h) for h in handles):
+        f.note("handles:ai-tool", "**Handles** names an AI tool. Handles are the people behind the prod; tools go "
+               "under **AI models and tools used**. If that really is someone's scene name, leave it.")
     if len(set(h.lower() for h in handles)) != len(handles):
         f.block("bad:handles-dupe", "**Handles**: the same handle is listed twice.")
     for prop, fid in (("category", "category"), ("platform", "platform")):
@@ -236,7 +247,7 @@ def check_prod(v: dict, f: Findings) -> dict | None:
     if f.blocking:
         return None
     draft = {
-        "title": v["title"].strip(), "group": v["group"].strip(), "handles": handles,
+        "title": v["prod_title"].strip(), "group": v["group"].strip(), "handles": handles,
         "platform": v["platform"], "category": v["category"], "year": year, "license": lic,
         "provenance": {"type": v["provenance"]},
     }

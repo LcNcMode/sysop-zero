@@ -214,7 +214,7 @@ def build(body: str, issue: int, data: bytes, out: Path) -> dict:
         return {"status": "skip", "reason": "triage says needs-info"}
     v = parse_body(body, "prod-submission")
     year = int(v["year"].strip())
-    slug = f"{year}-{slugify(v['title'])}"
+    slug = f"{year}-{slugify(v['prod_title'])}"
     if (ROOT / "prods" / slug).exists():
         raise Refused(f"`prods/{slug}/` already exists; updates to a released prod go through a maintainer")
     folder = out / "prods" / slug
@@ -223,7 +223,7 @@ def build(body: str, issue: int, data: bytes, out: Path) -> dict:
     generated = []
     if not (folder / "prod.yaml").exists():
         handles = [h.strip() for h in re.split(r"[,\n]", v["handles"]) if h.strip()]
-        decl = {"title": v["title"].strip(), "group": v["group"].strip(), "handles": handles,
+        decl = {"title": v["prod_title"].strip(), "group": v["group"].strip(), "handles": handles,
                 "platform": v["platform"], "category": v["category"], "year": year,
                 "license": v["license"].strip(), "provenance": {"type": v["provenance"]}}
         models = [m.strip(" -*\t") for m in v.get("models", "").split("\n") if m.strip(" -*\t")]
@@ -241,13 +241,13 @@ def build(body: str, issue: int, data: bytes, out: Path) -> dict:
         generated.append("prod.yaml")
     if not (folder / "nfo.txt").exists():
         handles = ", ".join(h.strip() for h in re.split(r"[,\n]", v["handles"]) if h.strip())
-        head = (f"{v['title'].strip()}\n\n  group ....... {v['group'].strip()}\n  credits ..... {handles}\n"
+        head = (f"{v['prod_title'].strip()}\n\n  group ....... {v['group'].strip()}\n  credits ..... {handles}\n"
                 f"  category .... {v['category']}\n  platform .... {v['platform']}\n\n")
         (folder / "nfo.txt").write_text(head + v.get("notes", "").strip() + "\n", encoding="utf-8")
         generated.append("nfo.txt")
     validate(folder)
     ensure_header(folder, f"# Declared by the creator in submission issue #{issue}. Human-owned (see docs/PROVENANCE.md).\n")
-    title = f"prod: {clean_title(v['title'])} by {clean_title(v['group'])}"
+    title = f"prod: {clean_title(v['prod_title'])} by {clean_title(v['group'])}"
     listing = "\n".join(f"{p}  ({(folder / p).stat().st_size} bytes)" for p in files)
     pr_body = "\n".join([
         f"Automatic intake of submission #{issue}. Closes #{issue}.",

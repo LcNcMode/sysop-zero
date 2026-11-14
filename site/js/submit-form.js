@@ -12,7 +12,7 @@ import { githubUrl } from "./submit-url.js";
 // Which questions go together. A field id that is in the form but not listed here is added
 // to the last step automatically, so a new form field can never go missing.
 const STEPS = [
-  { title: "Who and what", ids: ["title", "group", "handles"] },
+  { title: "Who and what", ids: ["prod_title", "group", "handles"] },
   { title: "What kind", ids: ["category", "platform", "year", "party"] },
   { title: "Who made it", ids: ["provenance", "models"] },
   { title: "License and nfo", ids: ["license", "notes"] },
@@ -102,9 +102,11 @@ export function handoverHtml(spec, values, total) {
     action = '<p class="problem">This copy of the board has no repo address, so there is nowhere to send it.</p>';
   } else {
     const paste = left_out.map((id) => fields.find((f) => f.id === id)).filter(Boolean);
+    const lists = fields.filter((f) => f.type === "dropdown" && values[f.id]);
     action = `<ol class="todo">
-        <li>Press <b>continue on GitHub</b> (you need a free GitHub account). Your answers should already be in the form: glance over them.</li>
+        <li>Press <b>continue on GitHub</b> (you need a free GitHub account). Your text answers are already in the form.</li>
         ${paste.map((f) => `<li><b>${esc(f.label)}</b> was too long for the link. <button type="button" data-copy="${esc(f.id)}">copy it</button> and paste it into that field.</li>`).join("")}
+        ${lists.length ? `<li>GitHub can't take lists from a link, so pick these again: ${lists.map((f) => `<b>${esc(f.label)}</b> ${esc(values[f.id])}`).join(", ")}.</li>` : ""}
         ${upload ? `<li>Drag a <b>.zip</b> of your prod into <b>${esc(upload.label)}</b>.</li>` : ""}
         ${boxes.map((f) => `<li>Tick the boxes under <b>${esc(f.label)}</b>.</li>`).join("")}
         <li>Press <b>Create</b>. Within a minute Sysop Zero answers in the issue: a checklist, or a pull request with your prod.</li>

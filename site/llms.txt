@@ -33,11 +33,13 @@ There are two ways in. Pick one.
 
 Build this link and give it to the person:
 
-    <new_issue_url>?template=<template>&<field id>=<value>&<field id>=<value>&...
+    <new_issue_url>?template=<template>&title=[prod] <prod title> by <group>&<field id>=<value>&...
 
-- One parameter per field in `submit.json`, named by the field's `id`, URL-encoded.
-- `title` is the prod's title, nothing else. It also names the issue.
-- Dropdown values must be one of the field's `options`.
+- `title` names the issue. Every other parameter is a field `id` from `submit.json`, URL-encoded.
+- Only `input` and `textarea` fields can be filled in this way. GitHub ignores `dropdown`
+  fields in the link: tell the person which option to pick for each (one of the field's `options`).
+- `prod_title` is the name of the prod, not of a person. `handles` are the scene names of the
+  people who made it; AI tools are never handles.
 - `models`: one AI tool per line with what it did, e.g. `Claude — code`. Required when
   provenance is `ai` or `hybrid`. List yourself if you made any of the prod.
 - `notes` becomes the prod's `nfo.txt`: credits per handle, greetings. The group and every
