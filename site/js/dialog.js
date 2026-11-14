@@ -37,7 +37,9 @@ export function initDialog(onClosed) {
       $("#p-nfo").hidden = !p.has_nfo;
       if (!dialog.open) dialog.showModal();
       const started = await stage.start(p);
-      if (!started && dialog.open) dialog.close(); // the visitor chose "back" on the heads-up
+      // Only "back" on the heads-up closes the dialog. null means this open() was overtaken
+      // (closed, or another prod opened meanwhile) and must not touch the newer state.
+      if (started === false && dialog.open) dialog.close();
     },
     close() { if (dialog.open) dialog.close(); },
   };

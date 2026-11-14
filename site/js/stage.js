@@ -8,9 +8,10 @@ import { needsHeadsUp, askHeadsUp, dismissHeadsUp } from "./gate.js";
 
 /**
  * @param {{frame: HTMLIFrameElement, gate: HTMLElement}} els the iframe and the empty notice element
- * @returns {{start: (p: Prod) => Promise<boolean>, stop: () => void}}
- *          start() resolves true when the prod was loaded, false when the visitor chose "back"
- *          or stop() was called while the notice was up.
+ * @returns {{start: (p: Prod) => Promise<boolean|null>, stop: () => void}}
+ *          start() resolves true when the prod was loaded, false when the visitor chose "back",
+ *          and null when this start was overtaken (stop() or a newer start() came first).
+ *          Callers must only react to false: a null belongs to a run that no longer matters.
  */
 export function createStage({ frame, gate }) {
   let run = 0; // increases on every start/stop, so a late answer to an old notice is ignored
@@ -22,7 +23,8 @@ export function createStage({ frame, gate }) {
       if (needsHeadsUp()) {
         frame.hidden = true;
         const ok = await askHeadsUp(gate);
-        if (mine !== run || !ok) return false;
+        if (mine !== run || ok === null) return null;
+        if (!ok) return false;
       }
       frame.hidden = false;
       loadIntoFrame(frame, p);

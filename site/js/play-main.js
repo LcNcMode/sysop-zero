@@ -25,7 +25,7 @@ async function main() {
 
   const stage = createStage({ frame: $("#p-frame"), gate: $("#p-gate") });
   const started = await stage.start(p);
-  if (!started) location.href = "./"; // "back" on the heads-up: to the gallery
+  if (started === false) location.href = "./"; // "back" on the heads-up: to the gallery
 }
 
 // A different prod in the same tab (edited address, or a link): start over.
