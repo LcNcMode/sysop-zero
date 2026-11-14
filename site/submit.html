@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Upload — Sysop Zero</title>
+<!-- Same CSP as index.html. Keep them identical. This page sends nothing itself: it opens
+     GitHub's issue form with the answers filled in. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="description" content="Release a prod on Sysop Zero: answer a few questions, attach a zip, done.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/submit.css">
+</head>
+<body>
+<header>
+  <h1>Upload</h1>
+  <p class="dim">Release a prod: a few questions here, then attach your zip on GitHub. Handles only, no legal names.</p>
+  <nav aria-label="page">
+    <a class="btn" href="./">← gallery</a>
+    <button type="button" id="text-size">text size: A</button>
+    <button type="button" id="start-over">start over</button>
+  </nav>
+</header>
+<!-- Filled by js/submit-main.js from submit.json. -->
+<div class="wizard" id="wizard" aria-live="polite"><p class="dim">loading the form…</p></div>
+<noscript><p class="dim">This guide needs JavaScript. The form itself is on GitHub: see the repo's "New issue" page.</p></noscript>
+<footer>agents: read <a href="llms.txt">llms.txt</a> · at home in git? fork + PR works too</footer>
+<script type="module" src="js/submit-main.js"></script>
+</body>
+</html>

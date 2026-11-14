@@ -1,0 +1,55 @@
+/* layout.css — the gallery page frame: header, controls, the grid of prods, footer. */
+
+header {
+  padding: 2rem var(--gap-l) var(--gap-m);
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--text-title);
+  letter-spacing: 0.35em;
+  padding-left: 0.35em; /* balances the spacing after the last letter, so the title is centred */
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  background: linear-gradient(var(--fg-strong), var(--hi) 45%, var(--ac) 55%, var(--fg-strong));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(3px 3px 0 var(--shadow));
+}
+
+#tagline { color: var(--dim); }
+
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-m);
+  justify-content: center;
+  align-items: center;
+}
+
+nav label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-s);
+}
+
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr));
+  gap: var(--gap-l);
+  align-content: start;
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--gap-l);
+}
+
+footer {
+  padding: var(--gap-l);
+  text-align: center;
+  color: var(--dim);
+  font-size: var(--text-s);
+}

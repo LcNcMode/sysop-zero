@@ -1,0 +1,82 @@
+/* card.css — one prod in the gallery. The HTML is built in js/card.js. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-m);
+  padding: var(--gap-l);
+  border: 1px solid var(--line);
+  background: linear-gradient(var(--bg-raised), var(--bg));
+  min-width: 0; /* let long words wrap instead of widening the grid */
+  overflow-wrap: anywhere;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: var(--text-l);
+  color: var(--fg-strong);
+}
+
+.card p { margin: 0; }
+
+.card .by { color: var(--ac); }
+
+/* Facts: category, platform, year, size, license, party. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-s);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  font-size: var(--text-s);
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line-strong);
+  color: var(--dim);
+}
+
+/* Provenance: who or what made it. Always text, never a tooltip. */
+.made {
+  font-size: var(--text-s);
+  color: var(--dim);
+}
+.made ul {
+  margin: var(--gap-s) 0 0;
+  padding-left: 1.2rem;
+}
+.tag.prov-human { border-color: var(--ok); color: var(--ok); }
+.tag.prov-ai { border-color: var(--ac); color: var(--ac); }
+.tag.prov-hybrid { border-color: var(--hi); color: var(--hi); }
+
+/* Longer text the visitor opens on demand: provenance notes. */
+.card details { font-size: var(--text-s); color: var(--dim); }
+.card summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--fg);
+}
+.card summary::before { content: "[+] "; white-space: pre; }
+.card details[open] summary::before { content: "[-] "; }
+.card details p { white-space: pre-line; }
+
+/* Drift: a neutral note about declared vs observed, not an accusation. */
+.drift {
+  font-size: var(--text-s);
+  color: var(--warn);
+  border-left: 0.2rem solid var(--warn);
+  padding-left: var(--gap-m);
+}
+.drift ul { margin: var(--gap-s) 0 0; padding-left: 1.2rem; }
+
+.actions {
+  margin-top: auto; /* pin the buttons to the bottom of the card */
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-s);
+  align-items: center;
+}

@@ -2,30 +2,53 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Sysop Zero</title>
+<!-- Strict CSP: only this site's own files. No inline scripts or styles, no other hosts.
+     Keep it identical in play.html. See site/README.md before changing it. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="A demoscene board for the AI era. Watch human, AI and hybrid prods in your browser, each with honest provenance.">
-<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/card.css">
+<link rel="stylesheet" href="css/player.css">
 </head>
 <body>
+<a class="skip btn" href="#grid">skip to the files</a>
 <header>
   <h1 id="site-title">Sysop Zero</h1>
   <p id="tagline"></p>
-  <nav>
+  <nav aria-label="filters and settings">
     <label>category <select id="f-category"><option value="">all</option></select></label>
     <label>provenance <select id="f-provenance"><option value="">all</option><option>human</option><option>ai</option><option>hybrid</option></select></label>
-    <a id="repo-link" hidden>submit a prod</a>
+    <button type="button" id="text-size">text size: A</button>
+    <a class="btn btn-primary" href="submit.html">upload a prod</a>
   </nav>
 </header>
-<main id="grid" aria-live="polite"><p class="dim">loading prods…</p></main>
-<dialog id="player">
-  <div class="bar"><span id="p-title"></span><span><a id="p-open" target="_blank" rel="noopener">open full window</a> · <a id="p-nfo" target="_blank" rel="noopener">nfo</a> · <button id="p-close">close [esc]</button></span></div>
-  <iframe id="p-frame" title="prod" sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer" allow="autoplay; fullscreen" allowfullscreen></iframe>
+<main id="grid" aria-live="polite" tabindex="-1"><p class="dim">loading prods…</p></main>
+<noscript><p class="dim">The gallery needs JavaScript. The raw file list is in <a href="prods.json">prods.json</a>.</p></noscript>
+
+<!-- The player. Filled and opened by js/dialog.js; the prod runs in the sandboxed iframe. -->
+<dialog id="player" class="player" aria-labelledby="p-title">
+  <div class="bar">
+    <span class="title" id="p-title"></span>
+    <span class="controls">
+      <a class="btn" id="p-nfo" target="_blank" rel="noopener">nfo</a>
+      <a class="btn" id="p-open" target="_blank" rel="noopener">new window</a>
+      <button type="button" id="p-fs" hidden>fullscreen</button>
+      <button type="button" class="btn-primary" id="p-close">✕ close</button>
+    </span>
+  </div>
+  <div class="stage">
+    <div class="gate" id="p-gate" hidden></div>
+    <iframe id="p-frame" title="prod" sandbox="allow-scripts allow-pointer-lock" referrerpolicy="no-referrer" allow="autoplay; fullscreen" allowfullscreen></iframe>
+  </div>
 </dialog>
+
 <footer><span id="generated"></span> · prods are CC BY-NC-SA 4.0 unless stated · run by Sysop Zero</footer>
-<script src="player.js"></script>
-<script src="app.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -10,6 +10,9 @@ There are two ways to release a prod. Pick the one that suits you.
 
 ## Release with the form
 
+New here? The **upload** page in the gallery asks the same questions one small step at a
+time, checks your answers, and then opens this form with everything filled in.
+
 1. Open a **Prod submission** issue and fill in the fields. Handles only, no legal names.
 2. Drag a **`.zip`** of your prod into **Where are the files?**. Put the files at the top of
    the zip, or in one folder; an `nfo.txt` and `prod.yaml` of your own are welcome but optional.

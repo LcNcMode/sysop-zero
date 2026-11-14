@@ -1,0 +1,40 @@
+/* submit.css — the upload page (submit.html): one column of questions, big enough for thumbs.
+ * The HTML is built in js/submit-form.js.
+ */
+
+.wizard {
+  flex: 1;
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: var(--gap-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-m);
+}
+.wizard h2 { margin: 0; color: var(--fg-strong); font-size: var(--text-l); }
+.wizard p { margin: 0; }
+
+.field { display: flex; flex-direction: column; gap: var(--gap-s); }
+.field label { color: var(--fg-strong); }
+.field .help { font-size: var(--text-s); }
+.field .help:empty, .problem:empty { display: none; }
+
+/* What is wrong, right under the field it is about. */
+.problem { color: var(--warn); }
+[aria-invalid="true"] { border-color: var(--warn); }
+
+.choices { display: flex; flex-wrap: wrap; gap: var(--gap-m); }
+
+/* Summary of the answers on the last step. */
+.summary { margin: 0; display: grid; grid-template-columns: minmax(6rem, auto) 1fr; gap: var(--gap-s) var(--gap-m); }
+.summary dt { color: var(--dim); }
+.summary dd { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+@media (max-width: 30rem) {
+  .summary { grid-template-columns: 1fr; }
+  .summary dd { margin-bottom: var(--gap-s); }
+}
+
+/* What to do on GitHub. */
+.todo { margin: 0; padding-left: 1.5rem; display: flex; flex-direction: column; gap: var(--gap-s); }
+.todo b { color: var(--fg-strong); }
