@@ -21,7 +21,8 @@
   CONTROLS
   --------
   Click "Play with sound". Pause / Restart / Fullscreen under the picture.
-  "Download the film" saves the MP4. "Production credits" shows the credits.
+  "Production credits" shows the credits. To save the MP4, use the
+  download button on the prod's gallery card.
 
   WARNINGS
   --------
