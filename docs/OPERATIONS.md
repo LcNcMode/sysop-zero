@@ -34,7 +34,7 @@ job mints its token only after the zip has been unpacked, and uses it only to pu
 
 | area | setting |
 |---|---|
-| Ruleset `main` | PR required (1 approval, stale reviews dismissed, last push approved, threads resolved), linear history. Bypass: repository admins, via PR only (lets the sole maintainer merge). |
+| Ruleset `main` | PR required (1 approval, stale reviews dismissed, threads resolved; last-push approval off, because agents push through the maintainer's own account), linear history. Bypass: repository admins, via PR only (lets the sole maintainer merge). |
 | Ruleset `main-checks` | required checks `check` and `selftest` (Prod check), no force-push, no deletion. **No bypass, admins included.** A bypass actor skips every rule in a ruleset, so CI lives in its own ruleset. If CI itself is broken: disable `main-checks`, merge the fix, re-enable. Keep the job ids `check` and `selftest` in `prod-check.yml` stable, or update this ruleset in the same PR. |
 | Merge | squash only, delete branch on merge |
 | Pages | source: GitHub Actions (`pages.yml`) |
