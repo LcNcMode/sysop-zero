@@ -49,12 +49,12 @@ means less to build for the same result.
 |---|---|---|---|
 | E1 | Iteration 1 put the party in `parties/<party>/party.yaml`; the README and `triage.py` already use `parties/<slug>.yaml`. | breaks | Keep `parties/<slug>.yaml`. Generated files and jury ballots go in a folder next to it, `parties/<slug>/`. No migration, triage keeps working. |
 | E2 | "Entries are the prods whose `prod.yaml` says `party:`, or that came in through the form." The build reads the repo, not issues, so form entries would be invisible; `prod.yaml` is human-owned, so nobody else can add `party:`; and a prod can only name one party. | breaks | Entries become an explicit list in the party file, added by PR when a Compo entry is accepted. `party:` in `prod.yaml` stays a tag. |
-| E3 | "The script knows who submitted or maintains each prod" (to block voting on your own entry). No prod has a login today. | breaks | Each entry in the party file carries the entrant's GitHub login(s), taken from the Compo entry issue author. That one field also drives the jury conflict rule. |
+| E3 | "The script knows who submitted or maintains each prod" (to block voting on your own entry). No prod has a login today. | breaks | Each entry in the party file lists the GitHub logins of **everyone in the crew** (issue author plus a new form field for the others). That one field also drives the jury conflict rule. |
 | E4 | Step 1 says the Compo entry form "reads the compo list from the party file". Forms are static YAML. | breaks | The form keeps its fixed list; triage checks the chosen compo against the party's `compos:` and blocks a mismatch. |
 | E5 | Decision 4: jurors may enter but don't score a compo they are in. With two active sceners, both likely in `demo`, the `demo` jury would be the sysop alone. With `min_ballots: 5` and a small audience, `mixed` falls back to jury-only: **one person decides the compo.** | gap | `min_jurors: 3` per compo after conflicts are removed. A compo short of jurors invites jurors from outside the board; if that fails it runs public-only, and if that also lacks ballots it is shown without places (a showcase). Results say which rule applied. |
 | E6 | Five compos are listed by default. Today 8 of 9 prods are demos; most compos would have zero or one entry. | gap | `min_entries: 3` per compo. Smaller compos merge into one **combined** compo (scene name: *wild*), or run as a showcase. |
 | E7 | "Skipping is fine": a voter may leave entries unscored. Then entries are judged by different groups of voters, and a few fans can lift a mean. | gap | Score **every entry in a compo or none of them**; you may skip a whole compo. Own entries are the only exception (left out automatically). |
-| E8 | "The last version of the ballot before the close counts." Issues can be edited after the close, and the bot has no schedule to notice the moment. | gap | At the close the sysop runs the tally (manual workflow run). It reads all ballots once, locks the ballot issues, and commits that **snapshot** (`parties/<slug>/ballots.json`) in the results PR. Later edits change nothing. No cron needed. |
+| E8 | "The last version of the ballot before the close counts." Issues can be edited after the close, and the bot has no schedule to notice the moment. | gap | After the close the sysop runs the tally (manual workflow run). It counts each ballot as it stood at `closes` (from the issue's edit history, or sets aside a ballot edited later), locks the ballot issues, and commits that **snapshot** (`parties/<slug>/ballots.json`) in the results PR. No cron needed. |
 | E9 | Jury ballots are "added in one PR when voting closes", with a login "used to check them". If the sysop collects and commits them, nothing proves who wrote which ballot. | gap | Each juror opens **their own PR** with `parties/<slug>/jury/<handle>.yaml` after the close. CI checks that the PR author is that juror's login. Until then the scores stay with the juror. |
 | E10 | Dates have no time or timezone. | gap | All times are UTC. A date means 23:59 UTC that day. |
 | E11 | No rule for entries that break the rules (size, drift, undeclared AI). | gap | An entry must pass `prodcheck.py` with no errors at the deadline. The sysop may disqualify with a written reason; `disqualified:` in the party file, shown in the results. |
@@ -131,9 +131,18 @@ prizes:
 
 **Entering.** A scener opens a Compo entry issue. Triage checks the party slug, that the
 compo is in the party's `compos:`, that the prod exists and passes `prodcheck.py`, and that
-the deadline has not passed. The accepted entry becomes one line in `entries:`, with the
-issue author's login, in a PR a human merges (the same intake flow as prods). Nobody edits
-`prod.yaml`; its `party:` tag stays optional.
+the deadline has not passed. The accepted entry becomes one line in `entries:`, in a PR a
+human merges (the same intake flow as prods). Nobody edits `prod.yaml`; its `party:` tag
+stays optional.
+
+**Who is in an entry.** `logins` lists **everyone in the crew** with a GitHub account, not
+only the person who opened the issue: the Compo entry form gets a field for the other crew
+logins (step 1). Every listed login is a conflict: it can't vote on that entry and can't
+judge that compo. Being listed only takes rights away, so a crew member's own word is
+enough, with one exception: if a **juror** is listed, the sysop asks the juror before voting
+opens and records the answer, so that listing cannot be used to remove a juror. A crew
+member nobody listed is caught only if someone notices; the results PR is the place to say
+so, and the sysop can set that person's votes aside.
 
 **Too few entries.** At the deadline, a compo with fewer than `min_entries` moves into the
 `combined` compo; if that is still too small, its entries are shown as a showcase without
@@ -197,9 +206,14 @@ the issue: accepted, or what to fix.
   that the built-in token reads it).
   The number of set-aside ballots is published with the results.
 
-**The close.** After `closes`, the sysop starts the tally by hand (`workflow_dispatch`). It
-reads every ballot issue once, locks them, writes `ballots.json` as the snapshot, and opens
-the results PR. Edits after that are ignored, because only the snapshot is counted.
+**The close.** The cutoff is `closes`, not the moment the tally runs. After `closes`, the
+sysop starts the tally by hand (`workflow_dispatch`). For each ballot issue it takes **the
+last version edited at or before `closes`**: GitHub keeps each issue's edit history with
+timestamps (**? verify** in step 4 that the built-in token can read it). If that history
+can't be read, a ballot last edited after `closes` is set aside instead of counted. The tally
+then locks the ballot issues, writes `ballots.json` as the snapshot (with each ballot's
+edit time), and opens the results PR. Later edits change nothing, because only the
+snapshot is counted.
 
 **Mixed.** Per entry: `score = jury_weight × jury mean + public_weight × public mean`. If
 there are fewer public ballots than `min_ballots`, the jury mean stands alone, and the
@@ -284,7 +298,7 @@ kept it there (decision 5).
 
 Each has a recommendation; the evaluation row it comes from is in brackets.
 
-7. **Entries list in the party file**, with the entrant's login, added by PR. *Recommended:
+7. **Entries list in the party file**, with every crew member's login, added by PR. *Recommended:
    yes. It is the only way the build can see entries and the tally can stop self-voting.* [E2, E3]
 8. **Minimum jury of 3 per compo**, with outside jurors invited when conflicts leave fewer.
    *Recommended: yes, and the sysop names two or three outside jurors for the pilot.* [E5]
