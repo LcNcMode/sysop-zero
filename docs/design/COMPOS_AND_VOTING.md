@@ -1,6 +1,7 @@
 # Compos and voting — sketch and plan
 
-> **Status: proposal. Nothing here is built.** Written 2026-11-14 for the sysop's review.
+> **Status: accepted plan (2026-11-16). Nothing here is built yet.** Written 2026-11-14; the sysop's
+> answers are under "Decisions" below.
 > Items marked **? verify** are assumptions to test before building on them.
 
 ## What we want
@@ -164,21 +165,18 @@ job with the same shape as triage (built-in token, `issues: write`, no secrets, 
 Step 5 is the only one that reaches into Discussions.
 
 Rating every prod is listed first in "What we want" but fifth in the plan on purpose: it is
-the only part that needs wider bot permissions, and a compo can run without it. It can move
-up if the sysop prefers (see Decisions).
+the only part that needs wider bot permissions, and a compo can run without it. The sysop
+kept it there (see Decisions).
 
-## Decisions for the sysop
+## Decisions (answered by the sysop, 2026-11-16)
 
-1. **Open ballots.** Public votes are visible on GitHub. Fine for the first compo, or do we
-   wait for a service that keeps them secret? *Recommended: open ballots, said plainly on the
-   vote page. Scene parties vote in secret, but ours is small and its trust comes from
-   transparency.*
-2. **Scale.** 1 to 5 per entry for compos; rulez / ok / sucks for everyday rating.
-   *Recommended as written: two scales, because the two questions are different.*
-3. **Default mode and weights.** *Recommended: `mixed`, 50 / 50, with `min_ballots: 5`.*
-4. **Who is the jury** for the first compo, and are jurors allowed to enter?
-   *Recommended: jurors do not score a compo they have an entry in.*
-5. **Everyday rating: when?** After the first compo (step 5), or earlier.
-   *Recommended: after. It needs the bot to write to Discussions.*
-6. **Prizes.** Honour and a badge only, or something physical. Anything with money or
-   shipping is the sysop's own to arrange; the repo only records the result.
+1. **Open ballots.** Yes, for now. Public votes are visible on GitHub, and the vote page says
+   so plainly. Our trust comes from transparency; secret ballots wait for a real need.
+2. **Scale.** Two scales: 1 to 5 per entry for compos, rulez / ok / sucks for everyday rating.
+3. **Default mode and weights.** `mixed`, 50 / 50 jury and public, with `min_ballots: 5`.
+4. **Jury.** The sysop plus invited sceners. Jurors may enter, but never score a compo they
+   have an entry in.
+5. **Everyday rating.** After the first compo (step 5), since it needs the bot to write to
+   Discussions.
+6. **Prizes.** Honour and a badge only. Anything with money or shipping is the sysop's own to
+   arrange; the repo only records the result.
