@@ -1,0 +1,26 @@
+# Declared for the creator (Venture), who asked for this release in the session that built it.
+# Human-owned: CI compares it with what it observes; nobody else edits it (see docs/PROVENANCE.md).
+title: "PHOSPHOR — a noir transmission in ten signals"
+group: Xanadu
+handles:
+  - Venture
+platform: web
+category: demo
+year: 2026
+released: 2026-11-21
+entry: index.html
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+    - Claude (Anthropic) via Claude Code — code, visuals, audio analysis and timing
+    - Suno — music generation
+  notes: >
+    Venture set the brief (theme, ten sections, oscillators, surprises, intro and credits),
+    pushed the iterations ("more pressure, more wow, a little sexy but not vulgar"), supplied
+    the reference images that inspired the laser rig and the hand x network credits, chose the
+    Xanadu / Venture credits, and supplied the music. Claude wrote all code and visuals by hand
+    in WebGL2 (no image or video generation), measured the kick timeline and section cuts from
+    the track offline, and tested in headless Chromium. The music is "Cinematic com - tracker",
+    a VoxNoir production generated with Suno, used unedited.
+tags: [oscilloscope, vector, webgl2, crt, lasers, noir, suno, xanadu]

@@ -1,0 +1,62 @@
+ ___________________________________________________________________________
+|                                                                           |
+|                   X A N A D U   -   V E N T U R E                          |
+|                              P H O S P H O R                              |
+|                 a noir transmission in ten signals                        |
+|___________________________________________________________________________|
+
+  group ....... Xanadu
+  credits ..... Venture  - direction, brief, feedback, references, music
+  code+gfx .... Claude (Anthropic) via Claude Code
+  music ....... VoxNoir production using Suno - "Cinematic com - tracker"
+  platform .... web browser (WebGL2 + Web Audio), offline, no network
+  category .... demo
+  license ..... CC BY-NC-SA 4.0
+  released .... 21 November 2026
+
+  ABOUT
+  -----
+  One beam, one tube. Every pixel is drawn by a simulated electron beam on
+  an oscilloscope CRT with real phosphor persistence. Each section is a
+  "signal" with its own phosphor colour, and the sections morph into each
+  other by resampling the beam path. 3:01, synced to 463 kick onsets
+  measured offline from the track.
+
+    pre  two real oscillators, panned L/R; the screen is their true XY plot
+    00   POWER ON          XANADU PRESENTS, title written stroke by stroke
+    01   LISSAJOUS GARDEN  3D Lissajous knots
+    02   TRUE XY           a real stereo goniometer of the music
+    03   NOIR SKYLINE      spectrum city, rain, searchlights, lightning
+    04   TUNNEL VISION     warp tunnel, words flying at you
+    05   FEMME FATALE      line-art portrait, a near-kiss, a Rubin vase
+    06   PULSAR RIDGES     spectrogram ridgelines, hidden-line removal
+    07   HARMONIC STRINGS  standing waves that roll into cymatic rings
+    08   SIGNAL LOST       the tube dies on the drop... 3, 2, 1
+    09   RGB AWAKENING     a kiss turns the tube to colour, it breaks out
+    10   LASER CATHEDRAL   two-row haze laser rig, crowd in backlight
+    EOT  hand x network, credits, power off
+
+  CONTROLS
+  --------
+  Click to power on.  F fullscreen  Space pause  Left/Right -/+5 s
+  1-9, 0 jump to a signal  C credits  R restart  M reduced flashing
+
+  WARNINGS
+  --------
+  PHOTOSENSITIVITY: flashes, strobing lasers and fast cuts.
+  Press M (or add ?calm to the URL) for a reduced-flashing mode.
+
+  CREDITS AND PRODUCTION DISCLOSURE
+  ---------------------------------
+  Venture            - direction, brief, iteration feedback, reference
+                       images, music selection
+  Claude (Anthropic) - all code and visuals, via Claude Code: WebGL2 beam
+                       renderer, CRT, scenes, offline audio analysis
+  VoxNoir / Suno     - music, AI-generated with Suno, used unedited
+  No AI image or video generation: every frame is computed live in your
+  browser from the code in index.html.
+
+  GREETINGS
+  ---------
+  mini of Xanadu, Astra (gg), and every scener still watching the
+  phosphor glow.
