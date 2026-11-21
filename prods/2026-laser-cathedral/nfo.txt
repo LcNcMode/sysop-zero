@@ -1,0 +1,62 @@
+ ___________________________________________________________________________
+|                                                                           |
+|                  X A N A D U   -   V E N T U R E                          |
+|                       L A S E R   C A T H E D R A L                       |
+|                  a techno mass in gothic light                            |
+|___________________________________________________________________________|
+
+  group ....... Xanadu
+  credits ..... Venture  - direction, brief, feedback, music
+  code+gfx .... Claude (Anthropic) via Claude Code
+  music ....... VoxNoir production using Suno - "Mon dieu bebe"
+  platform .... web browser (WebGL2 + Web Audio), offline, no network
+  category .... demo
+  license ..... CC BY-NC-SA 4.0
+  released .... 21 November 2026
+
+  ABOUT
+  -----
+  A Gothic cathedral wakes up as a techno club. Rib vaults, rose windows, a
+  great organ, gargoyles that fire lasers, kings and commoners dancing with
+  Death, angels and demons fighting over the crossfader, drones with lasers,
+  strobes and rolling haze. 3:31, 125.2 BPM, cut on the bar grid of the track.
+
+    I     INTROIT              a candle, XANADU, the portal opens
+    II    NAVE                 FIAT LUX - flight down the endless nave
+    III   KYRIE                the rose window rushes at you
+    IV    ROSA MYSTICA         the rose as a laser aperture
+    V     MEMENTO MORI         Death in a spotlight, bells
+    VI    FESTUM STULTORUM     the feast of fools - king for a day
+    VII   ORGANUM              organ pipes as a spectrum, gargoyle lasers
+    VIII  LABYRINTHUS          the dance floor from above
+    IX    JUDICIUM             angels vs demons, the scales as crossfader
+    X     SANCTUS              stained glass, incense, dust in the light
+    XI    SURSUM CORDA         the glass shatters, drones form the rose
+    XII   ALLELUIA             the west front, bells, lasers into the night
+    XIII  GLORIA               through a tunnel of rose windows
+    XIV   TE DEUM             everyone on the same floor, credits
+    XV    AMEN                 dawn
+
+  CONTROLS
+  --------
+  Click to enter.  F fullscreen  Space pause  Left/Right -/+5 s
+  1-9, 0 jump to a part  [ ] previous/next part  C credits  R restart
+  M reduced flashing
+
+  WARNINGS
+  --------
+  PHOTOSENSITIVITY: flashes, strobing lasers and fast cuts.
+  Press M (or add ?calm to the URL) for a reduced-flashing mode.
+
+  CREDITS AND PRODUCTION DISCLOSURE
+  ---------------------------------
+  Venture            - direction, brief, iteration feedback, music selection
+  Claude (Anthropic) - all code and visuals, via Claude Code: WebGL2 beam
+                       renderer, 3D camera, scenes, offline audio analysis
+  VoxNoir / Suno     - music, AI-generated with Suno, used unedited
+  No AI image or video generation: every frame is computed live in your
+  browser from the code in index.html.
+
+  GREETINGS
+  ---------
+  Astra (gg), mini of Xanadu, and every scener still watching the light.
