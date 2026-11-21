@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PHOSPHOR — a noir transmission in ten signals</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+canvas{display:block;width:100vw;height:100vh;cursor:none}
+#f{display:none}
+#err{position:fixed;left:0;right:0;bottom:12px;text-align:center;font:12px monospace;color:#5f8;opacity:.7;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<input type="file" id="f" accept="audio/*">
+<div id="err"></div>
+<script>
+'use strict';
+/* =====================================================================
+   PHOSPHOR — a noir transmission in ten signals
+   One beam. One tube. Every pixel on screen is drawn by a simulated
+   electron beam (analytic gaussian line integral, erf) onto a phosphor
+   layer with real persistence. Sections morph into each other by
+   arc-length resampling the beam path of both scenes.
+   Music: voxnoir — "Cinematic com - tracker".  Code: Claude Code.
+   ===================================================================== */
+
+// ---------------------------------------------------------------- utils
+const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
+const mix=(a,b,t)=>a+(b-a)*t;
+const sstep=(a,b,x)=>{x=clamp((x-a)/(b-a));return x*x*(3-2*x)};
+const fract=x=>x-Math.floor(x);
+const hash=n=>{n=Math.sin(n*127.1+311.7)*43758.5453;return n-Math.floor(n)};
+const TAU=Math.PI*2, PI=Math.PI;
+const HSV=[0,0,0];
+function hsv(h,s,v){h=fract(h)*6;const i=h|0,f=h-i,p=v*(1-s),q=v*(1-s*f),t=v*(1-s*(1-f));
+  switch(i){case 0:HSV[0]=v;HSV[1]=t;HSV[2]=p;break;case 1:HSV[0]=q;HSV[1]=v;HSV[2]=p;break;case 2:HSV[0]=p;HSV[1]=v;HSV[2]=t;break;
+  case 3:HSV[0]=p;HSV[1]=q;HSV[2]=v;break;case 4:HSV[0]=t;HSV[1]=p;HSV[2]=v;break;default:HSV[0]=v;HSV[1]=p;HSV[2]=q}return HSV}
+
+const Q=new URLSearchParams(location.search);
+const FAKE=Q.has('nosound');           // dev / screenshot mode: no audio, synthetic features
+const T0=Q.has('t')?parseFloat(Q.get('t')):0;
+let CALM=Q.has('calm');   // reduced flashing: M toggles
+
+// ---------------------------------------------------------------- timeline
+const BPM=89.2, BEAT=60/BPM;
+const DROP=143.36, LOST=133.3, CRED=169.1, FINAL=175.8, OFF=178.6, END=181;
+const TR=1.35;   // morph transition length (2 beats)
+// kick onsets measured offline from the master (t,strength) -> sample-accurate pulse
+const KK=[3.16,0.28,3.41,0.25,3.67,0.36,4.42,0.27,4.98,0.29,5.55,0.76,5.89,1.00,6.22,0.71,6.57,1.00,7.00,0.45,7.24,0.46,7.69,0.83,7.93,0.47,8.36,0.90,8.58,0.90,9.03,0.51,9.26,0.47,9.49,1.00,9.94,1.00,10.18,0.57,10.41,0.42,10.73,0.44,10.95,0.66,11.28,1.00,11.52,0.58,11.96,1.00,12.19,0.81,12.42,0.43,12.64,0.47,13.08,1.00,13.32,1.00,13.77,0.97,14.56,0.28,15.35,0.82,15.74,0.30,16.01,0.31,16.83,0.28,17.15,0.75,17.39,0.57,17.71,0.93,18.05,0.92,18.38,0.95,18.71,0.83,19.05,1.00,19.39,0.81,19.62,1.00,19.96,1.00,20.29,1.00,20.72,1.00,20.99,0.61,21.30,0.49,22.11,0.65,22.75,0.74,23.27,0.37,23.90,0.75,24.22,0.61,24.55,0.81,25.24,0.44,25.70,0.85,26.02,0.38,26.34,0.72,26.60,0.60,27.50,0.86,28.13,0.72,28.64,0.41,29.16,0.95,29.93,0.68,30.18,0.45,30.63,0.50,31.09,0.72,31.49,0.55,31.72,0.50,32.07,0.53,32.41,0.52,32.75,0.55,33.10,0.52,33.54,0.64,33.87,0.59,34.20,0.88,34.44,0.70,34.68,0.65,35.35,0.63,35.99,0.63,36.47,0.64,36.80,0.42,37.15,0.63,37.37,0.31,37.69,0.41,37.92,0.44,38.27,0.50,38.91,0.83,39.58,0.77,40.06,0.84,40.73,0.73,41.07,0.70,41.40,0.73,41.74,0.52,41.96,0.41,42.53,0.52,43.19,0.73,43.61,0.39,44.07,0.87,44.32,0.55,44.62,0.51,44.99,0.69,45.44,0.63,45.86,0.74,46.11,0.51,46.75,0.44,47.06,0.33,48.11,0.43,48.59,0.43,49.02,0.91,49.67,0.73,50.34,0.75,50.83,0.63,51.28,0.40,51.50,0.57,51.83,0.46,52.14,0.67,52.62,0.66,53.03,0.60,53.27,1.00,53.93,0.58,54.61,0.66,55.09,0.66,55.73,0.54,56.21,0.59,56.62,0.45,56.86,0.67,58.00,0.58,58.44,0.43,58.68,0.50,58.90,0.34,59.36,0.37,59.80,0.63,60.23,0.75,60.66,0.59,61.02,0.57,61.89,1.00,62.23,0.37,62.47,0.80,62.91,0.41,63.36,0.79,63.70,0.67,64.02,1.00,64.27,0.35,64.73,0.37,65.18,0.46,65.82,0.79,66.07,0.44,66.40,0.54,66.63,0.49,66.85,0.37,67.19,0.46,67.61,0.66,68.15,0.42,68.40,0.51,68.76,0.59,69.07,0.68,69.44,0.50,69.83,0.45,70.05,0.48,70.56,0.50,70.88,0.52,71.21,0.60,71.87,0.63,72.35,0.56,72.67,0.60,73.43,0.52,73.79,0.58,74.15,0.71,74.59,0.63,75.03,0.50,75.48,0.48,75.94,0.55,76.61,0.55,76.94,0.56,77.50,0.50,77.73,0.54,78.14,0.48,78.62,0.50,78.95,0.54,79.28,0.71,79.52,0.49,80.20,0.65,80.54,0.53,81.32,0.68,81.77,0.56,82.31,0.45,82.66,0.56,82.98,0.70,83.31,0.81,83.64,0.94,83.99,0.93,84.22,0.79,84.88,0.93,85.46,0.51,85.68,0.42,86.13,0.52,86.80,0.48,87.03,0.40,87.37,0.55,87.60,0.48,87.93,0.38,88.15,0.56,88.49,0.65,88.92,0.58,89.14,0.77,89.72,0.69,89.95,0.34,90.17,0.51,90.46,0.40,91.06,0.60,91.30,0.62,91.97,0.45,92.19,0.53,92.51,0.43,92.73,0.55,93.54,0.40,93.86,0.68,94.55,0.50,94.87,0.48,95.10,0.64,95.67,0.64,96.00,0.59,96.34,0.48,97.01,0.63,97.31,0.52,97.68,0.73,97.99,0.43,98.34,0.92,98.79,0.94,99.24,1.00,99.56,0.77,99.89,0.72,100.79,0.55,101.02,0.68,101.38,0.35,101.72,0.60,102.27,0.58,102.61,0.43,102.85,0.56,103.27,0.53,103.49,0.73,104.07,0.32,104.40,0.41,104.63,0.62,104.97,0.42,105.29,0.70,105.64,0.46,106.18,0.88,106.43,0.43,106.86,0.44,107.08,1.00,107.66,0.40,107.98,0.49,108.22,0.65,108.56,0.46,108.88,0.52,109.23,0.55,109.45,0.43,109.78,0.52,110.31,0.49,110.67,0.71,110.90,0.57,111.35,0.64,111.80,0.81,112.04,0.47,112.48,0.59,112.80,0.56,113.15,0.57,113.71,0.64,114.04,0.54,114.28,0.63,114.63,0.34,114.96,0.24,115.38,0.36,115.65,0.43,116.28,0.67,116.50,0.27,116.85,0.45,117.16,1.00,117.50,1.00,117.84,0.70,118.18,0.51,118.47,0.49,118.96,0.75,119.18,0.50,119.63,1.00,119.85,1.00,120.08,0.52,120.41,1.00,120.74,1.00,120.96,0.64,121.21,0.92,121.43,1.00,121.77,0.81,122.11,0.79,122.44,0.97,122.78,0.87,123.11,1.00,123.45,1.00,123.78,1.00,124.10,0.53,124.34,1.00,124.67,1.00,124.90,0.80,125.35,0.66,125.69,0.70,126.02,0.76,126.36,1.00,126.58,0.85,127.02,0.75,127.26,0.63,127.69,0.52,127.93,0.50,128.37,0.54,128.60,0.91,128.92,0.44,129.16,0.48,129.49,0.52,129.73,0.54,130.06,0.58,130.40,0.54,130.94,0.51,131.18,0.49,131.48,0.55,132.40,0.53,132.63,0.49,132.85,0.51,133.29,0.51,133.53,0.51,134.30,0.78,134.75,0.56,135.20,0.63,135.52,0.55,135.76,0.58,136.53,0.85,136.76,0.80,137.09,0.83,137.76,0.81,138.10,0.62,138.43,0.65,138.88,1.00,139.10,0.65,139.35,0.68,139.60,0.40,140.00,0.38,140.34,0.68,140.67,0.51,141.11,1.00,141.46,1.00,141.79,1.00,142.01,1.00,142.35,1.00,142.58,1.00,142.92,0.71,143.17,0.31,143.57,0.51,143.81,0.47,144.26,0.66,144.71,0.42,144.93,0.53,145.15,0.68,145.60,0.42,146.05,0.43,146.32,1.00,146.72,0.55,146.94,0.62,147.16,0.47,147.41,0.46,147.65,0.37,148.17,0.65,148.40,0.50,148.84,0.57,149.52,0.53,149.83,0.63,150.05,0.51,150.31,0.44,150.75,0.68,151.10,0.46,151.55,0.63,151.89,0.54,152.11,0.31,152.76,0.75,153.08,0.36,153.30,0.48,153.65,0.60,153.91,0.57,154.20,0.45,154.80,0.65,155.13,0.57,155.48,0.63,155.96,0.67,156.33,0.77,156.59,0.50,156.90,0.58,157.23,0.58,157.91,0.51,158.13,0.62,158.37,0.40,158.70,0.54,159.02,0.71,159.38,0.43,159.72,0.59,159.94,0.45,160.24,0.54,160.69,0.61,160.94,0.32,161.23,0.42,161.81,0.85,162.62,0.56,162.96,0.52,163.29,0.47,163.61,0.61,163.85,0.47,164.18,0.65,164.41,0.59,165.06,0.88,165.40,0.49,165.64,0.48,166.19,0.68,166.85,0.94,167.18,0.60,167.42,0.42,167.64,0.48,167.97,0.48,168.64,0.70,168.98,0.69,169.88,0.57,170.42,0.73,170.79,0.51,171.01,0.44,171.54,0.52,171.86,0.36,172.22,0.43,172.66,1.00,173.01,0.60,173.33,1.00,173.55,1.00,173.78,0.87,174.00,1.00,174.23,1.00,174.45,1.00,174.78,1.00,175.14,1.00,175.69,0.34,176.25,0.41,176.80,0.41,177.15,0.53,177.82,0.61,178.37,0.76,178.70,0.80,179.28,0.33,179.80,0.24,180.29,0.30,180.81,0.28,181.14,0.50,181.43,0.32,181.81,0.35,182.04,0.37,182.33,0.35];
+let kIdx=0,kPrevT=-9;
+function kickClock(T){if(T<kPrevT-.05||T-kPrevT>1){kIdx=0;while(kIdx<KK.length/2&&KK[kIdx*2]<T)kIdx++;kPrevT=T;return 0}
+  let s=0;while(kIdx<KK.length/2&&KK[kIdx*2]<=T){s=Math.max(s,KK[kIdx*2+1]);kIdx++}kPrevT=T;return s}
+// id, name, phosphor, tint, decay(60fps), feedback zoom, rot, graticule, rgb, transition
+const SEC=[
+ {t:0,     id:'00',n:'POWER ON',        ph:'P31 GREEN', e:.25,tint:[.32,1,.48], dec:.86,z:1,   r:0,    g:.14,rgb:0},
+ {t:17.5,  id:'01',e:0.6,n:'LISSAJOUS GARDEN',ph:'P31 GREEN', tint:[.32,1,.48], dec:.88,z:1,   r:0,    g:.09,rgb:0},
+ {t:31.0,  id:'02',e:0.5,n:'TRUE XY',         ph:'P31 GREEN', tint:[.45,1,.40], dec:.72,z:1,   r:0,    g:.26,rgb:0},
+ {t:44.0,  id:'03',e:0.75,n:'NOIR SKYLINE',    ph:'P3 AMBER',  tint:[1,.6,.18],  dec:.80,z:1,   r:0,    g:0,  rgb:0},
+ {t:59.7,  id:'04',e:1,n:'TUNNEL VISION',   ph:'P7 BLUE',   tint:[.42,.68,1], dec:.84,z:1,   r:0,    g:0,  rgb:0},
+ {t:79.1,  id:'05',e:.55,n:'FEMME FATALE',    ph:'P22R ROSE', tint:[1,.34,.52], dec:.9,z:1,   r:0,    g:0,  rgb:0},
+ {t:96.0,  id:'06',e:0.95,n:'PULSAR RIDGES',   ph:'P4 WHITE',  tint:[.86,.9,1],  dec:.62,z:1,   r:0,    g:0,  rgb:0},
+ {t:111.8, id:'07',e:0.55,n:'HARMONIC STRINGS',ph:'P2 CYAN',   tint:[.28,1,.85], dec:.87,z:1,   r:0,    g:0,  rgb:0},
+ {t:LOST,  id:'08',e:0,n:'SIGNAL LOST',     ph:'P31 GREEN', tint:[.32,1,.48], dec:.80,z:1,   r:0,    g:.12,rgb:0, cut:1},
+ {t:DROP,  id:'09',e:1,n:'RGB AWAKENING',   ph:'P22 RGB',   tint:[1,1,1],     dec:.93,z:1.014,r:.005,g:0, rgb:1, cut:1},
+ {t:156.5, id:'10',e:1,n:'LASER CATHEDRAL', ph:'P22 RGB',   tint:[1,1,1],     dec:.8,z:1,r:0,g:0, rgb:1},
+ {t:CRED,  id:'EOT',e:0.45,n:'END OF TRANSMISSION',ph:'P31 GREEN',tint:[.32,1,.48],dec:.88,z:1,  r:0,    g:.06,rgb:0},
+ {t:1e9}
+];
+
+// ---------------------------------------------------------------- GL setup
+const cv=document.getElementById('c');
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false,depth:false,stencil:false,powerPreference:'high-performance'});
+if(!gl){document.getElementById('err').textContent='WebGL2 required.';throw new Error('no webgl2')}
+const HALF=!!gl.getExtension('EXT_color_buffer_float')||!!gl.getExtension('EXT_color_buffer_half_float');
+function shd(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s}
+function prog(vs,fs){const p=gl.createProgram();gl.attachShader(p,shd(gl.VERTEX_SHADER,vs));gl.attachShader(p,shd(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+  const u={};const n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);for(let i=0;i<n;i++){const a=gl.getActiveUniform(p,i);u[a.name]=gl.getUniformLocation(p,a.name)}return{p,u}}
+
+const VQ=`#version 300 es
+layout(location=0) in vec2 p; out vec2 uv; void main(){uv=p*.5+.5;gl_Position=vec4(p,0,1);}`;
+
+// The beam: each instance is one segment; the fragment computes the exact
+// integral of a gaussian spot moving along the segment -> seamless joins.
+const beamP=prog(`#version 300 es
+layout(location=0) in vec2 q; layout(location=1) in vec4 seg; layout(location=2) in vec4 cw;
+uniform float uAsp; uniform float uPx;
+out vec2 vP; flat out vec2 vA; flat out vec2 vB; flat out vec3 vC; flat out float vW;
+void main(){
+  vec2 a=seg.xy,b=seg.zw,d=b-a; float L=length(d); vec2 t=L>1e-6?d/L:vec2(1,0); vec2 n=vec2(-t.y,t.x);
+  float w=max(cw.w,uPx*1.1); float e=w*3.2;
+  vec2 P=mix(a-t*e,b+t*e,q.x)+n*e*q.y;
+  vP=P;vA=a;vB=b;vC=cw.rgb;vW=w; gl_Position=vec4(P.x/uAsp,P.y,0,1);
+}`,`#version 300 es
+precision highp float;
+in vec2 vP; flat in vec2 vA; flat in vec2 vB; flat in vec3 vC; flat in float vW; out vec4 o; uniform float uBG;
+float erf(float x){float s=sign(x),a=abs(x);float t=1.+(0.278393+(0.230389+(0.000972+0.078108*a)*a)*a)*a;t*=t;return s-s/(t*t);}
+float beam(float al,float pe,float L,float s){
+  if(L<1e-6) return exp(-(al*al+pe*pe)/(s*s));
+  return exp(-pe*pe/(s*s))*(erf(al/s)-erf((al-L)/s))*.5;}
+void main(){
+  vec2 ba=vB-vA; float L=length(ba); vec2 t=L>1e-6?ba/L:vec2(1,0); vec2 pa=vP-vA;
+  float al=dot(pa,t), pe=dot(pa,vec2(-t.y,t.x));
+  float g=beam(al,pe,L,vW)*.55 + beam(al,pe,L,vW*.33)*1.1 + beam(al,pe,L,vW*2.6)*.06;
+  o=vec4(vC*g*uBG,1);
+}`);
+
+// phosphor persistence: trail = max(prev*decay (optionally zoomed/rotated), fresh)
+const fbP=prog(VQ,`#version 300 es
+precision highp float; in vec2 uv; out vec4 o;
+uniform sampler2D uPrev,uFresh; uniform float uDecay,uZoom,uRot,uAsp;
+void main(){ vec2 p=uv-.5; p.x*=uAsp; float c=cos(uRot),s=sin(uRot); p=mat2(c,s,-s,c)*p/uZoom; p.x/=uAsp; p+=.5;
+  vec3 pr=texture(uPrev,p).rgb*uDecay; if(p.x<0.||p.y<0.||p.x>1.||p.y>1.)pr=vec3(0);
+  vec3 fr=texture(uFresh,uv).rgb; o=vec4(max(pr,fr),1);}`);
+
+const downP=prog(VQ,`#version 300 es
+precision highp float; in vec2 uv; out vec4 o; uniform sampler2D uT; uniform vec2 uTx;
+void main(){vec3 c=texture(uT,uv+uTx*vec2(-1,-1)).rgb+texture(uT,uv+uTx*vec2(1,-1)).rgb+texture(uT,uv+uTx*vec2(-1,1)).rgb+texture(uT,uv+uTx*vec2(1,1)).rgb;o=vec4(c*.25,1);}`);
+
+const blurP=prog(VQ,`#version 300 es
+precision highp float; in vec2 uv; out vec4 o; uniform sampler2D uT; uniform vec2 uD;
+void main(){vec3 c=texture(uT,uv).rgb*.227;
+ c+=(texture(uT,uv+uD*1.384).rgb+texture(uT,uv-uD*1.384).rgb)*.316;
+ c+=(texture(uT,uv+uD*3.230).rgb+texture(uT,uv-uD*3.230).rgb)*.070; o=vec4(c,1);}`);
+
+// the tube: barrel, power squash, chroma, bloom, mono phosphor tint, noise, scanlines, glass
+const finP=prog(VQ,`#version 300 es
+precision highp float; in vec2 uv; out vec4 o;
+uniform sampler2D uA,uB1,uB2,uO,uEx; uniform vec2 uRes,uShake; uniform float uPunch,uShock,uShockA,uSplit,uTube; uniform float uT,uPX,uPY,uNoise,uFlash,uRGB,uGain,uRoll; uniform vec3 uTint;
+float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+void main(){
+  vec2 c=uv*2.-1.; float r2=dot(c,c);
+  vec2 q=c*(1.+.035*uTube*r2);
+  q*=1.-uPunch*.035; q+=uShake;
+  float rr=length(q),R=uShock*1.75;
+  float sw=uShockA*exp(-pow((rr-R)/.1,2.))*max(0.,1.-uShock/1.15);
+  q-=(rr>1e-4?q/rr:vec2(0))*sw*.08;
+  float tear=uNoise*step(.82,h21(vec2(floor(q.y*14.+uT*3.),floor(uT*12.))));
+  q.x+=tear*.06*sin(q.y*30.+uT*50.);
+  float edge=pow(pow(abs(q.x),10.)+pow(abs(q.y),10.),.1);
+  if(uRoll>0.){q.y=mod(q.y+uRoll+1.,2.)-1.;}
+  vec2 s=q; s.y/=max(uPY,1e-4); s.x/=max(uPX,1e-4);
+  vec2 t=s*.5+.5;
+  float tube=mix(1.,smoothstep(1.005,.985,edge),uTube);
+  float ins=step(abs(s.x),1.)*step(abs(s.y),1.);
+  vec2 ca=(t-.5)*(.0035+uSplit*.025+uPunch*.004)+vec2(uSplit*.006,0);
+  vec3 col=vec3(texture(uA,t+ca).r,texture(uA,t).g,texture(uA,t-ca).b);
+  col+=(texture(uB1,t).rgb*.55+texture(uB2,t).rgb*.75)*(1.+uPunch*.45);
+  col+=texture(uO,t).rgb*.8;
+  col*=ins*min(1./sqrt(max(uPX*uPY,1e-5)),60.)*uGain;
+  // auto exposure: mean light of the blurred phosphor; dense frames are pulled down before they burn white
+  float mL=texture(uEx,vec2(.5)).r;col*=1./(1.+4.*max(0.,mL-.045));
+  float lum=dot(col,vec3(.299,.587,.114));
+  vec3 tint=mix(uTint,vec3(1),uRGB);
+  col+=tint*sw*.22*tube;
+  col=mix(uTint*lum*1.1+vec3(lum*lum*.08),col,uRGB);
+  col+=tint*uFlash*.5*(1.-.4*r2);
+  float n=h21(floor(uv*uRes*.5)+floor(uT*60.)*1.7);
+  col+=uNoise*tint*n*n*.9;
+  col=1.-exp(-col*1.3);
+  col*=mix(1.,.80+.20*sin(uv.y*uRes.y*1.5708),.25+.75*uTube);
+  col*=1.-.45*uTube*pow(clamp(edge,0.,1.),5.);
+  col*=tube;
+  col+=vec3(.010,.012,.014)*smoothstep(1.2,0.,length(c-vec2(-.45,.55)))*tube*uTube;
+  col+=(h21(uv*uRes+uT)-.5)*.022;
+  o=vec4(max(col,0.),1);
+}`);
+
+// mean phosphor light -> 1x1 texture (auto exposure input)
+const exP=prog(VQ,`#version 300 es
+precision highp float; in vec2 uv; out vec4 o; uniform sampler2D uT;
+void main(){float m=0.;for(int i=0;i<6;i++)for(int j=0;j<6;j++)m+=dot(texture(uT,vec2((float(i)+.5)/6.,(float(j)+.5)/6.)).rgb,vec3(.3,.59,.11));o=vec4(m/36.,0,0,1);}`);
+// geometry
+const vaoQ=gl.createVertexArray();gl.bindVertexArray(vaoQ);
+{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);}
+const MAXS=48000;
+const vaoB=gl.createVertexArray();gl.bindVertexArray(vaoB);
+{const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,-1,1,-1,0,1,1,1]),gl.STATIC_DRAW);
+ gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);}
+const instBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,instBuf);gl.bufferData(gl.ARRAY_BUFFER,MAXS*32,gl.DYNAMIC_DRAW);
+gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,32,0);gl.vertexAttribDivisor(1,1);
+gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,4,gl.FLOAT,false,32,16);gl.vertexAttribDivisor(2,1);
+gl.bindVertexArray(null);
+
+function mkFBO(w,h){const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
+  if(HALF)gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,w,h,0,gl.RGBA,gl.HALF_FLOAT,null);
+  else gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  const f=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,f);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);
+  gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);return{t,f,w,h}}
+function delFBO(o){if(o){gl.deleteTexture(o.t);gl.deleteFramebuffer(o.f)}}
+let exF=null,W=0,H=0,ASP=1,fresh,ovl,trail=[],b1,b2,b3,b4;
+function resize(){const d=Math.min(window.devicePixelRatio||1,1.5);
+  const w=Math.min(2560,Math.floor(innerWidth*d)),h=Math.floor(innerHeight*d*Math.min(1,2560/(innerWidth*d)));
+  if(w===W&&h===H)return; W=cv.width=w;H=cv.height=h;ASP=W/H;
+  [fresh,ovl,trail[0],trail[1],b1,b2,b3,b4].forEach(delFBO);
+  fresh=mkFBO(W,H);ovl=mkFBO(W,H);trail=[mkFBO(W,H),mkFBO(W,H)];
+  b1=mkFBO(W>>2,H>>2);b2=mkFBO(W>>2,H>>2);b3=mkFBO(W>>4,H>>4);b4=mkFBO(W>>4,H>>4);if(!exF)exF=mkFBO(1,1);}
+addEventListener('resize',resize);resize();
+
+// ---------------------------------------------------------------- beam builder
+class Tgt{constructor(n){this.d=new Float32Array(n*8);this.n=0;this.cap=n}}
+const tHud=new Tgt(6000),tMain=new Tgt(MAXS),tA=new Tgt(20000),tB=new Tgt(20000),tC=new Tgt(8000),tD=new Tgt(8000);
+let TG=tMain,cR=1,cG=1,cB=1,cW=.0032,pX=0,pY=0;
+function col(r,g,b){cR=r;cG=g===undefined?r:g;cB=b===undefined?r:b}
+function colA(a,k){cR=a[0]*k;cG=a[1]*k;cB=a[2]*k}
+function wid(w){cW=w}
+function seg(ax,ay,bx,by){const T=TG;if(T.n>=T.cap)return;const d=T.d,o=T.n*8;
+  d[o]=ax;d[o+1]=ay;d[o+2]=bx;d[o+3]=by;d[o+4]=cR;d[o+5]=cG;d[o+6]=cB;d[o+7]=cW;T.n++}
+function mv(x,y){pX=x;pY=y}
+function ln(x,y){seg(pX,pY,x,y);pX=x;pY=y}
+function dot(x,y){seg(x,y,x,y)}
+function circle(x,y,r,n,a0=0){mv(x+r*Math.cos(a0),y+r*Math.sin(a0));for(let i=1;i<=n;i++){const a=a0+i/n*TAU;ln(x+r*Math.cos(a),y+r*Math.sin(a))}}
+function into(t,fn){const p=TG;TG=t;t.n=0;fn();TG=p}
+
+// ------------- arc-length resampling morph (the seamless glue between sections)
+const NM=2600;
+class Samp{constructor(){for(const k of['x','y','r','g','b','w','c'])this[k]=new Float32Array(NM);this.run=new Int32Array(NM)}}
+const SA=new Samp(),SB=new Samp(),SC=new Samp(),SD=new Samp();
+const LENS=new Float32Array(20000),RUNS=new Int32Array(20000);
+function resample(t,S){const d=t.d,n=t.n;let L=0,run=0;
+  for(let j=0;j<n;j++){const o=j*8;if(j>0&&(Math.abs(d[o]-d[o-6])>1e-4||Math.abs(d[o+1]-d[o-5])>1e-4))run++;
+    RUNS[j]=run;const l=Math.hypot(d[o+2]-d[o],d[o+3]-d[o+1]);LENS[j]=l;L+=l}
+  if(n===0||L<1e-6){for(let k=0;k<NM;k++){S.x[k]=n?d[0]:0;S.y[k]=n?d[1]:0;S.r[k]=S.g[k]=S.b[k]=0;S.w[k]=.003;S.c[k]=0;S.run[k]=k}return}
+  const st=L/NM;let j=0,acc=0;
+  for(let k=0;k<NM;k++){const s=(k+.5)*st;while(j<n-1&&acc+LENS[j]<s){acc+=LENS[j];j++}
+    const o=j*8,f=LENS[j]>0?clamp((s-acc)/LENS[j]):0;
+    S.x[k]=d[o]+(d[o+2]-d[o])*f;S.y[k]=d[o+1]+(d[o+3]-d[o+1])*f;S.r[k]=d[o+4];S.g[k]=d[o+5];S.b[k]=d[o+6];S.w[k]=d[o+7];S.run[k]=RUNS[j]}
+  for(let k=0;k<NM-1;k++)S.c[k]=S.run[k]===S.run[k+1]?1:0;S.c[NM-1]=0}
+function morphEmit(A,B,m,sw,t){const sm=Math.sin(PI*m)*sw;
+  let px=0,py=0;
+  for(let k=0;k<NM;k++){
+    let x=mix(A.x[k],B.x[k],m),y=mix(A.y[k],B.y[k],m);
+    if(sm>0){const a=k*.013+t*2.1;x+=Math.sin(a*3.1)*sm*.6;y+=Math.cos(a*2.3)*sm*.6}
+    if(k>0){const w=mix(A.c[k-1],B.c[k-1],m);
+      if(w>.02){cR=mix(A.r[k],B.r[k],m)*w;cG=mix(A.g[k],B.g[k],m)*w;cB=mix(A.b[k],B.b[k],m)*w;cW=mix(A.w[k],B.w[k],m);seg(px,py,x,y)}}
+    px=x;py=y}}
+function morph(fa,fb,m,sw,t,ta=tA,tb=tB,sa=SA,sb=SB){
+  into(ta,fa);into(tb,fb);resample(ta,sa);resample(tb,sb);morphEmit(sa,sb,m,sw,t)}
+
+// ---------------------------------------------------------------- beam font
+const FONT={A:'0004264440|0343',B:'00063645443303|3342413000',C:'4536160501103041',D:'00062644422000',E:'46060040|0333',F:'460600|0333',
+G:'45361605011030414323',H:'0006|4046|0343',I:'1636|2620|1030',J:'4641301001',K:'0006|460340',L:'060040',M:'0006234640',N:'00064046',
+O:'100105163645413010',P:'00063645443303',Q:'100105163645413010|2240',R:'00063645443303|2340',S:'453616050413334241301001',T:'0646|2620',
+U:'060110304146',V:'062046',W:'0610233046',X:'0046|0640',Y:'0623|4623|2320',Z:'06460040',
+0:'100105163645413010|4105',1:'152620|1030',2:'05163645440040',3:'05163645443313|334241301001',4:'30360242',5:'4606033342413000',
+6:'4536160501103041423303',7:'064610',8:'13040516364544331302011030414233',9:'0110304145361605041343',
+'-':'0333','.':'2021',',':'2110','/':'0046',':':'2122|2425','!':'2622|2021','+':'0343|2125','=':'0242|0444','>':'064300','<':'460340',
+'_':'0040','(':'36252130',')':'16252110','?':'0516364544332322|2021',"'":'2625','#':'1016|3036|0242|0444','*':'0444|0440|2125','%':'0046|0506|4041'};
+const GLY={};for(const k in FONT)GLY[k]=FONT[k].split('|').map(s=>{const a=[];for(let i=0;i<s.length;i+=2)a.push(+s[i],+s[i+1]);return a});
+const textW=(s,h,tr=1)=>((s.length*6-2)*tr)*h/6;
+let gT=0;
+function text(s,x,y,h,o={}){s=s.toUpperCase();const sc=h/6,tr=o.tr||1,sl=o.sl||0;
+  let x0=o.c?x-textW(s,h,tr)/2:o.r?x-textW(s,h,tr):x;
+  let tot=0;for(const ch of s){const g=GLY[ch];if(g)for(const pl of g)tot+=Math.max(1,pl.length/2-1)}
+  const lim=(o.p===undefined?1:clamp(o.p))*tot;let cnt=0,hx=0,hy=0;
+  outer:for(let i=0;i<s.length;i++){const g=GLY[s[i]];if(!g)continue;
+    const jx=o.j?(hash(i*7.1+Math.floor(gT*24))-.5)*o.j:0,jy=o.j?(hash(i*3.3+Math.floor(gT*24)+.5)-.5)*o.j:0;
+    const ox=x0+i*6*sc*tr+jx,oy=y+jy;
+    for(const pl of g){const P=(k)=>[ox+(pl[k]+pl[k+1]*sl)*sc,oy+(pl[k+1]-3)*sc];
+      if(pl.length===2){if(cnt>=lim)break outer;const a=P(0);dot(a[0],a[1]);cnt++;continue}
+      let a=P(0);mv(a[0],a[1]);
+      for(let k=2;k<pl.length;k+=2){if(cnt>=lim)break outer;const b=P(k);const f=Math.min(1,lim-cnt);
+        const bx=mix(a[0],b[0],f),by=mix(a[1],b[1],f);ln(bx,by);hx=bx;hy=by;cnt++;if(f<1)break outer;a=b}}}
+  if(o.p!==undefined&&o.p>0&&o.p<1){const r=cR,g=cG,b=cB;col(r*2.5,g*2.5,b*2.5);dot(hx,hy);col(r,g,b)}}
+
+// ---------------------------------------------------------------- audio
+let AC=null,buf=null,src=null,master,anM,anL,anR,startAt=0,state='load',loadP=0,preT=0,paused=false;
+const NB=128,FFT=2048,TD=1024;
+const F={bass:0,lo:0,mid:0,hi:0,lvl:0,kick:0,hat:0,kickTrig:false,bigTrig:false,hatTrig:false,flash:0,
+  spec:new Float32Array(NB),specS:new Float32Array(NB),L:new Float32Array(TD),R:new Float32Array(TD),M:new Float32Array(TD)};
+const bandLo=new Int16Array(NB),bandHi=new Int16Array(NB);let fbuf=new Uint8Array(FFT/2);
+function initBands(sr){const hz=sr/FFT;for(let k=0;k<NB;k++){const f0=30*Math.pow(14000/30,k/NB),f1=30*Math.pow(14000/30,(k+1)/NB);
+  bandLo[k]=Math.max(1,Math.floor(f0/hz));bandHi[k]=Math.max(bandLo[k]+1,Math.ceil(f1/hz))}}
+initBands(48000);
+function setupAudio(){AC=new (window.AudioContext||window.webkitAudioContext)();initBands(AC.sampleRate);
+  master=AC.createGain();master.connect(AC.destination);
+  anM=AC.createAnalyser();anM.fftSize=FFT;anM.smoothingTimeConstant=.5;anM.minDecibels=-88;anM.maxDecibels=-18;
+  anL=AC.createAnalyser();anR=AC.createAnalyser();anL.fftSize=anR.fftSize=TD;
+  const sp=AC.createChannelSplitter(2);master.connect(anM);master.connect(sp);sp.connect(anL,0);sp.connect(anR,1)}
+function playFrom(off){if(src){try{src.stop()}catch(e){}src.disconnect()}
+  src=AC.createBufferSource();src.buffer=buf;src.connect(master);src.start(0,Math.max(0,off));startAt=AC.currentTime-Math.max(0,off);
+  src.onended=()=>{if(state==='play'&&songT()>END-1)state='end'}}
+let fakeClock=0;
+function songT(){if(FAKE)return fakeClock;if(!AC)return 0;return AC.currentTime-startAt-(AC.outputLatency||0)}
+
+// audible oscillators == visible oscillators (pre-roll power-on)
+function preRoll(){const t=AC.currentTime+.02,g=AC.createGain(),o1=AC.createOscillator(),o2=AC.createOscillator(),p1=AC.createStereoPanner(),p2=AC.createStereoPanner();
+  o1.frequency.value=220;o2.frequency.setValueAtTime(220,t);o2.frequency.setValueAtTime(220,t+.5);o2.frequency.exponentialRampToValueAtTime(330,t+2.2);
+  p1.pan.value=-1;p2.pan.value=1;o1.connect(p1);o2.connect(p2);p1.connect(g);p2.connect(g);g.connect(master);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.35);g.gain.setValueAtTime(.16,t+2.15);g.gain.linearRampToValueAtTime(0,t+2.6);
+  o1.start(t);o2.start(t);o1.stop(t+2.7);o2.stop(t+2.7)}
+const PRE=2.6;
+
+let dMean=0,dVar=.001,hMean=0,hVar=.001,prevB=0,prevH=0,lastK=-9,lastH=-9;
+function analyze(T,dt){
+  const real=AC&&!FAKE&&state!=='load'&&state!=='ready';
+  if(real){anM.getByteFrequencyData(fbuf);anL.getFloatTimeDomainData(F.L);anR.getFloatTimeDomainData(F.R);
+    for(let k=0;k<NB;k++){let m=0;for(let b=bandLo[k];b<bandHi[k]&&b<fbuf.length;b++)if(fbuf[b]>m)m=fbuf[b];const v=m/255;F.spec[k]=Math.min(1,v*v*1.25)}
+  }else{const bp=fract(T/BEAT),pk=Math.exp(-bp*6);
+    for(let k=0;k<NB;k++){const u=k/NB;F.spec[k]=clamp((.62-.38*u)*(.65+.35*Math.sin(k*.37+T*3.1)*Math.sin(k*.11-T))*(u<.25?.55+pk*.7:1)+(u>.7?Math.exp(-fract(T/BEAT*2)*9)*.35:0))}
+    const f1=state==='pre'?220:110*3/2,f2=state==='pre'?220*Math.pow(1.5,clamp((preT-.5)/1.7)):110;
+    for(let i=0;i<TD;i++){const tt=T+i/48000;
+      F.L[i]=state==='pre'?.16*Math.sin(TAU*f1*tt):.25*Math.sin(TAU*f1*tt)+.12*Math.sin(TAU*517*tt)*pk+.08*Math.sin(TAU*61*tt);
+      F.R[i]=state==='pre'?.16*Math.sin(TAU*f2*tt):.25*Math.sin(TAU*f2*tt+T)+.1*Math.sin(TAU*401*tt)+.08*Math.sin(TAU*61*tt+1)}}
+  for(let i=0;i<TD;i++)F.M[i]=(F.L[i]+F.R[i])*.5;
+  const ks=1-Math.exp(-dt*7);for(let k=0;k<NB;k++)F.specS[k]=mix(F.specS[k],F.spec[k],ks);
+  const avg=(a,b)=>{let s=0;for(let k=a;k<b;k++)s+=F.spec[k];return s/(b-a)};
+  const b=avg(0,30),l=avg(30,60),m=avg(60,92),h=avg(92,NB);
+  const sm=(cur,v,up,dn)=>v>cur?mix(cur,v,up):mix(cur,v,1-Math.exp(-dt*dn));
+  F.bass=sm(F.bass,b,.7,5);F.lo=sm(F.lo,l,.6,5);F.mid=sm(F.mid,m,.6,5);F.hi=sm(F.hi,h,.7,7);F.lvl=(F.bass+F.lo+F.mid+F.hi)/4;
+  const d=b-prevB;prevB=b;const kz=(d-dMean)/Math.sqrt(dVar);dMean=mix(dMean,d,.02);dVar=Math.max(1e-5,mix(dVar,(d-dMean)*(d-dMean),.02));
+  const kd=kz>2.3&&d>.02&&T-lastK>.24&&b>.08;
+  if(state==='play'||state==='end'){const ks=kickClock(T);F.kickTrig=ks>0;F.bigTrig=ks>.72;if(ks>0){lastK=T;F.kick=Math.max(F.kick,.45+.55*ks)}else F.kick*=Math.exp(-dt*8)}
+  else{F.kickTrig=kd;F.bigTrig=false;if(kd){lastK=T;F.kick=1}else F.kick*=Math.exp(-dt*7)}
+  const e=h-prevH;prevH=h;const hz=(e-hMean)/Math.sqrt(hVar);hMean=mix(hMean,e,.02);hVar=Math.max(1e-5,mix(hVar,(e-hMean)*(e-hMean),.02));
+  F.hatTrig=hz>2.4&&e>.012&&T-lastH>.11;if(F.hatTrig){lastH=T;F.hat=1}else F.hat*=Math.exp(-dt*12);
+  F.flash*=Math.exp(-dt*5)}
+
+// ---------------------------------------------------------------- shared visuals
+function graticule(a,tint){if(a<.005)return;const gy=.84,dv=gy/4,gx=Math.min(ASP*.92,dv*5);const dx=gx/5;
+  wid(.0022);
+  for(let i=-5;i<=5;i++)for(let j=-20;j<=20;j++){col(a*(i===0||j%5===0?1:.55));dot(i*dx,j*dv/5)}
+  for(let j=-4;j<=4;j++)for(let i=-25;i<=25;i++){if(i%5===0)continue;col(a*(j===0?1:.55));dot(i*dx/5,j*dv)}}
+function hud(T,si,a){if(a<.01)return;const s=SEC[si],lt=T-s.t,p=sstep(0,1.1,lt);wid(.0021);
+  const x0=-ASP+.13,y0=.85,h=.028;col(.55*a);
+  text('SIGNAL '+s.id+' // '+s.n,x0,y0,h,{p});
+  col(.38*a);text(s.ph+'   '+BPM.toFixed(1)+' BPM',ASP-.13,y0,h,{r:1,p});
+  const tc='T+'+(T<100?'0':'')+(T<10?'0':'')+T.toFixed(2);text(tc,x0,-y0,h);
+  const bx=ASP-.13-16*.018;for(let i=0;i<16;i++){const v=F.specS[i*8]*0.12+.004;col(.5*a);mv(bx+i*.018,-y0-h*.5);ln(bx+i*.018,-y0-h*.5+v)}}
+
+const wv=i=>F.M[((i%TD)+TD)%TD];
+
+// 3D helpers
+let R3x=0,R3y=0,R3z=0;
+function rot(x,y,z,ay,ax){let c=Math.cos(ay),s=Math.sin(ay);const X=x*c+z*s;let Z=-x*s+z*c;c=Math.cos(ax);s=Math.sin(ax);R3y=y*c-Z*s;R3z=y*s+Z*c;R3x=X}
+
+// ---------------------------------------------------------------- scenes
+// every scene: fn(c) where c={t:global, lt:local, dt}
+function sPre(c){ // real XY of the two audible oscillators (L->x, R->y)
+  let pk=.02;for(let i=0;i<TD;i++)pk=Math.max(pk,Math.abs(F.L[i]),Math.abs(F.R[i]));const g=.6/pk;
+  col(1.1);wid(.0034);mv(F.L[0]*g,F.R[0]*g);for(let i=1;i<TD;i++)ln(F.L[i]*g,F.R[i]*g)}
+
+function sIntro(c){const t=c.lt;
+  const amp=mix(.6,.86,sstep(5.5,8.5,t))*(1+.12*F.bass),br=mix(.75,.32,sstep(5.5,8,t))+.5*sstep(.2,1.4,t)*(1-sstep(1.4,2.6,t)),N=760,dl=t*.42;
+  wid(.0034);
+  for(let i=0;i<=N;i++){const th=i/N*TAU;const x=Math.sin(3*th+dl)*amp,y=Math.sin(2*th)*amp*.92+wv(i*2)*.05;
+    col(br*(.8+.4*Math.sin(th*6+t)));i?ln(x,y):mv(x,y)}
+  if(t>1&&t<6.2){const fo=1-sstep(5.1,6.1,t);col(1.25*fo);wid(.0042);text('XANADU',0,.05,.13,{c:1,tr:1.7,p:sstep(1.2,3.1,t),j:F.hat*.01});
+    col(.6*fo);wid(.0024);text('PRESENTS',0,-.11,.034,{c:1,tr:1.6,p:sstep(3.2,4.2,t)})}
+  if(t>6){col(1.35);wid(.0042);text('PHOSPHOR',0,.07,.25,{c:1,p:sstep(6.2,10.4,t),tr:1.28,j:t>12.5?F.hat*.014:0})}
+  if(t>10){col(.75);wid(.0026);text('A NOIR TRANSMISSION IN TEN SIGNALS',0,-.2,.042,{c:1,p:sstep(10.2,13,t),tr:1.15})}
+  if(t>13.3){col(.45);wid(.0022);text('MUSIC  VOXNOIR PRODUCTION USING SUNO',0,-.3,.028,{c:1,p:sstep(13.4,15.2,t),tr:1.2})}}
+
+const LR=[[3,2,1],[5,4,3],[4,3,2],[5,3,4],[7,5,3],[2,1,3],[7,4,5],[9,8,7]];
+function sLiss(c){const lb=c.lt/BEAT,bar=Math.floor(lb/4),f=sstep(0,1.4,lb-bar*4);
+  const P=LR[(bar+1)%8],Pq=LR[bar%8];const a=mix(Pq[0],P[0],f),b=mix(Pq[1],P[1],f),cc=mix(Pq[2],P[2],f);
+  const sc=.5+.2*F.bass+.12*F.kick,ay=c.t*.45,ax=Math.sin(c.t*.23)*.9,N=1500;wid(.0032);
+  for(let i=0;i<=N;i++){const th=i/N*TAU;rot(Math.sin(a*th+c.t*.5),Math.sin(b*th),Math.sin(cc*th+c.t*.3),ay,ax);
+    const s=2.4/(2.4+R3z);col(.35+.75*(1-R3z)*.5+.15);const x=R3x*sc*s*1.15,y=R3y*sc*s*1.15;i?ln(x,y):mv(x,y)}
+  for(let k=0;k<3;k++){const ang=c.t*.35+k*TAU/3,ox=Math.cos(ang)*Math.min(ASP*.78,1.25),oy=Math.sin(ang)*.62,r=.09+.05*F.specS[20+k*25];
+    col(.55);const n=160;for(let i=0;i<=n;i++){const th=i/n*TAU;const x=ox+Math.sin((k+2)*th+c.t)*r,y=oy+Math.sin((k+1)*th)*r;i?ln(x,y):mv(x,y)}}}
+
+let agc=.25,trigI=0;
+function sScope(c){const L=F.L,R=F.R,M=F.M;let pk=.02;for(let i=0;i<TD;i++)pk=Math.max(pk,Math.abs(L[i]),Math.abs(R[i]));
+  agc=mix(agc,pk,.06);const g=.6/agc;wid(.0028);
+  col(1);mv((L[0]-R[0])*.707*g*1.25,(L[0]+R[0])*.707*g*.82);
+  for(let i=1;i<TD;i++)ln((L[i]-R[i])*.707*g*1.25,(L[i]+R[i])*.707*g*.82);
+  let i0=0;for(let i=1;i<TD/2;i++)if(M[i-1]<0&&M[i]>=0){i0=i;break}
+  const Wd=Math.min(ASP*.86,1.5);col(.85);
+  for(let k=0;k<480;k++){const x=-Wd+2*Wd*k/479,y=.66+M[i0+k]*g*.18;k?ln(x,y):mv(x,y)}
+  col(.75);for(let k=0;k<NB;k++){const x=-Wd+2*Wd*k/(NB-1),y=-.9+F.spec[k]*.3;k?ln(x,y):mv(x,y)}
+  wid(.002);col(.4);text('CH1',-Wd,.82,.026);text('X-Y  L-R / L+R',-Wd,.5,.026);text('FFT 30 HZ - 14 KHZ',-Wd,-.52,.026)}
+
+const BLD=[];{let x=-2.1,i=0;while(x<2.1){const w=.06+hash(i*3.7)*.13;BLD.push({x0:x,x1:x+w,bin:4+Math.floor(hash(i*1.3)*80),h0:.04+hash(i*9.1)*.16,ant:hash(i*5.5)>.78,i});x+=w+(hash(i*2.2)>.7?.02:0);i++}}
+let bolt=-9,boltSeed=0;
+function sSky(c){const hor=-.2,t=c.lt;
+  wid(.0026);
+  for(let k=-9;k<=9;k++){col(.32);mv(k*.012,hor);ln(k*.42,-1.1)}
+  const sp=t*1.4;for(let j=0;j<12;j++){const z=j+1-fract(sp),y=hor-(1.0)/(z*.85+.15)*.18;if(y<-1.1)continue;col(.28*clamp(1-z/12));mv(-ASP,y);ln(ASP,y)}
+  for(let i=0;i<3;i++){const bx=(i-1)*ASP*.62,a=PI/2+Math.sin(t*.55+i*2.1)*.55,hw=.045,L=2.4;col(.16+.35*F.kick);wid(.0026);
+    mv(bx+Math.cos(a-hw)*L,hor+Math.sin(a-hw)*L);ln(bx,hor);ln(bx+Math.cos(a+hw)*L,hor+Math.sin(a+hw)*L)}
+  const H=b=>b.h0+F.specS[b.bin]*.62+(b.i%5===0?.12:0);
+  wid(.0032);col(1);mv(-ASP-.2,hor);
+  for(const b of BLD){if(b.x1<-ASP-.2||b.x0>ASP+.2)continue;const h=hor+H(b);ln(b.x0,h);
+    if(b.ant){const m=(b.x0+b.x1)/2;ln(m-.008,h);ln(m,h+.07+F.hi*.04);ln(m+.008,h)}ln(b.x1,h)}
+  ln(ASP+.2,hor);
+  col(.3);wid(.0026);let first=true;
+  for(const b of BLD){if(b.x1<-ASP-.2||b.x0>ASP+.2)continue;const h=hor-H(b)*.55;const wo=Math.sin(t*3+b.x0*9)*.006;
+    if(first){mv(b.x0+wo,hor);first=false}ln(b.x0+wo,h);ln(b.x1+wo,h)}
+  wid(.0024);const bt=Math.floor(t/BEAT);
+  for(const b of BLD){if(b.x1<-ASP||b.x0>ASP)continue;const h=H(b);const cols=Math.floor((b.x1-b.x0)/.032),rows=Math.floor((h-.04)/.045);
+    for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){const lit=hash(b.i*31+r*7+q*3+Math.floor(bt/2)*.37);if(lit>.72){col(.45+(lit>.95?F.hi*.8:0));dot(b.x0+.018+q*.032,hor+.03+r*.045)}}}
+  const mr=.11*(1+.08*F.bass),mx=Math.min(ASP*.62,1.1);col(.95);wid(.003);circle(mx,.6,mr,80);col(.35);
+  mv(mx+mr*.3,.6+mr*.93);for(let i=1;i<=30;i++){const a=PI*.42+i/30*PI*1.16;ln(mx+mr*.35+Math.cos(a)*mr*.8,.6+Math.sin(a)*mr*.95)}
+  wid(.0022);for(let i=0;i<110;i++){const x=(hash(i)*2-1)*(ASP+.2),spd=1.4+hash(i*3)*1.2,y=1.15-fract(hash(i*7)+t*spd*.45)*2.4;
+    col(.2+F.hi*.55);mv(x,y);ln(x-.014,y-.06)}
+  if(F.kickTrig&&t-bolt>2.2&&hash(Math.floor(c.t*3))>.35){bolt=t;boltSeed=Math.random()*1000;F.flash=Math.max(F.flash,.6)}
+  const ba=t-bolt;if(ba<.25){col(2.2*(1-ba/.25));wid(.0036);let x=Math.cos(boltSeed)*ASP*.6,y=1.05;mv(x,y);
+    for(let k=0;k<14;k++){x+=(hash(boltSeed+k)-.5)*.16;y-=.085;ln(x,y);if(k===6){const bx=x,by=y;let x2=x,y2=y;for(let m=0;m<5;m++){x2+=.03+(hash(boltSeed+k*9+m)-.5)*.1;y2-=.07;ln(x2,y2)}mv(bx,by)}}}}
+
+let tunZ=0,tunKick=0;const TWORDS=['XANADU','VENTURE','PHOSPHOR','VOXNOIR'];
+const tunPath=z=>[Math.sin(z*.31)*.7+Math.sin(z*.17)*.4,Math.cos(z*.23)*.5];
+function sTun(c){tunZ+=c.dt*(2.1+F.bass*3.2);const sp=.6,first=Math.ceil(tunZ/sp)*sp,cam=tunPath(tunZ+.4),NR=30,NV=48;
+  if(F.bigTrig)tunKick+=PI/(3+(Math.floor(tunZ/7.2)%5));const roll=tunZ*.16+Math.sin(c.t*.5)*.4+tunKick;const ring=[];
+  wid(.0024);const spd=2.1+F.bass*3.2;
+  for(let k=0;k<150;k++){const rel=20-((tunZ+hash(k)*20)%20);if(rel<.2)continue;const an=hash(k*3.1)*TAU,rd=.25+hash(k*7.7)*1.1;
+    const x=Math.cos(an)*rd,y=Math.sin(an)*rd,r2=rel+.05*spd;col(clamp(1-rel/20)*(.5+F.kick));mv(x*.85/rel,y*.85/rel);ln(x*.85/r2,y*.85/r2)}
+  wid(.003);
+  for(let k=0;k<NR;k++){const z=first+k*sp,dz=z-tunZ;if(dz<.12)continue;const p=tunPath(z),ox=p[0]-cam[0],oy=p[1]-cam[1],s=.85/dz;
+    const sides=3+(Math.floor(z/7.2)%5),ring_i=Math.round(z/sp);const br=sstep(0,1,1-dz/(NR*sp))*Math.min(1,dz*1.2)*(1+(F.kick*1.5)*(ring_i%4===0?1:0));
+    const pts=[];
+    for(let j=0;j<=NV;j++){const th=j/NV*TAU+roll;const seg2=TAU/sides,a=((th%seg2)+seg2)%seg2-seg2/2;
+      const poly=Math.cos(PI/sides)/Math.cos(a);const r=(.55*mix(1,poly,.85))*(1+.32*F.spec[(j*5+ring_i*3)%96]);
+      const X=(ox+Math.cos(th)*r)*s,Y=(oy+Math.sin(th)*r)*s;pts.push(X,Y);col(br);j?ln(X,Y):mv(X,Y)}
+    ring.push({pts,br})}
+  { const per=8*BEAT,wi=Math.floor(c.lt/per),wl=(c.lt-wi*per)/per,z=mix(9,.22,Math.pow(wl,1.7));
+    const word=TWORDS[wi%TWORDS.length];into(tC,()=>{wid(.0045);col(1);text(word,0,0,.3,{c:1,tr:1.25})});
+    const d=tC.d,sc=.85/z,br=sstep(9,5.5,z)*Math.min(1,z*2.2)*1.7*(1+F.kick*.6),ca=Math.cos(roll*.35),sa=Math.sin(roll*.35);
+    for(let j=0;j<tC.n;j++){const o=j*8;const P=(x,y)=>[(x*ca-y*sa)*sc,(x*sa+y*ca)*sc];const a=P(d[o],d[o+1]),b=P(d[o+2],d[o+3]);
+      col(br);wid(Math.min(.012,.0045*Math.sqrt(sc)));seg(a[0],a[1],b[0],b[1])}
+    wid(.003)}
+  for(let k=0;k<ring.length-1;k++){const A=ring[k],B=ring[k+1];col(Math.min(A.br,B.br)*.5);for(let j=0;j<NV;j+=6){mv(A.pts[j*2],A.pts[j*2+1]);ln(B.pts[j*2],B.pts[j*2+1])}}}
+
+const KN=[[2,3],[3,5],[2,5],[3,7],[5,8],[3,4]];
+const ICO=(()=>{const p=(1+Math.sqrt(5))/2,v=[[-1,p,0],[1,p,0],[-1,-p,0],[1,-p,0],[0,-1,p],[0,1,p],[0,-1,-p],[0,1,-p],[p,0,-1],[p,0,1],[-p,0,-1],[-p,0,1]];
+  const e=[];for(let i=0;i<12;i++)for(let j=i+1;j<12;j++){const d=Math.hypot(v[i][0]-v[j][0],v[i][1]-v[j][1],v[i][2]-v[j][2]);if(Math.abs(d-2)<.01)e.push([i,j])}return{v,e}})();
+function sKnot(c){const lb=c.lt/BEAT,idx=Math.floor(lb/8),f=sstep(0,1.6,lb-idx*8),P=KN[(idx+1)%6],Pq=KN[idx%6];
+  const ay=c.t*.5,ax=c.t*.31,sc=.25*(1+.22*F.bass),N=1200;wid(.0033);
+  const kn=(p,q,ph)=>[(2+Math.cos(q*ph))*Math.cos(p*ph),(2+Math.cos(q*ph))*Math.sin(p*ph),Math.sin(q*ph)*1.3];
+  for(let i=0;i<=N;i++){const ph=i/N*TAU,A=kn(Pq[0],Pq[1],ph),B=kn(P[0],P[1],ph);const w=1+F.specS[(i*3)%NB]*.25;
+    rot(mix(A[0],B[0],f)*sc*w,mix(A[1],B[1],f)*sc*w,mix(A[2],B[2],f)*sc*w,ay,ax);const s=2.6/(2.6+R3z);col(.3+.8*clamp(.5-R3z*.6));
+    i?ln(R3x*s,R3y*s):mv(R3x*s,R3y*s)}
+  const is=.72*(1+.28*F.kick);wid(.0026);
+  for(const [a,b] of ICO.e){const A=ICO.v[a],B=ICO.v[b];rot(A[0]*is*.53,A[1]*is*.53,A[2]*is*.53,-ay*.7,ax*.6+.4);const x1=R3x,y1=R3y,z1=R3z;
+    rot(B[0]*is*.53,B[1]*is*.53,B[2]*is*.53,-ay*.7,ax*.6+.4);const s1=2.6/(2.6+z1),s2=2.6/(2.6+R3z);col(.22+.3*clamp(.5-(z1+R3z)*.25));mv(x1*s1,y1*s1);ln(R3x*s2,R3y*s2)}
+  col(.35);const N2=140;for(let i=0;i<=N2;i++){const a=i/N2*TAU;rot(Math.cos(a)*1.25,0,Math.sin(a)*1.25,c.t*.2,.5+Math.sin(c.t*.3)*.3);const s=2.6/(2.6+R3z);i?ln(R3x*s,R3y*s):mv(R3x*s,R3y*s)}}
+
+const RN=46,RC=120;const hist=[];for(let i=0;i<RN;i++)hist.push(new Float32Array(RC));let hHead=0,hAcc=0;const HOR=new Float32Array(RC);
+function sRidge(c){hAcc+=c.dt;if(hAcc>1/22){hAcc=0;hHead=(hHead+1)%RN;const row=hist[hHead];
+    for(let n=0;n<RC;n++){const u=n/(RC-1)*2-1,a=Math.abs(u),b=Math.min(NB-1,Math.floor(Math.pow(a,1.15)*95));
+      row[n]=(F.spec[b]*Math.exp(-a*a*2.6)*1.15+hash(n*1.7+hHead*9.3)*.03*(1-a))*(.5+.5*Math.cos(Math.min(1,a)*PI*.5))}}
+  HOR.fill(-9);const Wd=Math.min(ASP*.62,.95);wid(.0027);
+  for(let r=0;r<RN;r++){const row=hist[(hHead-r+RN)%RN],yb=-.8+r*.034,amp=.5*(1-r/RN*.35)*(1+F.kick*.22),br=.85-r/RN*.65+(r<12?F.kick*.45*(1-r/12):0);col(br);
+    let xp=-Wd,yp=yb+row[0]*amp;
+    for(let n=1;n<RC;n++){const x=-Wd+2*Wd*n/(RC-1),y=yb+row[n]*amp,h1=HOR[n-1],h2=HOR[n];
+      const v1=yp>h1,v2=y>h2;
+      if(v1&&v2)seg(xp,yp,x,y);
+      else if(v1!==v2){const d1=yp-h1,d2=y-h2,t=d1/(d1-d2),xi=mix(xp,x,t),yi=mix(yp,y,t);if(v1)seg(xp,yp,xi,yi);else seg(xi,yi,x,y)}
+      if(n===1)HOR[0]=Math.max(HOR[0],yp);HOR[n]=Math.max(h2,y);xp=x;yp=y}}}
+
+const PL=[];
+function sStr(c){const NS=12,t=c.lt;
+  if((F.kickTrig||F.hatTrig)&&PL.length<26)PL.push({s:Math.floor(Math.random()*NS),u:.15+Math.random()*.7,t0:c.t,a:.05+F.kick*.06});
+  for(let i=PL.length-1;i>=0;i--)if(c.t-PL[i].t0>2.6)PL.splice(i,1);
+  const m=sstep(13.7,15.3,t),Wd=ASP*.88;wid(.003);
+  for(let s=0;s<NS;s++){const A=F.specS[4+s*10]*.075+.004,n=s%4+1,y0=(s-5.5)*.128,om=6+s*1.7;
+    const lin=[];
+    for(let i=0;i<=150;i++){const u=i/150;let d=A*Math.sin(n*PI*u)*Math.sin(c.t*om);
+      for(const p of PL){if(p.s!==s)continue;const age=c.t-p.t0;for(let dir=-1;dir<=1;dir+=2){let pos=p.u+dir*age*.8;pos=Math.abs(((pos%2)+2)%2);if(pos>1)pos=2-pos;
+        d+=p.a*Math.exp(-age*1.6)*Math.exp(-(u-pos)*(u-pos)/.0016)*.5}}
+      d*=Math.pow(Math.sin(PI*u),.35);
+      const lx=(u*2-1)*Wd,ly=y0+d;const ang=u*TAU-PI/2+s*.3+c.t*.25*(s%2?1:-1),rad=.08+s*.066+d;
+      const x=mix(lx,Math.cos(ang)*rad,m),y=mix(ly,Math.sin(ang)*rad,m);col(.5+A*9);i?ln(x,y):mv(x,y)}
+    if(m<.5){col(.9*(1-m*2));dot(-Wd,y0);dot(Wd,y0)}}}
+
+let roll=0;
+function sLost(c){const t=c.lt;
+  if(t<.5){sStr({t:c.t,lt:c.t-111.8,dt:c.dt});return}
+  if(t>1.4&&t<8.2){if(fract(t*.75)<.72){col(1.1);wid(.0038);text('NO SIGNAL',0,.06,.12,{c:1,tr:1.3})}col(.5);wid(.0024);text('CH1 ---    CH2 ---    SYNC ---',0,-.12,.03,{c:1})}
+  if(t>4.6&&t<10.06){const lock=sstep(7.6,8.4,t);roll+=c.dt*mix(1.9,0,lock);const Wd=Math.min(ASP*.86,1.5),amp=mix(.1,.3,lock)*sstep(4.6,5.6,t);
+    col(mix(.6,1.1,lock));wid(.003);let prev=null;
+    for(let k=0;k<600;k++){let u=fract(k/600+roll);const x=-Wd+2*Wd*u,y=-.45+wv(k)*amp*3+(1-lock)*(hash(k+Math.floor(t*20))-.5)*.02;
+      if(prev!==null&&u<prev)mv(x,y);else if(prev===null)mv(x,y);else ln(x,y);prev=u}
+    col(.6);wid(.0024);
+    if(t<7.9)text('SEARCHING'+'...'.slice(0,1+Math.floor(t*3)%3),0,.3,.04,{c:1});else if(t<8.6)text('LOCKED',0,.3,.04,{c:1})}
+  const dr=DROP-LOST;if(t>dr-3*BEAT&&t<dr){const n=Math.ceil((dr-t)/BEAT),age=(3-n)*BEAT;const lt=t-(dr-3*BEAT)-age;
+    col(1.4);wid(.0055);text(String(n),0,.05,.55,{c:1,p:sstep(0,.28,lt)})}}
+
+const RINGS=[];
+function sKal(c){if(c.lt<1.9){lipsFX(c);kalUpd(c);return}if(c.lt<2.7){morph(()=>lipsFX(c),()=>sKalB(c),sstep(1.9,2.7,c.lt),.12,c.t,tC,tD,SC,SD);return}sKalB(c)}
+function kalUpd(c){if(F.bigTrig){RINGS.push({t0:c.t,h:Math.random()});if(RINGS.length>8)RINGS.shift()}}
+function sKalB(c){const t=c.t,lt=c.lt,K=lt>7?12:8;
+  kalUpd(c);
+  wid(.0032);
+  for(let k=0;k<K;k++){const base=k/K*TAU,mir=k%2?-1:1;const N=170;
+    for(let i=0;i<=N;i++){const u=i/N,r=.04+u*1.05;
+      const th=mir*(Math.sin(u*5+t*1.3)*.22+u*(.5+F.bass*.9)*Math.sin(t*.4)+F.specS[Math.floor(u*90)]*.3);
+      const a=base+th+t*.22,x=Math.cos(a)*r,y=Math.sin(a)*r;const C=hsv(t*.07+k/K*.5+u*.35,.85,1.15);col(C[0],C[1],C[2]);i?ln(x,y):mv(x,y)}}
+  const n=5+Math.floor(lt/BEAT/8)%4;col(1.2,1.2,1.2);const N=360;
+  for(let i=0;i<=N;i++){const th=i/N*TAU,r=(.16+.14*F.bass)*Math.cos(n*th+t)+.05;const x=Math.cos(th+t*.5)*r,y=Math.sin(th+t*.5)*r;i?ln(x,y):mv(x,y)}
+  for(const R of RINGS){const age=t-R.t0;if(age>1.6)continue;const C=hsv(R.h,.6,1.6*(1-age/1.6));col(C[0],C[1],C[2]);circle(0,0,.05+age*1.1,90,t)}}
+
+const NP=1300,PX=new Float32Array(NP),PY=new Float32Array(NP),PVX=new Float32Array(NP),PVY=new Float32Array(NP),PLF=new Float32Array(NP),PH=new Float32Array(NP);let pNext=0,burstH=0;
+function sNova(c){const t=c.t,dt=c.dt;
+  if(F.kickTrig){burstH=fract(burstH+.17);for(let i=0;i<(F.bigTrig?150:60);i++){const j=pNext;pNext=(pNext+1)%NP;const a=Math.random()*TAU,s=.7+Math.random()*1.8;
+    PX[j]=Math.cos(a)*.05;PY[j]=Math.sin(a)*.05;PVX[j]=Math.cos(a)*s;PVY[j]=Math.sin(a)*s;PLF[j]=1;PH[j]=burstH+Math.random()*.15}}
+  wid(.003);const dr=Math.exp(-dt*1.3);
+  for(let i=0;i<NP;i++){if(PLF[i]<=0)continue;const sx=-PY[i]*.9,sy=PX[i]*.9;PVX[i]=PVX[i]*dr+sx*dt;PVY[i]=PVY[i]*dr+sy*dt;
+    PX[i]+=PVX[i]*dt;PY[i]+=PVY[i]*dt;PLF[i]-=dt*.85;const C=hsv(PH[i],.7,PLF[i]*1.3);col(C[0],C[1],C[2]);seg(PX[i],PY[i],PX[i]-PVX[i]*.05,PY[i]-PVY[i]*.05)}
+  const N=NB*2;wid(.0032);
+  for(let i=0;i<=N;i++){const k=i<NB?i:N-i,a=i/N*TAU+t*.3,r=.24+F.spec[Math.min(NB-1,k)]*.38;const C=hsv(i/N+t*.1,.75,1.2);col(C[0],C[1],C[2]);
+    const x=Math.cos(a)*r,y=Math.sin(a)*r;i?ln(x,y):mv(x,y)}
+  const n=7+Math.floor(c.lt/BEAT/4)%5,kk=3,R=.15*(1+F.kick*.5);col(1.6,1.6,1.6);
+  for(let i=0;i<=n;i++){const a=i*kk/n*TAU-t*.8;const x=Math.cos(a)*R,y=Math.sin(a)*R;i?ln(x,y):mv(x,y)}}
+
+const PAGES=[['MUSIC','VOXNOIR PRODUCTION USING SUNO'],['A PRODUCTION BY','XANADU']];const HM_END=172.45;
+function page(i,lt){const P=PAGES[i];col(.5);wid(.0024);text(P[0],0,.16,.045,{c:1,tr:1.3,p:sstep(0,.35,lt)});
+  col(1.2);wid(.004);text(P[1],0,-.02,P[1].length>12?.075:.12,{c:1,tr:1.15,p:sstep(.1,.7,lt)})}
+function bookend(c,y,r){col(.6);wid(.003);const N=200;for(let i=0;i<=N;i++){const th=i/N*TAU;const x=Math.sin(th+c.t*.9)*r*1.3,yy=y+Math.sin(th)*r*(1+F.bass*.4);i?ln(x,yy):mv(x,yy)}}
+function sCred(c){const t=c.t,pd=(FINAL-HM_END)/PAGES.length;
+  if(t<HM_END-.45){humanMachine(c);return}
+  if(t<HM_END){morph(()=>humanMachine(c),()=>page(0,0),sstep(HM_END-.45,HM_END,t),.1,t,tC,tD,SC,SD);return}
+  const lt=t-HM_END;
+  if(t<FINAL){const i=Math.min(PAGES.length-1,Math.floor(lt/pd)),pl=lt-i*pd;bookend(c,-.52,.06);
+    if(i>0&&pl<.35){morph(()=>page(i-1,9),()=>page(i,pl),sstep(0,.35,pl),.08,t,tC,tD,SC,SD)}else page(i,pl);
+    col(.32);wid(.0021);text('GREETINGS TO ASTRA  -  GG',0,-.8,.026,{c:1,p:sstep(1.5,4,lt)});return}
+  const fl=t-FINAL;bookend(c,-.52,.06*(1-sstep(1.2,2.6,fl)));
+  col(1.5);wid(.0046);text('PHOSPHOR',0,.1,.24,{c:1,tr:1.28,p:sstep(0,.6,fl),j:F.hat*.01});
+  col(.7);wid(.0026);text('A NOIR TRANSMISSION IN TEN SIGNALS',0,-.16,.04,{c:1,tr:1.15,p:sstep(.4,1.2,fl)});
+  col(1);wid(.003);text('VENTURE  /  XANADU',0,-.3,.05,{c:1,tr:1.4,p:sstep(.8,1.6,fl)});
+  col(.4);wid(.0021);text('END OF TRANSMISSION',0,-.8,.026,{c:1,p:sstep(1,1.8,fl)})}
+
+
+// Catmull-Rom through points in a 100x100 box (y down), mapped to world; p = drawn fraction
+function spline(P,sx,sy,ox,oy,n,p=1){const N=P.length,tot=(N-1)*n,lim=p*tot;let c=0;
+  const X=x=>(x-50)*sx+ox,Y=y=>-(y-52)*sy+oy;mv(X(P[0][0]),Y(P[0][1]));if(lim<=0)return;
+  for(let i=0;i<N-1;i++){const a=P[Math.max(0,i-1)],b=P[i],d=P[i+1],e=P[Math.min(N-1,i+2)];
+    for(let k=1;k<=n;k++){if(c>=lim)return;const t=k/n,t2=t*t,t3=t2*t;
+      const x=.5*(2*b[0]+(-a[0]+d[0])*t+(2*a[0]-5*b[0]+4*d[0]-e[0])*t2+(-a[0]+3*b[0]-3*d[0]+e[0])*t3);
+      const y=.5*(2*b[1]+(-a[1]+d[1])*t+(2*a[1]-5*b[1]+4*d[1]-e[1])*t2+(-a[1]+3*b[1]-3*d[1]+e[1])*t3);ln(X(x),Y(y));c++}}}
+const FF={
+ brim:[[3,34],[18,28],[42,22],[68,18],[90,20],[93,23],[84,27],[60,30],[34,32],[14,34],[3,34]],
+ crown:[[22,30],[24,18],[31,9],[46,6],[59,8],[66,16],[68,24]],
+ band:[[23,26],[44,22],[67,20]],
+ face:[[64,28],[65,32],[66,37],[67,41],[70,44.5],[73.5,48.5],[72,50.5],[69,51.2],[70.2,53],[71.8,54.6],[69.6,56],[71.3,57.6],[70.2,60.2],[68,63.5],[65,66.5],[61,68],[61.5,74],[61,82],[63,88],[71,92.5],[86,96.5]],
+ lips:[[70.2,53],[71.8,54.6],[69.6,56],[71.3,57.6],[70.2,60.2]],
+ hair:[[31,32],[26,38],[29,45],[24,52],[29,59],[26,66],[33,72],[42,74],[49,72],[49,80],[47,88],[38,94],[20,98]],
+ brow:[[56,35.5],[60,34],[64.5,34.6]],
+ eye:[[56.5,40.5],[60,42],[63.5,40.6]],
+ cig:[[71.5,57.2],[87,61.5]],
+ fhair:[[64,28],[52,26],[40,30],[31,32]]};
+const LIPS={u:[[18,52],[30,44.5],[41,40],[50,44.5],[59,40],[70,44.5],[82,52]],l:[[82,52],[68,62],[50,67],[32,62],[18,52]],m:[[18,52],[34,53.2],[50,51.2],[66,53.2],[82,52]]};
+function lady(sx,ox,oy,p,hat,t){const s=Math.abs(sx),sy=s,seq=hat?['brim','crown','band','face','hair','brow','eye','cig']:['fhair','face','hair','brow','eye'];
+  const n=seq.length;wid(.0034);
+  seq.forEach((k,i)=>{const q=clamp(p*n-i);if(q<=0)return;let P=FF[k];
+    if(k==='hair'){P=P.map((v,j)=>[v[0]+Math.sin(t*1.6+j*.9)*(1.2+F.specS[8+j*3]*6),v[1]])}
+    col(k==='brim'||k==='crown'?1.15:k==='band'?.6:1);spline(P,sx,sy,ox,oy,10,q)});
+  if(p>=1){col(2.1);wid(.0036);spline(FF.lips,sx,sy,ox,oy,8);
+    col(.9);wid(.0024);for(let j=0;j<5;j++){const u=j/4,x=56.5+u*7,y=40.5+Math.sin(u*PI)*1.5;const X=(x-50)*sx+ox,Y=-(y-52)*sy+oy;mv(X,Y);ln(X+(1.2+u)*sx*.4,Y-2.2*sy)}
+    col(1.4);const ex=(51-50)*sx+ox,ey=-(51-52)*sy+oy;mv(ex,ey);ln(ex,ey-4*sy);circle(ex,ey-5.6*sy,1.5*s,20)}}
+function smoke(sx,ox,oy,t){const tx=(87-50)*sx+ox,ty=-(61.5-52)*sx+oy;wid(.0028);
+  for(let r=0;r<4;r++){mv(tx,ty);for(let j=1;j<=80;j++){const h=j*.011,sw=Math.sin(j*.16+t*1.3+r*1.7)*(.006+j*.0024)*(1+F.mid*1.2)+Math.sin(j*.045-t*.6+r)*j*.0016;
+    col(.5*(1-j/80)*(.6+.4*Math.sin(t+r)));ln(tx+sw+j*.0011*(r-1.5),ty+h)}}
+  col(1.6+F.kick*2);dot(tx,ty)}
+function sLady(c){const t=c.t,lt=c.lt,s=.0155;
+  const solo=()=>{lady(s,-.05,0,sstep(0,2.8,lt),true,t);if(lt>2.4)smoke(s,-.05,0,t)};
+  const duo=()=>{const g=mix(.42,.075,sstep(9.4,16,lt))*(1+F.kick*.25),d=.012;
+    lady(d,-g-21*d,-.05,1,false,t);lady(-d,g+21*d,-.05,1,false,t)};
+  if(lt<8.4)solo();else if(lt<9.4)morph(solo,duo,sstep(8.4,9.4,lt),.1,t,tC,tD,SC,SD);else duo()}
+function lips(sc,t){const d=.0115*sc;for(const k of['u','l','m'])spline(LIPS[k],d,d,0,.02,10)}
+function lipsFX(c){for(let e=3;e>=0;e--){const C=hsv(.965+e*.012,.85,(1.7-e*.38)*(1+F.kick*.6));col(C[0],C[1],C[2]);wid(.0036);lips(1+e*.14*(1+F.kick*1.5)+Math.sin(c.t*3)*.02,c.t)}}
+const SCROLL='          XANADU PRESENTS  PHOSPHOR   ///   VENTURE AT THE CONTROLS   ///   MUSIC  VOXNOIR PRODUCTION USING SUNO   ///   ONE BEAM  ONE TUBE  TEN SIGNALS   ///   GREETINGS TO EVERY SCENER STILL WATCHING THE PHOSPHOR GLOW   ///   ASTRA - GG   ///   ';
+function scroller(T,y,h,a){const adv=h*1.25,off=(T-DROP+1)*.62,first=Math.floor(off/adv),n=Math.ceil(2*ASP/adv)+2;wid(.003);
+  for(let i=first;i<first+n;i++){if(i<0)continue;const ch=SCROLL[i%SCROLL.length];if(ch===' ')continue;const x=-ASP+i*adv-off+.05;
+    const e=sstep(ASP+.05,ASP-.35,Math.abs(x+adv/2));if(e<=0)continue;const yy=y+Math.sin(x*2.6+T*3.4)*.055*(1+F.kick*.8);
+    const C=hsv(x*.18+T*.25,.65,1.5*e*a);col(C[0],C[1],C[2]);text(ch,x,yy,h)}}
+
+// ---------------------------------------------------------------- 10 LASER CATHEDRAL
+// two rows of fixtures, each a fan of haze beams: hot at the source, widening and fading with distance
+function hazeBeam(x,y,a,len,C,b){const dx=Math.cos(a),dy=Math.sin(a);let px=x,py=y;
+  for(let k=1;k<=6;k++){const u=k/6,nx=x+dx*len*u,ny=y+dy*len*u,f=Math.pow(1.08-u,1.6)*b;
+    col(C[0]*f,C[1]*f,C[2]*f);wid(.0022+u*.0075);seg(px,py,nx,ny);px=nx;py=ny}}
+const CROWD=[];{let x=-2.2,i=0;while(x<2.2){const r=.13+hash(i*4.1)*.09;CROWD.push({x,r,y:-1.1+hash(i*2.7)*.1,i});x+=r*1.25;i++}}
+function sLaser(c){const t=c.t,lb=c.lt/BEAT,bar=Math.floor(lb/4),prog=bar%5,Wd=Math.min(ASP*.84,1.5);
+  // warm curtain of lights behind the rig
+  for(let l=0;l<9;l++){const u=l/8*2-1;for(let d=1;d<=9;d++){const x=u*.05+u*d*.03,y=-.31-d*.042,tw=hash(l*13+d*7+Math.floor(lb*2));
+    col(1.3*(.35+.65*tw),.55*(.35+.65*tw),.16);wid(.0045);dot(x,y)}}
+  const rows=[{n:9,y:.1,span:Wd,nb:9,len:2.7,lift:.55},{n:7,y:-.22,span:Wd*.62,nb:7,len:1.7,lift:.42}];
+  rows.forEach((R,ri)=>{for(let i=0;i<R.n;i++){const u=i/(R.n-1)*2-1,x=u*R.span,side=Math.sign(u);let sp,tl,br=1;
+    switch(prog){
+      case 0:sp=.3+.5*(.5+.5*Math.sin(lb*PI/2));tl=0;break;                                   // breathe
+      case 1:sp=.42;tl=Math.sin(t*2.3+i*.75+ri*PI)*.45;break;                                 // wave
+      case 2:sp=.36;tl=-side*(.22+.28*(.5+.5*Math.sin(lb*PI/4)))*(ri?-1:1);break;              // cathedral cross
+      case 3:sp=.5;tl=Math.sin(t*.7)*.15;br=(Math.floor(lb*2)%R.n===i||Math.floor(lb*2)%R.n===R.n-1-i)?1.7:.14;break; // chase
+      default:sp=.62+F.kick*.35;tl=Math.sin(t*.9)*.3*(ri?-1:1);br=CALM?.6+F.kick*.2:.35+F.kick*1.5}             // strobe on kicks
+    const base=PI/2-u*R.lift,C=hsv(.6+.04*Math.sin(t*.3+i)+ri*.03,.22+ri*.18,1);
+    for(let k=0;k<R.nb;k++){const a=clamp(base+tl+(k/(R.nb-1)-.5)*sp*2,.12,PI-.12);hazeBeam(x,R.y,a,R.len,C,br*(.5+F.hi*.6)*(ri?.85:1))}
+    col(2.4*br);wid(.0045);dot(x,R.y);col(.9*br,.95*br,1.2*br);wid(.016);dot(x,R.y)}});
+  // crowd in backlight: rim-lit heads, two phone screens
+  for(const h of CROWD){if(h.x<-ASP-.3||h.x>ASP+.3)continue;const y=h.y+F.kick*.012*hash(h.i*9.1);col(.14,.16,.24);wid(.003);
+    mv(h.x+Math.cos(.15)*h.r,y+Math.sin(.15)*h.r);for(let k=1;k<=16;k++){const a=.15+k/16*(PI-.3);ln(h.x+Math.cos(a)*h.r,y+Math.sin(a)*h.r)}}
+  for(const [px,py] of [[-.55,-.9],[.82,-.88]]){const w=.035,h=.06;col(1.4,1.35,1.6);wid(.0035);
+    for(let k=0;k<=4;k++){mv(px-w/2,py-h/2+k*h/4);ln(px+w/2,py-h/2+k*h/4)}}}
+
+// ---------------------------------------------------------------- credits: hand x network (Venture x Claude)
+const HAND=[[36,96],[31,72],[26,58],[19,44],[16,33],[19,28],[24,30],[29,41],[33,50],[34,36],[33,21],[36,14],[41,14],[44,22],[45,36],[47,46],[48,30],[48,12],[51,6],[56,7],[58,14],[57,30],[57,45],[60,33],[64,19],[68,15],[72,18],[71,26],[67,41],[66,52],[73,49],[80,43],[85,43],[86,48],[80,58],[72,70],[66,82],[62,96]];
+const TIPS=[[20,33],[38,19],[53,11],[68,21],[83,46]];
+const BRAIN=(()=>{const n=[];let k=0;while(n.length<72&&k<6000){k++;const x=hash(k*1.37)*2-1,y=hash(k*2.71)*2-1;
+    const inside=(x*x/1+y*y/.62<1&&y>-.55)||(Math.abs(x-.2)<.18&&y<-.4&&y>-.95);if(inside)n.push([x,y])}
+  const e=[],adj=n.map(()=>[]);n.forEach((a,i)=>{const d=n.map((b,j)=>[Math.hypot(a[0]-b[0],a[1]-b[1]),j]).sort((p,q)=>p[0]-q[0]);
+    for(let m=1;m<=3;m++){const j=d[m][1];if(!adj[i].includes(j)){adj[i].push(j);adj[j].push(i);e.push([i,j])}}});return{n,e,adj}})();
+let bPulse={t0:-9,dist:null};
+function bfs(src){const d=BRAIN.n.map(()=>99);d[src]=0;const q=[src];while(q.length){const i=q.shift();for(const j of BRAIN.adj[i])if(d[j]>d[i]+1){d[j]=d[i]+1;q.push(j)}}return d}
+function humanMachine(c){const t=c.t,lt=t-CRED,AM=[1.25,.62,.22],CY=[.2,.95,1.15];
+  const hs=.0088,hx=-.66,hy=.14,HX=x=>(x-50)*hs+hx,HY=y=>-(y-52)*hs+hy;
+  const bx=.66,by=.16,bs=.4,BX=x=>bx+x*bs,BY=y=>by+y*bs;
+  // floor ring + light pillars in the reflection
+  const fy=-.5;for(let i=0;i<=80;i++){const a=i/80*TAU,x=Math.cos(a)*1.05,y=fy+Math.sin(a)*.07,w=(x+1.05)/2.1;
+    col(mix(AM[0],CY[0],w)*.7,mix(AM[1],CY[1],w)*.7,mix(AM[2],CY[2],w)*.7);wid(.003);i?ln(x,y):mv(x,y)}
+  for(let k=0;k<14;k++){const left=k<7,x=(left?hx:bx)+(k%7-3)*.035,len=.18+hash(k)*.22,b=.2*(1-((t*.6+hash(k*3))%1)*.5);const C=left?AM:CY;
+    col(C[0]*b,C[1]*b,C[2]*b);wid(.004);mv(x,fy-.03);ln(x+Math.sin(t*2+k)*.01,fy-.03-len)}
+  // the hand: outline drawn in, fingerprint ridges, tip whorls, dust
+  const p=sstep(0,1.4,lt);colA(AM,1.1);wid(.0034);spline(HAND,hs,hs,hx,hy,8,p);
+  if(lt>.8){const q=sstep(.8,1.8,lt);for(let k=1;k<=7;k++){colA(AM,.45*q);wid(.0024);const rx=3+k*3.1,ry=2.4+k*2.5;mv(HX(48+rx*Math.cos(3.4)),HY(68+ry*Math.sin(3.4)));
+      for(let j=1;j<=20;j++){const a=3.4+j/20*2.6;ln(HX(48+rx*Math.cos(a)),HY(68+ry*Math.sin(a)))}}
+    for(const [tx,ty] of TIPS)for(let r=1;r<=3;r++){colA(AM,.35*q);wid(.0022);circle(HX(tx),HY(ty),r*1.3*hs,18,r)}}
+  for(let i=0;i<70;i++){const P=HAND[i%HAND.length],a=fract(hash(i*3.3)+t*.12),x=HX(P[0])-a*.35-hash(i)*.05,y=HY(P[1])+a*.12+Math.sin(t+i)*.02;
+    const b=(1-a)*.9*p;col(AM[0]*b,AM[1]*b,AM[2]*b);wid(.0028);dot(x,y)}
+  // the network: edges, nodes, signal waves spreading from a node on every heavy kick
+  if(F.kickTrig){const src=Math.floor(Math.random()*BRAIN.n.length);bPulse={t0:t,dist:bfs(src)}}
+  const nq=sstep(.4,1.8,lt),age=t-bPulse.t0;const lit=i=>bPulse.dist?Math.exp(-Math.pow(age*7-bPulse.dist[i],2))*Math.exp(-age*.8):0;
+  for(const [i,j] of BRAIN.e){const a=BRAIN.n[i],b=BRAIN.n[j],l=.22+.9*Math.max(lit(i),lit(j));if(hash(i*31+j)>nq)continue;
+    col(CY[0]*l,CY[1]*l,CY[2]*l);wid(.0022);mv(BX(a[0]),BY(a[1]));ln(BX(b[0]),BY(b[1]))}
+  const BO=[[3,50],[8,30],[25,14],[50,10],[75,15],[93,30],[99,50],[90,68],[72,76],[62,76],[62,98]];
+  colA(CY,.4*nq);wid(.0026);spline(BO,bs/50,bs/50,bx,by-.04*bs,8,nq);
+  BRAIN.n.forEach((v,i)=>{if(hash(i*7.7)>nq)return;const l=.8+2.2*lit(i)+(i%9===0?.6:0);col(CY[0]*l,CY[1]*l,CY[2]*l);wid(i%9===0?.0075:.0042);dot(BX(v[0]),BY(v[1]))});
+  // the thread: wrist -> crossing point on the floor -> brain stem, a spark running along it
+  const A=[HX(64),HY(90)],M=[0,fy+.02],Bp=[BX(.25),BY(-.92)],tp=sstep(1,2.2,lt);const N=90;let sx=0,sy=0;const sp=fract(t*.45);
+  for(let i=0;i<=N;i++){const u=i/N;if(u>tp)break;let x,y;if(u<.5){const v=u*2;x=mix(A[0],M[0],v);y=mix(A[1],M[1],v)-Math.sin(v*PI)*.18}else{const v=u*2-1;x=mix(M[0],Bp[0],v);y=mix(M[1],Bp[1],v)-Math.sin(v*PI)*.16}
+    const C=u<.5?AM:CY,k=.55+.9*Math.exp(-Math.pow((u-.5)/.06,2));col(mix(C[0],1.6,k-.55),mix(C[1],1.6,k-.55),mix(C[2],1.6,k-.55));wid(.003);i?ln(x,y):mv(x,y);if(Math.abs(u-sp)<.006){sx=x;sy=y}}
+  if(tp>=1){col(2.6);wid(.006);dot(sx,sy);col(1.8);wid(.01);dot(0,fy+.02)}
+  wid(.003);colA(AM,.9);text('VENTURE',hx,-.76,.06,{c:1,tr:1.35,p:sstep(1.6,2.4,lt)});colA(AM,.45);wid(.0022);text('DIRECTION',hx,-.65,.026,{c:1,tr:1.4,p:sstep(1.4,2,lt)});
+  wid(.003);colA(CY,.9);text('CLAUDE',bx,-.76,.06,{c:1,tr:1.35,p:sstep(1.9,2.7,lt)});colA(CY,.45);wid(.0022);text('CODE + VISUALS',bx,-.65,.026,{c:1,tr:1.4,p:sstep(1.7,2.3,lt)})}
+const SCN=[sIntro,sLiss,sScope,sSky,sTun,sLady,sRidge,sStr,sLost,sKal,sLaser,sCred];
+
+// ---------------------------------------------------------------- power (CRT on/off)
+function power(T){let px=1,py=1,g=1;
+  const off=(a)=>{py=a<.22?1-sstep(0,.22,a)*.994:.006;px=a<.22?1:1-sstep(.22,.42,a)*.995;g=1-sstep(.45,1.1,a)};
+  if(state==='pre'){py=mix(.006,1,sstep(.12,.42,preT));px=mix(.004,1,sstep(0,.14,preT));return[px,py,g]}
+  if(T>=LOST&&T<LOST+1.5){const a=T-LOST;if(a<1.05)off(a);else{const b=a-1.05;py=mix(.006,1,sstep(.05,.3,b));px=mix(.005,1,sstep(0,.08,b));g=1}}
+  if(T>=OFF){off(T-OFF);}
+  return[px,py,g]}
+function noiseAt(T){if(T>=LOST+1.05&&T<DROP)return Math.max(0,(T<LOST+4?.38:mix(.38,0,sstep(LOST+4,LOST+9,T))));return 0}
+
+// ---------------------------------------------------------------- frame
+const FX={tube:1,st:-99,sa:0,age:99,punch:0,split:0,glitch:0,shake:0,fin:0,bg:1};function shock(a,T){FX.st=T;FX.sa=CALM?a*.25:a}
+let last=performance.now(),cur=0,prm={tint:[.32,1,.48],dec:.86,z:1,r:0,g:.14,rgb:0},lastSec=-1,bigFlash=0;
+function secIdx(T){let i=0;while(i<SEC.length-2&&T>=SEC[i+1].t)i++;return i}
+function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/1000);last=now;resize();
+  if(FAKE&&state==='play'&&!paused)fakeClock+=dt;if(paused)dt=0;
+  let T=state==='play'||state==='end'?songT():0;gT=T;
+  if(state==='pre'){preT+=dt;if(FAKE)fakeClock=T0;if(preT>=PRE&&(FAKE||buf)){state='play';if(!FAKE)playFrom(T0);else fakeClock=T0}}
+  analyze(state==='pre'?preT:T,dt);
+  TG=tHud;tHud.n=0;tMain.n=0;
+  let si=0,pw=[1,1,1],noise=0,hudA=0;
+  if(state==='play'||state==='end'){
+    si=secIdx(T);const S=SEC[si],lt=T-S.t;
+    if(si!==lastSec){if(si>0&&lt<.5&&si!==8)shock(si===9?1.8:1.1,S.t);if(si===9){F.flash=1.5;FX.shake=.06;FX.glitch=1.2}if(si===8){FX.glitch=1;FX.shake=.03}lastSec=si}
+    if(T>=FINAL&&T<FINAL+.5&&!FX.fin){FX.fin=1;F.flash=1.4;shock(1.7,FINAL);FX.shake=.05}if(T<FINAL)FX.fin=0;
+    if(F.bigTrig&&S.e>=.9&&T-FX.st>.7)shock(.55,T);
+    FX.age=T-FX.st;if(FX.age<0)FX.age=99;FX.glitch*=Math.exp(-dt*4);FX.shake*=Math.exp(-dt*6);
+    const tt=(si===9||si===10)?0:1;FX.tube=mix(FX.tube,tt,1-Math.exp(-dt*(tt?2.2:9)));
+    FX.punch=F.kick*S.e;FX.split=FX.glitch*.6+F.kick*S.e*.22;FX.bg=1+F.kick*S.e*.45;
+    if(CALM){FX.punch*=.2;FX.split*=.15;FX.bg=1+(FX.bg-1)*.2;FX.shake=0;F.flash=Math.min(F.flash,.2)}
+    const inTr=si>0&&!S.cut&&lt<TR,m=inTr?sstep(0,TR,lt):1,P0=SEC[Math.max(0,si-1)];
+    const k=S.cut?1:m;
+    prm.tint=[0,1,2].map(i=>mix(P0.tint[i],S.tint[i],k));prm.dec=mix(P0.dec,S.dec,k);prm.z=mix(P0.z,S.z,k);prm.r=mix(P0.r,S.r,k);prm.g=mix(P0.g,S.g,k);prm.rgb=mix(P0.rgb,S.rgb,k);
+    if(si===8)prm.g=T>LOST+1.2?.12:0;
+    if(si===11){prm.rgb=1-sstep(HM_END-.5,HM_END+.4,T);prm.g=.06*sstep(HM_END,HM_END+1,T)}
+    graticule(prm.g*(si===0?sstep(0,1,T+1):1),prm.tint);
+    hudA=(si>=1&&si<=10&&si!==8)?1:(si===8&&T>DROP-.01?1:0);
+    if(si===9)hudA=sstep(0,2,lt);
+    hud(T,si,hudA*(inTr?m:1));
+    if((si===9&&lt>2.7)||si===10)scroller(T,si===10?-.76:-.6,.072,si===9?sstep(2.7,4,lt):1);
+    TG=tMain;const ctx={t:T,lt,dt};
+    if(inTr){const pc={t:T,lt:T-P0.t,dt};morph(()=>SCN[si-1](pc),()=>SCN[si](ctx),m,.12,T)}
+    else SCN[si](ctx);
+    pw=power(T);noise=noiseAt(T);
+    TG=tHud;if(T>END+.6&&state==='end'){pw=[1,1,1];col(.5);wid(.0026);text('PRESS R TO REPLAY',0,0,.035,{c:1,p:sstep(END+.6,END+1.6,T)})}
+  }else if(state==='pre'){prm.g=.14*sstep(.6,2,preT);graticule(prm.g);TG=tMain;sPre({t:preT,lt:preT,dt});pw=power(0)}
+  else{const p=.6+.4*Math.sin(now/300);col(.9*p);wid(.004);dot(0,0);wid(.0024);col(.55);
+    if(state==='load')text('RECEIVING SIGNAL '+Math.floor(loadP*100)+'%',0,-.12,.03,{c:1});
+    else{text('CLICK TO POWER ON',0,-.12,.032,{c:1,tr:1.2});col(.3);text('HEADPHONES + FULLSCREEN RECOMMENDED   F = FULLSCREEN',0,-.2,.022,{c:1});
+      col(.45);text('WARNING: FLASHING LIGHTS   M = REDUCED FLASHING '+(CALM?'(ON)':'(OFF)'),0,-.27,.022,{c:1})}
+    prm.tint=SEC[0].tint;prm.rgb=0;prm.dec=.8;prm.z=1;prm.r=0}
+  if(state!=='play'&&state!=='end'){FX.tube=1;FX.age=99;FX.punch=FX.split=0;FX.bg=1}
+  render(dt,pw,noise,now)}
+
+function bindTex(u,t,unit){gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,t);gl.uniform1i(u,unit)}
+function quad(){gl.bindVertexArray(vaoQ);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)}
+function beams(fbo,t,bg){gl.bindFramebuffer(gl.FRAMEBUFFER,fbo.f);gl.viewport(0,0,W,H);gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);
+  if(t.n){gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE);gl.useProgram(beamP.p);gl.uniform1f(beamP.u.uAsp,ASP);gl.uniform1f(beamP.u.uPx,2/H);gl.uniform1f(beamP.u.uBG,bg);
+    gl.bindBuffer(gl.ARRAY_BUFFER,instBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,t.d,0,t.n*8);
+    gl.bindVertexArray(vaoB);gl.drawArraysInstanced(gl.TRIANGLE_STRIP,0,4,t.n);gl.disable(gl.BLEND)}}
+function render(dt,pw,noise,now){
+  beams(ovl,tHud,1);beams(fresh,tMain,FX.bg);
+  const k=dt*60,dec=Math.pow(prm.dec,k),z=Math.pow(prm.z,k),r=prm.r*k;
+  const A=trail[cur],B=trail[1-cur];cur=1-cur;
+  gl.bindFramebuffer(gl.FRAMEBUFFER,B.f);gl.useProgram(fbP.p);bindTex(fbP.u.uPrev,A.t,0);bindTex(fbP.u.uFresh,fresh.t,1);
+  gl.uniform1f(fbP.u.uDecay,dec);gl.uniform1f(fbP.u.uZoom,z);gl.uniform1f(fbP.u.uRot,r);gl.uniform1f(fbP.u.uAsp,ASP);quad();
+  gl.viewport(0,0,b1.w,b1.h);gl.bindFramebuffer(gl.FRAMEBUFFER,b1.f);gl.useProgram(downP.p);bindTex(downP.u.uT,B.t,0);gl.uniform2f(downP.u.uTx,1/W,1/H);quad();
+  gl.useProgram(blurP.p);
+  for(let it=0;it<2;it++){gl.bindFramebuffer(gl.FRAMEBUFFER,b2.f);bindTex(blurP.u.uT,b1.t,0);gl.uniform2f(blurP.u.uD,1.4/b1.w,0);quad();
+    gl.bindFramebuffer(gl.FRAMEBUFFER,b1.f);bindTex(blurP.u.uT,b2.t,0);gl.uniform2f(blurP.u.uD,0,1.4/b1.h);quad()}
+  gl.viewport(0,0,b3.w,b3.h);gl.bindFramebuffer(gl.FRAMEBUFFER,b3.f);gl.useProgram(downP.p);bindTex(downP.u.uT,b1.t,0);gl.uniform2f(downP.u.uTx,1/b1.w,1/b1.h);quad();
+  gl.useProgram(blurP.p);
+  for(let it=0;it<2;it++){gl.bindFramebuffer(gl.FRAMEBUFFER,b4.f);bindTex(blurP.u.uT,b3.t,0);gl.uniform2f(blurP.u.uD,1.5/b3.w,0);quad();
+    gl.bindFramebuffer(gl.FRAMEBUFFER,b3.f);bindTex(blurP.u.uT,b4.t,0);gl.uniform2f(blurP.u.uD,0,1.5/b3.h);quad()}
+  gl.viewport(0,0,1,1);gl.bindFramebuffer(gl.FRAMEBUFFER,exF.f);gl.useProgram(exP.p);bindTex(exP.u.uT,b3.t,0);quad();
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,W,H);gl.useProgram(finP.p);
+  bindTex(finP.u.uA,B.t,0);bindTex(finP.u.uB1,b1.t,1);bindTex(finP.u.uB2,b3.t,2);bindTex(finP.u.uO,ovl.t,3);bindTex(finP.u.uEx,exF.t,4);
+  gl.uniform2f(finP.u.uRes,W,H);gl.uniform1f(finP.u.uT,now/1000);gl.uniform1f(finP.u.uPX,pw[0]);gl.uniform1f(finP.u.uPY,pw[1]);gl.uniform1f(finP.u.uGain,pw[2]);
+  gl.uniform1f(finP.u.uNoise,noise);gl.uniform1f(finP.u.uPunch,FX.punch);gl.uniform1f(finP.u.uTube,FX.tube);gl.uniform1f(finP.u.uShock,FX.age);gl.uniform1f(finP.u.uShockA,FX.sa);gl.uniform1f(finP.u.uSplit,FX.split);
+  gl.uniform2f(finP.u.uShake,(Math.random()-.5)*FX.shake,(Math.random()-.5)*FX.shake);gl.uniform1f(finP.u.uFlash,F.flash);gl.uniform1f(finP.u.uRGB,prm.rgb);gl.uniform3fv(finP.u.uTint,prm.tint);
+  gl.uniform1f(finP.u.uRoll,noise>0?(Math.sin(now/700)*.5+.5)*noise*.25:0);quad()}
+
+// ---------------------------------------------------------------- loading + controls
+async function loadTrack(){
+  if(FAKE){state='ready';return}
+  try{const r=await fetch('track.mp3');if(!r.ok)throw new Error(r.status);
+    const len=+r.headers.get('content-length')||3972936;const rd=r.body.getReader();const chunks=[];let got=0;
+    for(;;){const{done,value}=await rd.read();if(done)break;chunks.push(value);got+=value.length;loadP=Math.min(.99,got/len)}
+    const ab=new Uint8Array(got);let o=0;for(const c of chunks){ab.set(c,o);o+=c.length}
+    window._ab=ab.buffer;state='ready';loadP=1}
+  catch(e){document.getElementById('err').textContent='Could not fetch track.mp3 (opened via file://?). Click to choose the MP3, or drop it here.';state='ready';window._needFile=true}}
+async function decodeIfNeeded(){if(!AC)setupAudio();if(AC.state!=='running')await AC.resume();
+  if(!buf&&!FAKE){if(!window._ab)return false;buf=await AC.decodeAudioData(window._ab.slice(0))}return true}
+async function powerOn(){if(state!=='ready')return;
+  if(window._needFile&&!window._ab){document.getElementById('f').click();return}
+  if(!FAKE){setupAudio();await AC.resume();const p=AC.decodeAudioData(window._ab.slice(0));preRoll();state='pre';preT=0;
+    try{buf=await p}catch(e){state='ready';window._ab=null;window._needFile=true;document.getElementById('err').textContent='Could not decode the track. Click to choose the MP3, or drop it here.'}}
+  else{state='pre';preT=0}
+  if(T0>0&&!Q.has('pre')){preT=PRE-.01}}
+document.getElementById('f').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;window._ab=await f.arrayBuffer();window._needFile=false;document.getElementById('err').textContent='';powerOn()});
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',async e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(!f)return;window._ab=await f.arrayBuffer();window._needFile=false;document.getElementById('err').textContent='';powerOn()});
+cv.addEventListener('click',()=>{if(state==='ready')powerOn()});
+function seek(t){t=clamp(t,0,END-.5);kPrevT=-9;lastK=lastH=-9;prevB=prevH=0;dMean=hMean=0;dVar=hVar=.001;F.kick=F.hat=0;trail.forEach(o=>{gl.bindFramebuffer(gl.FRAMEBUFFER,o.f);gl.clear(gl.COLOR_BUFFER_BIT)});lastSec=-1;
+  if(FAKE)fakeClock=t;else if(buf)playFrom(t);state='play'}
+addEventListener('keydown',e=>{
+  if(e.key==='m'||e.key==='M')CALM=!CALM;
+  if(e.key==='f'||e.key==='F'){try{const r=!document.fullscreenElement?document.documentElement.requestFullscreen?.():document.exitFullscreen?.();r&&r.catch&&r.catch(()=>{})}catch(_){}}
+  if(state!=='play'&&state!=='end'){if(e.key===' '||e.key==='Enter')powerOn();if((e.key==='r'||e.key==='R')&&state==='end')seek(0);return}
+  if(e.key===' '){paused=!paused;if(AC)paused?AC.suspend():AC.resume()}
+  if(e.key==='ArrowRight')seek(songT()+5);if(e.key==='ArrowLeft')seek(songT()-5);
+  if(e.key==='r'||e.key==='R')seek(0);
+  if(/^[0-9]$/.test(e.key)){const i=e.key==='0'?10:+e.key;seek(SEC[i].t-.01)}
+  if(e.key==='c'||e.key==='C')seek(CRED-.01)});
+loadTrack();
+if(FAKE&&Q.has('auto')){state='play';fakeClock=T0}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
