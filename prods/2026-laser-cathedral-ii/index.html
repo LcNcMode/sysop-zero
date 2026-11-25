@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LASER CATHEDRAL II</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;color:#d8d2c4;font-family:Georgia,"Times New Roman",serif}
+video{position:fixed;inset:0;width:100vw;height:100vh;object-fit:contain;background:#000;display:block}
+#gate{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;cursor:pointer;background:radial-gradient(circle at 50% 45%,#1a1222 0,#000 65%);transition:opacity .8s}
+#gate.gone{opacity:0;pointer-events:none}
+h1{font-weight:400;letter-spacing:.42em;margin:0 0 .4em .42em;font-size:clamp(20px,4.4vw,46px);color:#fff;
+  text-shadow:0 0 18px rgba(170,200,255,.55)}
+.sub{letter-spacing:.3em;font-size:clamp(10px,1.4vw,14px);color:#ffd27a;margin-bottom:2.4em}
+.go{letter-spacing:.25em;font-size:clamp(12px,1.6vw,16px);color:#fff;animation:p 2.2s ease-in-out infinite}
+.warn{margin-top:2.6em;font:11px/1.6 monospace;color:#ff5a78;opacity:.85;max-width:34em;padding:0 1em}
+.keys{margin-top:.8em;font:11px monospace;color:#8a8478}
+#hint{position:fixed;left:0;right:0;bottom:10px;text-align:center;font:11px monospace;color:#8a8478;opacity:0;transition:opacity .6s;pointer-events:none}
+@keyframes p{50%{opacity:.35}}
+</style>
+</head>
+<body>
+<!--
+  LASER CATHEDRAL II - a techno mass, made by humans and machines together.
+  XANADU presents. Vision, direction, critique: Venture. Music: VoxNoir production using Suno.
+  Plan, code, light and edit: Facet (Claude via Claude Code). Flesh, glass and motion: Astra
+  (ChatGPT images + Runway Gen-4.5 motion). Code review: Codex. Rendered to video: every laser,
+  strobe, title and camera move is code; the generated plates are the bodies, rooms and materials.
+  WARNING: flashing lights and strobing.
+-->
+<video id="v" src="lcii.mp4" playsinline preload="auto"></video>
+<div id="gate">
+  <h1>LASER CATHEDRAL II</h1>
+  <div class="sub">A XANADU PRODUCTION</div>
+  <div class="go">CLICK TO ENTER THE CATHEDRAL</div>
+  <div class="warn">WARNING: FLASHING LIGHTS, STROBES AND FAST CUTS.<br>
+    Not for viewers with photosensitive epilepsy. Headphones recommended.</div>
+  <div class="keys">F fullscreen &middot; Space pause &middot; &larr; &rarr; 5 s &middot; R restart</div>
+</div>
+<div id="hint">F fullscreen &middot; Space pause &middot; R restart</div>
+<script>
+'use strict';
+const v = document.getElementById('v'), gate = document.getElementById('gate'), hint = document.getElementById('hint');
+let started = false;
+function start() {
+  if (started) return;
+  started = true;
+  gate.classList.add('gone');
+  v.currentTime = 0;
+  v.play().catch(() => { started = false; gate.classList.remove('gone'); });
+  hint.style.opacity = .8; setTimeout(() => { hint.style.opacity = 0; }, 3500);
+}
+gate.addEventListener('click', start);
+v.addEventListener('click', () => { if (started) v.paused ? v.play() : v.pause(); });
+v.addEventListener('ended', () => {
+  started = false;
+  gate.querySelector('.go').textContent = 'PRESS R TO REPLAY';
+  gate.classList.remove('gone');
+});
+function fs() {
+  try {
+    const r = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    if (r && r.catch) r.catch(() => {});
+  } catch (_) {}
+}
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'f') fs();
+  else if (k === 'r') { started = false; start(); }
+  else if (!started) { if (k === ' ' || k === 'enter') start(); }
+  else if (k === ' ') { e.preventDefault(); v.paused ? v.play() : v.pause(); }
+  else if (k === 'arrowright') v.currentTime = Math.min(v.duration || 0, v.currentTime + 5);
+  else if (k === 'arrowleft') v.currentTime = Math.max(0, v.currentTime - 5);
+});
+</script>
+</body>
+</html>
