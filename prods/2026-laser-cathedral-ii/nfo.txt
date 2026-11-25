@@ -1,0 +1,114 @@
+ ___________________________________________________________________________
+|                                                                           |
+|                  X A N A D U   -   V E N T U R E                          |
+|                  L A S E R   C A T H E D R A L   I I                      |
+|            a techno mass, made by humans and machines together            |
+|___________________________________________________________________________|
+
+  group ....... Xanadu
+  vision ...... Venture  - vision, direction, critique
+  music ....... VoxNoir  - "Mon dieu bebe", a VoxNoir production made with Suno
+  plan+code ... Facet    - Claude (Anthropic) via Claude Code: plan, engine,
+                           light, lasers, titles, camera, edit
+  flesh+glass . Astra    - ChatGPT (OpenAI) keyframes + Runway Gen-4.5 motion
+  review ...... Codex    - code review on every engine change
+  platform .... web browser (video player, offline, no network)
+  category .... demo
+  length ...... 3:40, 125.2 BPM, cut on the bar grid
+  license ..... CC BY-NC-SA 4.0
+  released .... 25 November 2026
+
+
+  THE STORY
+  ---------
+  Five days ago we released LASER CATHEDRAL: a Gothic cathedral that wakes
+  up as a techno club, every pixel a laser beam, hand-written in WebGL2.
+  Same track, same mass in fifteen movements. But it was empty. Light and
+  stone, nobody dancing.
+
+  LASER CATHEDRAL II puts the people in.
+
+  The chessboard is the floor. Kings, queens, bishops, pawns. Each piece
+  moves by its own law: the tower in straight lines, the bishop on the
+  diagonal, the pawn one step per beat. Death stands still, and the camera
+  does not cut while she is in frame. Then the rules get thrown over. The
+  pawn reaches the last rank and becomes queen. The angels in black latex
+  live it up while the demons in white lace are shocked. A champagne cork
+  goes on the drop. And at the end Death lays down a king and gives up.
+  The music won.
+
+  The crew was one human and three machines:
+
+    Venture had the vision and the last word on every frame.
+    Astra painted the bodies, the glass and the rooms, then sent them to
+      Runway to move.
+    Facet wrote the shot cards, ran the dailies and wrote the engine that
+      lights it all.
+    Codex reviewed the code, and caught real bugs (lasers pointing out of
+      frame, a recorder that never waited for its videos).
+
+  One rule held it together, the samples principle: the generated images
+  are only bodies, rooms and materials. Like samples in a tracker module.
+  Every laser, every strobe, every firework, every letter and every camera
+  move is code, placed on the bar grid of the track. Gold only for crowns
+  and titles. Never a bright line across the eyes.
+
+  Runway is good at one body doing one thing. Group shots fall apart, so
+  those were animated in the engine, or rescued: stabilised frame by frame,
+  slowed down with optical flow, or scrubbed to the music like a crossfader
+  (the scales in JUDICIUM swing with the beat, and when they balance, hearts
+  rise).
+
+
+  THE MASS
+  --------
+    I     INTROIT              the portal in the rain, the door leaks light
+    II    NAVE                 FIAT LUX, one long dolly to the altar
+    III   KYRIE                the rose window rushes at you
+    IV    ROSA MYSTICA         the rose lit by the spectrum, fall through it
+    V     MEMENTO MORI         Death writes "jak spelar tik matt" - but
+                               not tonight
+    VI    FESTUM STULTORUM     the farandole, the pawn crowned king for a day
+    VII   ORGANUM              the pipes play the spectrum, gargoyles fire
+    VIII  LABYRINTHUS          the floor from above, the maze turns
+    IX    JUDICIUM             angels vs demons on the scales, then love
+    X     SANCTUS              the saints in the glass open their eyes
+    XI    SURSUM CORDA         wings open, the cork goes on the drop
+    XII   FESTUM               fireworks, the pawn becomes queen
+    XIII  GLORIA               through the rose, the glass is alive
+    XIV   TE DEUM              everyone on the same floor, Death gives up
+    XV    AMEN                 dawn. after Albertus Pictor, Taby church,
+                               c. 1480. all light is code.
+
+
+  TOOLS
+  -----
+  Engine: Python, numpy, OpenCV, ffmpeg. FFT per frame for bass, mid, high
+  and beat. The SANCTUS was recorded frame by frame from the WebGL2 engine
+  of LASER CATHEDRAL in headless Chrome. Keyframes: ChatGPT. Motion: Runway
+  Gen-4.5. Music: Suno. Everything assembled on the absolute timeline of the
+  track, so nothing drifts.
+
+  Fonts rendered into the picture (not shipped):
+    Cinzel by The Cinzel Project Authors, SIL Open Font License 1.1
+    UnifrakturMaguntia, SIL Open Font License 1.1
+    DejaVu Serif, Bitstream Vera license (DejaVu changes public domain)
+
+  Everyone on screen is generated and adult. No real people.
+
+
+  CONTROLS
+  --------
+  Click to enter.  F fullscreen  Space pause  Left/Right -/+5 s  R restart
+
+
+  WARNINGS
+  --------
+  PHOTOSENSITIVITY: flashing lights, strobes, fireworks and fast cuts.
+  Full-frame flashes above 3 Hz only in bursts under one second, but please
+  do not watch if you are photosensitive.
+
+
+  SHOUT OUT
+  ---------
+  To all who know how to freaking party.

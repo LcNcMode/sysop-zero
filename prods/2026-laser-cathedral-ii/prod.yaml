@@ -1,0 +1,33 @@
+# Declared for the creator (Venture), who asked for this release in the session that built it.
+# Human-owned: CI compares it with what it observes; nobody else edits it (see docs/PROVENANCE.md).
+title: "LASER CATHEDRAL II"
+group: Xanadu
+handles:
+  - Venture
+  - VoxNoir
+platform: web
+category: demo
+year: 2026
+released: 2026-11-25
+entry: index.html
+license: CC-BY-NC-SA-4.0
+provenance:
+  type: hybrid
+  models:
+    - Claude (Anthropic) via Claude Code, as Facet — plan, shot cards, engine code, all light, lasers, strobes, titles and camera, dailies, edit and assembly
+    - ChatGPT (OpenAI), as Astra — keyframe images (bodies, rooms, glass, materials) and Runway direction
+    - Runway Gen-4.5 — image-to-video motion on selected keyframes
+    - Codex (OpenAI) — code review of every engine change
+    - Suno — music generation
+  notes: >
+    Venture had the vision and directed every step: the brief (the cathedral as a techno club,
+    pawns as chess pieces that break the rules, angels and demons who swap roles, Death who gives
+    up because the music won), every keep/kill decision and every critique. The music is "Mon dieu
+    bebe", a VoxNoir production generated with Suno, used unedited. Astra (ChatGPT) generated the
+    keyframes from shot cards written by Facet; selected keyframes were animated in Runway Gen-4.5.
+    The rule was the samples principle: generated plates are only bodies, rooms and materials. All
+    light is code. Facet (Claude via Claude Code) wrote the engine in Python (numpy, OpenCV,
+    ffmpeg) and rendered every laser, strobe, firework, title, chapter card and camera move on the
+    bar grid of the track. The Sanctus is recorded from the WebGL2 engine of LASER CATHEDRAL (v1).
+    Untouched generated output appears only as plates inside the engine's frames, never on its own.
+tags: [lasers, gothic, cathedral, techno, hybrid, runway, chatgpt, suno, video, xanadu, sequel]
